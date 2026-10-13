@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부산김해경전철 열차 운용 현황판 (대형 카드 버전)</title>
+  <title>부산김해경전철 열차 운용 현황판 (1~25편성)</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -24,7 +24,7 @@
     .bgl-border { border-color: #832569; }
     .bgl-text { color: #832569; }
 
-    /* 열차 카드 (큼직하고 입체감 있는 디자인) */
+    /* 열차 카드 (호수 제거 및 디자인 정돈) */
     .train-card {
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       cursor: grab;
@@ -135,7 +135,7 @@
     <div id="train-dock" class="station-dropzone min-h-[105px] p-2.5 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap gap-2.5 items-start justify-start" data-location="dock"></div>
   </section>
 
-  <!-- 2. 메인 노선도 영역 (세로 여유 공간 확보) -->
+  <!-- 2. 메인 노선도 영역 -->
   <main class="flex flex-col gap-6" id="capture-area">
 
     <!-- [상단 트랙] 부원 ~ 신명차량기지 -->
@@ -286,7 +286,7 @@
       };
     }
 
-    const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_LARGE';
+    const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_CLEAN';
     function loadSavedData() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -308,32 +308,30 @@
     }
 
     /* ========================================================
-       2. UI 렌더링 템플릿 (첫 버전 스타일 복원)
+       2. UI 렌더링 템플릿 (몇호 텍스트 완전 제거)
     ======================================================== */
 
-    // 큼직한 열차 카드 생성[cite: 1]
     function createTrainCardHTML(train) {
       return `
         <div id="${train.id}" 
              class="train-card flex flex-col bg-white border border-slate-300 rounded-lg shadow-sm overflow-hidden select-none"
              draggable="true">
           
-          <!-- 전동차 헤더 -->
-          <div class="bg-gradient-to-r from-[#7a2665] via-[#942777] to-[#7a2665] px-2 py-1 flex items-center justify-between text-white border-b border-purple-900">
-            <div class="flex items-center gap-1">
+          <!-- 전동차 헤더 (호수 없이 편성 번호만 중앙 정렬) -->
+          <div class="bg-gradient-to-r from-[#7a2665] via-[#942777] to-[#7a2665] px-2 py-1 flex items-center justify-center text-white border-b border-purple-900">
+            <div class="flex items-center gap-1.5">
               <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
               <span class="text-[11px] font-bold tracking-tight">${train.numStr}</span>
             </div>
-            <span class="text-[9px] font-mono text-purple-200 font-bold">${100 + train.num}호</span>
           </div>
 
-          <!-- 전동차 창문 그래픽 -->
-          <div class="bg-slate-100 px-1.5 py-0.5 border-b border-slate-200 flex items-center justify-between">
-            <div class="flex gap-1 items-center">
-              <div class="w-2 h-1.5 bg-slate-700 rounded-xs"></div>
-              <div class="w-3.5 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-3.5 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-2 h-1.5 bg-slate-700 rounded-xs"></div>
+          <!-- 전동차 창문 그래픽 (호수 표기 삭제) -->
+          <div class="bg-slate-100 px-2 py-1 border-b border-slate-200 flex items-center justify-center">
+            <div class="flex gap-1.5 items-center">
+              <div class="w-2.5 h-1.5 bg-slate-700 rounded-xs"></div>
+              <div class="w-4 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-4 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-2.5 h-1.5 bg-slate-700 rounded-xs"></div>
             </div>
           </div>
 
@@ -349,20 +347,20 @@
       `;
     }
 
-    // 노선도 렌더링 (높이 85px로 확장된 상·선·하 슬롯)
+    // 노선도 렌더링
     function renderTrackLine(containerId, list) {
       const container = document.getElementById(containerId);
       container.innerHTML = '';
 
       list.forEach((st, idx) => {
-        // 1. 역 컬럼 (상 / 선 / 하)
+        // 역 컬럼 (상 / 선 / 하)
         const col = document.createElement('div');
         col.className = 'flex flex-col justify-between items-center h-[285px] min-w-[132px] flex-1 px-1';
         col.innerHTML = `
-          <!-- 상선 승강장 슬롯 (높이 85px) -->
+          <!-- 상선 승강장 슬롯 -->
           <div class="station-dropzone w-full h-[85px] rounded-xl bg-sky-50/70 border-2 border-sky-200 flex items-center justify-center p-1 shadow-2xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
           
-          <!-- 선로(중간) 슬롯 & 역명 명판 (높이 85px) -->
+          <!-- 선로(중간) 슬롯 & 역명 명판 -->
           <div class="station-dropzone relative z-10 w-full h-[85px] rounded-xl bg-white border-2 border-[#832569] flex flex-col items-center justify-center shadow-xs p-1" data-location="${st.id}_MID" title="${st.name} 선로">
             <div class="flex items-center gap-1 default-badge">
               <span class="w-4 h-4 rounded-full bg-[#832569] text-white text-[9px] font-black flex items-center justify-center shadow-xs">
@@ -373,12 +371,12 @@
             ${st.transfer ? `<span class="text-[9px] bg-sky-100 text-sky-800 font-bold px-1 rounded mt-1 default-badge">${st.transfer}</span>` : ''}
           </div>
 
-          <!-- 하선 승강장 슬롯 (높이 85px) -->
+          <!-- 하선 승강장 슬롯 -->
           <div class="station-dropzone w-full h-[85px] rounded-xl bg-rose-50/70 border-2 border-rose-200 flex items-center justify-center p-1 shadow-2xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
         `;
         container.appendChild(col);
 
-        // 2. 역간 본선 구간 (마지막 역 제외)
+        // 역간 본선 구간
         if (idx < list.length - 1) {
           const nextSt = list[idx + 1];
           const sec = document.createElement('div');
@@ -416,7 +414,6 @@
         if (train.location === 'dock') {
           dockCount++;
         } else {
-          // 중앙 선로에 열차가 올라가면 역명 텍스트 숨김 처리
           targetZone.querySelectorAll('.default-badge').forEach(b => b.classList.add('hidden'));
         }
 
