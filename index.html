@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부산김해경전철 열차 종합 운용 현황판 ('ㄹ'자 단일 연속선로)</title>
+  <title>부산김해경전철 열차 종합 운용 현황판 ('ㄹ'자 직결선로)</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -24,11 +24,11 @@
     .bgl-border { border-color: #832569; }
     .bgl-text { color: #832569; }
 
-    /* 열차 카드 (124px 원형 규격) */
+    /* 열차 카드 (94px 슬림 규격) */
     .train-card {
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       cursor: grab;
-      width: 124px;
+      width: 94px;
       flex-shrink: 0;
       z-index: 30;
     }
@@ -46,45 +46,20 @@
       background-color: #fdf2f8 !important;
       border-color: #db2777 !important;
       transform: scale(1.02);
-      box-shadow: 0 0 0 3px rgba(219, 39, 119, 0.35);
-    }
-
-    /* 실선 철길 스타일 */
-    .rail-line {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 12px;
-      transform: translateY(-50%);
-      background: linear-gradient(90deg, #7e22ce, #9d174d, #7e22ce);
-      border-radius: 6px;
-      z-index: 1;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    .rail-ties {
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 22px;
-      transform: translateY(-50%);
-      background-image: repeating-linear-gradient(90deg, #94a3b8 0, #94a3b8 4px, transparent 4px, transparent 18px);
-      z-index: 0;
-      opacity: 0.7;
+      box-shadow: 0 0 0 2px rgba(219, 39, 119, 0.35);
     }
 
     /* 토스트 알림 */
     #toast {
       position: fixed;
-      top: 24px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(-30px);
       background-color: #0f172a;
       color: #ffffff;
-      padding: 10px 20px;
+      padding: 8px 18px;
       border-radius: 9999px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
       display: flex;
@@ -101,12 +76,12 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col p-4">
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col p-3">
 
   <!-- 토스트 알림 -->
   <div id="toast">
@@ -115,170 +90,145 @@
   </div>
 
   <!-- 상단 컨트롤 헤더 -->
-  <header class="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4 sticky top-2 z-50 mb-4">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-md">
-        <i class="fa-solid fa-train-subway text-lg"></i>
+  <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 sticky top-1 z-50 mb-3">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
+        <i class="fa-solid fa-train-subway text-sm"></i>
       </div>
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="text-base font-bold text-slate-900 tracking-tight">부산김해경전철 열차 종합 운용 현황판</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">'ㄹ'자 연속 단일 선로망</span>
+          <h1 class="text-sm font-bold text-slate-900 tracking-tight">부산김해경전철 열차 종합 운용 현황판</h1>
+          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">1~25편성 관제</span>
         </div>
-        <p class="text-xs text-slate-500">사상주박지부터 신명차량기지까지 실제로 연결된 선로에서 실시간 위치를 관제합니다.</p>
       </div>
     </div>
 
     <!-- 기능 버튼 -->
-    <div class="flex items-center gap-2 text-xs">
-      <button id="btn-save" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium shadow-sm flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-floppy-disk text-xs"></i> 상태 저장
+    <div class="flex items-center gap-1.5 text-xs">
+      <button id="btn-save" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
+        <i class="fa-solid fa-floppy-disk text-[11px]"></i> 상태 저장
       </button>
-      <button id="btn-return-all" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg font-medium shadow-sm flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-warehouse text-xs"></i> 전 편성 대기소 복귀
+      <button id="btn-return-all" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
+        <i class="fa-solid fa-warehouse text-[11px]"></i> 대기소 복귀
       </button>
-      <button id="btn-reset-names" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium transition flex items-center gap-1.5">
-        <i class="fa-solid fa-rotate-left text-xs"></i> 텍스트 초기화
+      <button id="btn-reset-names" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
+        <i class="fa-solid fa-rotate-left text-[11px]"></i> 텍스트 초기화
       </button>
-      <div class="h-6 w-px bg-slate-200 mx-1"></div>
-      <button id="btn-export-slide" class="px-4 py-2 bg-[#832569] hover:bg-[#6c1c54] text-white rounded-lg font-semibold shadow-sm flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-image text-xs"></i> 슬라이드용 고화질 PNG 저장
+      <div class="h-5 w-px bg-slate-200 mx-1"></div>
+      <button id="btn-export-slide" class="px-3 py-1.5 bg-[#832569] hover:bg-[#6c1c54] text-white rounded-md font-semibold shadow-xs flex items-center gap-1 transition">
+        <i class="fa-solid fa-image text-[11px]"></i> 슬라이드용 PNG 저장
       </button>
     </div>
   </header>
 
-  <!-- 1. 열차 대기소 (상단 1~25편성) -->
-  <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-5">
-    <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+  <!-- 1. 열차 대기소 -->
+  <section class="bg-white rounded-xl p-3 shadow-xs border border-slate-200 mb-3">
+    <div class="flex items-center justify-between mb-2 pb-1 border-b border-slate-100">
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
-        <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <h2 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
           <i class="fa-solid fa-cubes-stacked text-purple-700"></i>
-          편성 대기소 / 유치선 (1편성 ~ 25편성)
+          편성 대기소 (1편성 ~ 25편성)
         </h2>
-        <span id="depot-count" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">25편성 대기중</span>
+        <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
-      <div class="text-xs text-slate-400">
-        💡 열차를 원하는 위치(상선 / 선로 / 하선)로 드래그하고 이름을 입력하세요.
+      <div class="text-[11px] text-slate-400">
+        💡 열차를 원하는 역 또는 본선의 상선/하선으로 드래그하세요.
       </div>
     </div>
 
     <!-- 대기소 드롭존 -->
-    <div id="train-dock" class="station-dropzone min-h-[105px] p-2.5 rounded-xl bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap gap-2.5 items-start justify-start" data-location="dock"></div>
+    <div id="train-dock" class="station-dropzone min-h-[92px] p-2 rounded-lg bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap gap-1.5 items-start justify-start" data-location="dock"></div>
   </section>
 
-  <!-- 2. 메인 'ㄹ'자 단일 연속 궤도망 영역 -->
-  <main class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col relative overflow-x-auto min-w-[1580px]" id="capture-area">
+  <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 -->
+  <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative w-full overflow-hidden" id="capture-area">
+    
+    <!-- SVG 완전 단일 연속 레일 궤도 -->
+    <svg id="continuous-rail-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+      <defs>
+        <linearGradient id="railGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#7e22ce" />
+          <stop offset="50%" stop-color="#9d174d" />
+          <stop offset="100%" stop-color="#7e22ce" />
+        </linearGradient>
+      </defs>
 
-    <!-- [상단 본선] 부원 ~ 신명차량기지 -->
-    <div class="relative bg-slate-50/70 border border-slate-200 rounded-2xl p-4">
-      <div class="relative flex items-center min-w-[1450px]">
-        <div class="rail-ties"></div>
-        <div class="rail-line"></div>
-        
-        <!-- 좌측 [상] [선] [하] 인디케이터 -->
-        <div class="flex flex-col justify-between items-center h-[285px] w-[38px] shrink-0 mr-3 z-10 py-1">
-          <span class="text-xs font-black text-sky-700 bg-sky-100 border border-sky-300 rounded-md px-1.5 py-1">상</span>
-          <span class="text-xs font-black text-amber-700 bg-amber-100 border border-amber-300 rounded-md px-1.5 py-1">선</span>
-          <span class="text-xs font-black text-rose-700 bg-rose-100 border border-rose-300 rounded-md px-1.5 py-1">하</span>
-        </div>
+      <!-- 침목 -->
+      <path id="svg-rail-ties" fill="none" stroke="#94a3b8" stroke-width="22" stroke-linecap="round" stroke-dasharray="3, 11" opacity="0.65" />
+      <!-- 주 레일 외곽선 -->
+      <path id="svg-rail-outer" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+      <!-- 주 레일 코어 라인 -->
+      <path id="svg-rail-core" fill="none" stroke="url(#railGrad)" stroke-width="8" stroke-linecap="round" />
+    </svg>
 
-        <div class="relative z-10 flex flex-1 items-center justify-between" id="track-tier-top"></div>
+    <!-- [1행: 정방향 좌->우] 사상주박지 ~ 사상 ~ 등구 ➔ 등구-대저 본선 -->
+    <div class="relative z-10 flex items-center mb-6" id="row-1">
+      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+        <span class="text-[9px] font-bold text-slate-400">선로</span>
+        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
       </div>
+      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
     </div>
 
-    <!-- [상단 ➔ 중단 연결 곡선 선로] 김해시청 ──▶ 부원 -->
-    <div class="flex justify-end pr-16 -my-4 z-20">
-      <div class="flex items-center gap-3 bg-purple-50/90 border-2 border-[#832569] px-4 py-2 rounded-2xl shadow-sm">
-        <div class="station-dropzone w-[130px] h-[54px] rounded-lg bg-white border border-dashed border-purple-400 flex items-center justify-center text-[11px] font-bold text-purple-900" data-location="SEC_CURVE_MID_TOP" title="김해시청 ~ 부원 연결선로">
-          <span class="default-badge">시청 ➔ 부원 본선</span>
-        </div>
-        <div class="flex flex-col items-center text-purple-700 font-extrabold text-xs">
-          <i class="fa-solid fa-arrow-up"></i>
-          <span>연결곡선</span>
-        </div>
+    <!-- [2행: 역방향 우->좌] 대저 ~ 김해시청 ➔ 시청-부원 본선 (양끝 일치 맞춤) -->
+    <div class="relative z-10 flex items-center mb-6" id="row-2">
+      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+        <span class="text-[9px] font-bold text-slate-400">선로</span>
+        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
       </div>
+      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-2"></div>
     </div>
 
-    <!-- [중단 본선] 대저 ~ 김해시청 -->
-    <div class="relative bg-slate-50/70 border border-slate-200 rounded-2xl p-4">
-      <div class="relative flex items-center min-w-[1450px]">
-        <div class="rail-ties"></div>
-        <div class="rail-line"></div>
-        
-        <!-- 좌측 [상] [선] [하] 인디케이터 -->
-        <div class="flex flex-col justify-between items-center h-[285px] w-[38px] shrink-0 mr-3 z-10 py-1">
-          <span class="text-xs font-black text-sky-700 bg-sky-100 border border-sky-300 rounded-md px-1.5 py-1">상</span>
-          <span class="text-xs font-black text-amber-700 bg-amber-100 border border-amber-300 rounded-md px-1.5 py-1">선</span>
-          <span class="text-xs font-black text-rose-700 bg-rose-100 border border-rose-300 rounded-md px-1.5 py-1">하</span>
-        </div>
-
-        <div class="relative z-10 flex flex-1 items-center justify-between" id="track-tier-middle"></div>
+    <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 -->
+    <div class="relative z-10 flex items-center pb-1" id="row-3">
+      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+        <span class="text-[9px] font-bold text-slate-400">선로</span>
+        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
       </div>
-    </div>
-
-    <!-- [하단 ➔ 중단 연결 곡선 선로] 등구 ──▶ 대저 -->
-    <div class="flex justify-start pl-16 -my-4 z-20">
-      <div class="flex items-center gap-3 bg-purple-50/90 border-2 border-[#832569] px-4 py-2 rounded-2xl shadow-sm">
-        <div class="flex flex-col items-center text-purple-700 font-extrabold text-xs">
-          <i class="fa-solid fa-arrow-up"></i>
-          <span>연결곡선</span>
-        </div>
-        <div class="station-dropzone w-[130px] h-[54px] rounded-lg bg-white border border-dashed border-purple-400 flex items-center justify-center text-[11px] font-bold text-purple-900" data-location="SEC_CURVE_BOT_MID" title="등구 ~ 대저 연결선로">
-          <span class="default-badge">등구 ➔ 대저 본선</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- [하단 본선] 사상주박지 ~ 사상 ~ 등구 -->
-    <div class="relative bg-slate-50/70 border border-slate-200 rounded-2xl p-4">
-      <div class="relative flex items-center min-w-[1450px]">
-        <div class="rail-ties"></div>
-        <div class="rail-line"></div>
-        
-        <!-- 좌측 [상] [선] [하] 인디케이터 -->
-        <div class="flex flex-col justify-between items-center h-[285px] w-[38px] shrink-0 mr-3 z-10 py-1">
-          <span class="text-xs font-black text-sky-700 bg-sky-100 border border-sky-300 rounded-md px-1.5 py-1">상</span>
-          <span class="text-xs font-black text-amber-700 bg-amber-100 border border-amber-300 rounded-md px-1.5 py-1">선</span>
-          <span class="text-xs font-black text-rose-700 bg-rose-100 border border-rose-300 rounded-md px-1.5 py-1">하</span>
-        </div>
-
-        <div class="relative z-10 flex flex-1 items-center justify-between" id="track-tier-bottom"></div>
-      </div>
+      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-3"></div>
     </div>
 
   </main>
 
   <script>
     /* ========================================================
-       1. 노선 데이터 정의 (21개 역 + 사상주박 + 신명기지)
+       1. 노선 데이터 정의 (물리적 ㄹ자 배치)
+       1행: 사상주박 -> 등구 -> 등구-대저 본선 (우측 끝)
+       2행: 시청-부원 본선 (좌측 끝) <- 김해시청 <- 대저 (우측 끝)
+       3행: 부원 (좌측 끝) -> 신명기지
     ======================================================== */
     
-    // 하단 라인: 사상주박 + 사상 ~ 등구
-    const bottomStations = [
+    // 1행: 주박지 ~ 등구 (맨 오른쪽에 등구-대저 본선)
+    const tier1Stations = [
       { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true },
       { id: 'st_01', num: '01', name: '사상', transfer: '2호선' },
-      { id: 'st_02', num: '02', name: '괘법르네시떼' },
+      { id: 'st_02', num: '02', name: '괘법르네' },
       { id: 'st_03', num: '03', name: '서부산유통' },
       { id: 'st_04', num: '04', name: '공항', transfer: '공항' },
       { id: 'st_05', num: '05', name: '덕두' },
       { id: 'st_06', num: '06', name: '등구' },
+      { id: 'sec_06_07', name: '등구~대저', isConnector: true }
     ];
 
-    // 중단 라인: 대저 ~ 김해시청
-    const middleStations = [
-      { id: 'st_07', num: '07', name: '대저', transfer: '3호선' },
-      { id: 'st_08', num: '08', name: '평강' },
-      { id: 'st_09', num: '09', name: '대사' },
-      { id: 'st_10', num: '10', name: '불암' },
-      { id: 'st_11', num: '11', name: '지내' },
-      { id: 'st_12', num: '12', name: '김해대학' },
-      { id: 'st_13', num: '13', name: '인제대' },
+    // 2행: 좌측 끝에 '시청-부원 본선'이 오고, 우측 끝에 '대저'가 오도록 배치
+    const tier2Stations = [
+      { id: 'sec_14_15', name: '시청~부원', isConnector: true },
       { id: 'st_14', num: '14', name: '김해시청' },
+      { id: 'st_13', num: '13', name: '인제대' },
+      { id: 'st_12', num: '12', name: '김해대학' },
+      { id: 'st_11', num: '11', name: '지내' },
+      { id: 'st_10', num: '10', name: '불암' },
+      { id: 'st_09', num: '09', name: '대사' },
+      { id: 'st_08', num: '08', name: '평강' },
+      { id: 'st_07', num: '07', name: '대저', transfer: '3호선' }
     ];
 
-    // 상단 라인: 부원 ~ 신명차량기지
-    const topStations = [
+    // 3행: 부원 ~ 신명차량기지 (부원이 좌측 끝에 위치하여 바로 위 시청-부원 본선과 수직 일치)
+    const tier3Stations = [
       { id: 'st_15', num: '15', name: '부원' },
       { id: 'st_16', num: '16', name: '봉황' },
       { id: 'st_17', num: '17', name: '수로왕릉' },
@@ -286,7 +236,7 @@
       { id: 'st_19', num: '19', name: '연지공원' },
       { id: 'st_20', num: '20', name: '장신대' },
       { id: 'st_21', num: '21', name: '가야대' },
-      { id: 'st_depot', num: '기지', name: '신명차량기지', isDepot: true },
+      { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true }
     ];
 
     let trainsData = {};
@@ -301,7 +251,7 @@
       };
     }
 
-    const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_CLEAN';
+    const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_REAL_S';
     function loadSavedData() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -329,95 +279,145 @@
     function createTrainCardHTML(train) {
       return `
         <div id="${train.id}" 
-             class="train-card flex flex-col bg-white border border-slate-300 rounded-lg shadow-sm overflow-hidden select-none"
+             class="train-card flex flex-col bg-white border border-slate-300 rounded shadow-xs overflow-hidden select-none"
              draggable="true">
           
-          <!-- 전동차 헤더 -->
-          <div class="bg-gradient-to-r from-[#7a2665] via-[#942777] to-[#7a2665] px-2 py-1 flex items-center justify-center text-white border-b border-purple-900">
-            <div class="flex items-center gap-1.5">
-              <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
-              <span class="text-[11px] font-bold tracking-tight">${train.numStr}</span>
+          <div class="bg-gradient-to-r from-[#7a2665] via-[#942777] to-[#7a2665] px-1.5 py-0.5 flex items-center justify-center text-white border-b border-purple-900">
+            <div class="flex items-center gap-1">
+              <i class="fa-solid fa-train-subway text-[9px] text-purple-200"></i>
+              <span class="text-[10px] font-bold tracking-tight">${train.numStr}</span>
             </div>
           </div>
 
-          <!-- 전동차 창문 그래픽 -->
-          <div class="bg-slate-100 px-2 py-1 border-b border-slate-200 flex items-center justify-center">
-            <div class="flex gap-1.5 items-center">
-              <div class="w-2.5 h-1.5 bg-slate-700 rounded-xs"></div>
-              <div class="w-4 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-4 h-1.5 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-2.5 h-1.5 bg-slate-700 rounded-xs"></div>
+          <div class="bg-slate-100 px-1 py-0.5 border-b border-slate-200 flex items-center justify-center">
+            <div class="flex gap-1 items-center">
+              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
+              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
             </div>
           </div>
 
-          <!-- 이름/메모 인라인 입력란 -->
-          <div class="p-1 bg-white">
+          <div class="p-0.5 bg-white">
             <input type="text" 
                    value="${escapeHtml(train.label)}" 
-                   placeholder="이름 입력" 
-                   class="train-label-input w-full text-center text-xs font-semibold px-1 py-0.5 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-purple-600 rounded text-slate-800 focus:outline-hidden transition"
+                   placeholder="이름" 
+                   class="train-label-input w-full text-center text-[10px] font-semibold px-1 py-0.5 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-purple-600 rounded text-slate-800 focus:outline-hidden transition leading-tight"
                    data-train-id="${train.id}" />
           </div>
         </div>
       `;
     }
 
-    // 노선도 렌더링
     function renderTrackLine(containerId, list) {
       const container = document.getElementById(containerId);
       container.innerHTML = '';
 
       list.forEach((st, idx) => {
-        // 역 컬럼
         const col = document.createElement('div');
-        col.className = 'flex flex-col justify-between items-center h-[285px] min-w-[132px] flex-1 px-1 z-10';
+        col.className = 'flex flex-col justify-between items-center h-[190px] flex-1 px-0.5 z-10 max-w-[104px] min-w-[84px]';
+        
+        const isConn = st.isConnector;
+        const badgeColor = isConn ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-white text-slate-900 border-[#832569]';
+        const upBg = isConn ? 'bg-purple-50/60 border-purple-200' : 'bg-sky-50/80 border-sky-200';
+        const dnBg = isConn ? 'bg-purple-50/60 border-purple-200' : 'bg-rose-50/80 border-rose-200';
+
         col.innerHTML = `
-          <!-- 상선 승강장 슬롯 -->
-          <div class="station-dropzone w-full h-[85px] rounded-xl bg-sky-50/80 border-2 border-sky-200 flex items-center justify-center p-1 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
+          <!-- 상선 슬롯 -->
+          <div class="station-dropzone w-full h-[76px] rounded-lg ${upBg} border flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
           
-          <!-- 선로(중간) 슬롯 & 역명 명판 -->
-          <div class="station-dropzone relative z-20 w-full h-[85px] rounded-xl bg-white border-2 border-[#832569] flex flex-col items-center justify-center shadow-xs p-1" data-location="${st.id}_MID" title="${st.name} 선로">
-            <div class="flex items-center gap-1 default-badge">
-              <span class="w-4 h-4 rounded-full bg-[#832569] text-white text-[9px] font-black flex items-center justify-center shadow-xs">
-                ${st.num}
-              </span>
-              <span class="text-xs font-black text-slate-900 truncate leading-none">${st.name}</span>
-            </div>
-            ${st.transfer ? `<span class="text-[9px] bg-sky-100 text-sky-800 font-bold px-1 rounded mt-1 default-badge">${st.transfer}</span>` : ''}
+          <!-- 슬림 역명 명판 -->
+          <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeColor} border flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
+            ${st.num ? `<span class="w-3 h-3 rounded-full bg-[#832569] text-white text-[7px] font-black flex items-center justify-center shadow-xs">${st.num}</span>` : ''}
+            <span class="text-[9.5px] font-extrabold truncate leading-none">${st.name}</span>
+            ${st.transfer ? `<span class="text-[7.5px] bg-sky-100 text-sky-800 font-bold px-0.5 rounded leading-tight">${st.transfer}</span>` : ''}
           </div>
 
-          <!-- 하선 승강장 슬롯 -->
-          <div class="station-dropzone w-full h-[85px] rounded-xl bg-rose-50/80 border-2 border-rose-200 flex items-center justify-center p-1 shadow-2xs backdrop-blur-xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
+          <!-- 하선 슬롯 -->
+          <div class="station-dropzone w-full h-[76px] rounded-lg ${dnBg} border flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
         `;
         container.appendChild(col);
 
-        // 역간 본선 구간
-        if (idx < list.length - 1) {
+        // 일반 역간 본선 구간
+        if (idx < list.length - 1 && !isConn && !list[idx + 1].isConnector) {
           const nextSt = list[idx + 1];
           const sec = document.createElement('div');
-          sec.className = 'flex flex-col justify-between items-center h-[285px] min-w-[126px] flex-[0.9] px-1 z-10';
+          sec.className = 'flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
           sec.innerHTML = `
-            <!-- 본선 상선 슬롯 -->
-            <div class="station-dropzone w-full h-[85px] rounded-xl bg-sky-50/40 border-2 border-dashed border-sky-200 flex items-center justify-center p-1" data-location="SEC_${st.id}_${nextSt.id}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
+            <!-- 본선 상선 -->
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5" data-location="SEC_${st.id}_${nextSt.id}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
             
-            <!-- 본선 중간 선로 슬롯 -->
-            <div class="station-dropzone relative z-20 w-full h-[85px] rounded-xl bg-white/85 border-2 border-slate-300 flex items-center justify-center shadow-xs p-1" data-location="SEC_${st.id}_${nextSt.id}_MID" title="${st.name}~${nextSt.name} 본선 중간">
-              <span class="text-[10px] font-bold text-slate-400 default-badge">본선구간</span>
+            <!-- 본선 표기 -->
+            <div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="SEC_${st.id}_${nextSt.id}">
+              <span class="text-[8.5px] font-bold text-slate-400">본선</span>
             </div>
 
-            <!-- 본선 하선 슬롯 -->
-            <div class="station-dropzone w-full h-[85px] rounded-xl bg-rose-50/40 border-2 border-dashed border-rose-200 flex items-center justify-center p-1" data-location="SEC_${st.id}_${nextSt.id}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
+            <!-- 본선 하선 -->
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5" data-location="SEC_${st.id}_${nextSt.id}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
           `;
           container.appendChild(sec);
         }
       });
     }
 
-    // 전체 열차 배치
+    /* ========================================================
+       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도 정밀 계산
+    ======================================================== */
+    function drawContinuousRail() {
+      const captureArea = document.getElementById('capture-area');
+      const captureRect = captureArea.getBoundingClientRect();
+
+      // 1행 시작(사상주박)과 끝(등구-대저 연결본선)
+      const r1StartMarker = document.querySelector('[data-marker="st_yard"]');
+      const r1ConnMarker = document.querySelector('[data-marker="sec_06_07"]');
+
+      // 2행 시작(대저)과 끝(시청-부원 연결본선)
+      const r2DaejeMarker = document.querySelector('[data-marker="st_07"]');
+      const r2ConnMarker = document.querySelector('[data-marker="sec_14_15"]');
+
+      // 3행 시작(부원)과 끝(신명기지)
+      const r3StartMarker = document.querySelector('[data-marker="st_15"]');
+      const r3EndMarker = document.querySelector('[data-marker="st_depot"]');
+
+      if (!r1StartMarker || !r1ConnMarker || !r2ConnMarker || !r2DaejeMarker || !r3StartMarker || !r3EndMarker) return;
+
+      const getCenter = (el) => {
+        const r = el.getBoundingClientRect();
+        return {
+          x: r.left + r.width / 2 - captureRect.left,
+          y: r.top + r.height / 2 - captureRect.top
+        };
+      };
+
+      const pR1Start = getCenter(r1StartMarker);
+      const pR1Conn = getCenter(r1ConnMarker);
+      const pR2Daeje = getCenter(r2DaejeMarker);
+      const pR2Conn = getCenter(r2ConnMarker);
+      const pR3Start = getCenter(r3StartMarker);
+      const pR3End = getCenter(r3EndMarker);
+
+      // 우측 꺾임: 1행 끝(등구-대저본선) -> 2행 끝(대저역)
+      // 좌측 꺾임: 2행 시작(시청-부원본선) -> 3행 시작(부원역)
+      const rightCurveX = Math.max(pR1Conn.x, pR2Daeje.x) + 48;
+      const leftCurveX = Math.min(pR2Conn.x, pR3Start.x) - 48;
+
+      const pathD = `
+        M ${pR1Start.x - 12} ${pR1Start.y}
+        L ${pR1Conn.x} ${pR1Conn.y}
+        C ${rightCurveX} ${pR1Conn.y}, ${rightCurveX} ${pR2Daeje.y}, ${pR2Daeje.x} ${pR2Daeje.y}
+        L ${pR2Conn.x} ${pR2Conn.y}
+        C ${leftCurveX} ${pR2Conn.y}, ${leftCurveX} ${pR3Start.y}, ${pR3Start.x} ${pR3Start.y}
+        L ${pR3End.x + 12} ${pR3End.y}
+      `;
+
+      document.getElementById('svg-rail-ties').setAttribute('d', pathD);
+      document.getElementById('svg-rail-outer').setAttribute('d', pathD);
+      document.getElementById('svg-rail-core').setAttribute('d', pathD);
+    }
+
     function renderAllTrains() {
       document.querySelectorAll('.station-dropzone').forEach(zone => {
         zone.querySelectorAll('.train-card').forEach(c => c.remove());
-        zone.querySelectorAll('.default-badge').forEach(b => b.classList.remove('hidden'));
       });
 
       let dockCount = 0;
@@ -428,8 +428,6 @@
 
         if (train.location === 'dock') {
           dockCount++;
-        } else {
-          targetZone.querySelectorAll('.default-badge').forEach(b => b.classList.add('hidden'));
         }
 
         const tempWrap = document.createElement('div');
@@ -445,7 +443,7 @@
     }
 
     /* ========================================================
-       3. 드래그 앤 드롭 및 이벤트 바인딩
+       4. 드래그 앤 드롭 및 이벤트 바인딩
     ======================================================== */
     let draggedTrainId = null;
 
@@ -508,7 +506,7 @@
     }
 
     /* ========================================================
-       4. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
+       5. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
     ======================================================== */
     let toastTimeout = null;
     function showToast(msg) {
@@ -521,7 +519,7 @@
 
       toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
-      }, 2200);
+      }, 2000);
     }
 
     document.getElementById('btn-save').addEventListener('click', () => {
@@ -552,14 +550,13 @@
       const captureElem = document.getElementById('capture-area');
       const btn = document.getElementById('btn-export-slide');
       const originText = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> 이미지 생성 중...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> 생성 중...';
 
       try {
         const canvas = await html2canvas(captureElem, {
           scale: 2,
           useCORS: true,
-          backgroundColor: '#ffffff',
-          windowWidth: captureElem.scrollWidth
+          backgroundColor: '#ffffff'
         });
 
         const link = document.createElement('a');
@@ -583,12 +580,16 @@
     /* 초기 실행 */
     window.addEventListener('DOMContentLoaded', () => {
       loadSavedData();
-      renderTrackLine('track-tier-top', topStations);
-      renderTrackLine('track-tier-middle', middleStations);
-      renderTrackLine('track-tier-bottom', bottomStations);
+      renderTrackLine('track-tier-1', tier1Stations);
+      renderTrackLine('track-tier-2', tier2Stations);
+      renderTrackLine('track-tier-3', tier3Stations);
       initDropZones();
       renderAllTrains();
+
+      setTimeout(drawContinuousRail, 200);
     });
+
+    window.addEventListener('resize', drawContinuousRail);
   </script>
 </body>
 </html>
