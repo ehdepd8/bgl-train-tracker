@@ -162,7 +162,7 @@
       <path id="svg-rail-core" fill="none" stroke="url(#railGrad)" stroke-width="8" stroke-linecap="round" />
     </svg>
 
-    <!-- [1행: 정방향 좌->우] 사상주박지 ~ 사상 ~ 등구 ➔ 등구-대저 본선 -->
+    <!-- [1행: 정방향 좌->우] 사상주박지 ~ 사상 ~ 등구 ➔ 등구~대저 본선 -->
     <div class="relative z-10 flex items-center mb-6" id="row-1">
       <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
         <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -172,7 +172,7 @@
       <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
     </div>
 
-    <!-- [2행: 역방향 우->좌] 대저 ~ 김해시청 ➔ 시청-부원 본선 (양끝 일치 맞춤) -->
+    <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 -->
     <div class="relative z-10 flex items-center mb-6" id="row-2">
       <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
         <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -197,9 +197,6 @@
   <script>
     /* ========================================================
        1. 노선 데이터 정의 (물리적 ㄹ자 배치)
-       1행: 사상주박 -> 등구 -> 등구-대저 본선 (우측 끝)
-       2행: 시청-부원 본선 (좌측 끝) <- 김해시청 <- 대저 (우측 끝)
-       3행: 부원 (좌측 끝) -> 신명기지
     ======================================================== */
     
     // 1행: 주박지 ~ 등구 (맨 오른쪽에 등구-대저 본선)
@@ -214,7 +211,7 @@
       { id: 'sec_06_07', name: '등구~대저', isConnector: true }
     ];
 
-    // 2행: 좌측 끝에 '시청-부원 본선'이 오고, 우측 끝에 '대저'가 오도록 배치
+    // 2행: 좌측 끝에 '시청-부원 본선', 우측 끝에 '대저'
     const tier2Stations = [
       { id: 'sec_14_15', name: '시청~부원', isConnector: true },
       { id: 'st_14', num: '14', name: '김해시청' },
@@ -227,7 +224,7 @@
       { id: 'st_07', num: '07', name: '대저', transfer: '3호선' }
     ];
 
-    // 3행: 부원 ~ 신명차량기지 (부원이 좌측 끝에 위치하여 바로 위 시청-부원 본선과 수직 일치)
+    // 3행: 부원 ~ 신명차량기지
     const tier3Stations = [
       { id: 'st_15', num: '15', name: '부원' },
       { id: 'st_16', num: '16', name: '봉황' },
@@ -315,26 +312,37 @@
 
       list.forEach((st, idx) => {
         const col = document.createElement('div');
-        col.className = 'flex flex-col justify-between items-center h-[190px] flex-1 px-0.5 z-10 max-w-[104px] min-w-[84px]';
-        
         const isConn = st.isConnector;
-        const badgeColor = isConn ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-white text-slate-900 border-[#832569]';
-        const upBg = isConn ? 'bg-purple-50/60 border-purple-200' : 'bg-sky-50/80 border-sky-200';
-        const dnBg = isConn ? 'bg-purple-50/60 border-purple-200' : 'bg-rose-50/80 border-rose-200';
+
+        // 연결 본선(등구~대저, 시청~부원)도 일반 본선처럼 흐리게(bg-sky-50/40, bg-rose-50/40) 및 점선(border-dashed) 처리
+        const colWidth = isConn ? 'flex-[0.75] max-w-[88px] min-w-[72px]' : 'flex-1 max-w-[104px] min-w-[84px]';
+        col.className = `flex flex-col justify-between items-center h-[190px] px-0.5 z-10 ${colWidth}`;
+        
+        const badgeStyle = isConn 
+          ? 'bg-white/85 text-slate-500 border-slate-300' 
+          : 'bg-white text-slate-900 border-[#832569]';
+        
+        const upBg = isConn 
+          ? 'bg-sky-50/40 border border-dashed border-sky-200' 
+          : 'bg-sky-50/80 border border-sky-200';
+          
+        const dnBg = isConn 
+          ? 'bg-rose-50/40 border border-dashed border-rose-200' 
+          : 'bg-rose-50/80 border border-rose-200';
 
         col.innerHTML = `
           <!-- 상선 슬롯 -->
-          <div class="station-dropzone w-full h-[76px] rounded-lg ${upBg} border flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
+          <div class="station-dropzone w-full h-[76px] rounded-lg ${upBg} flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
           
-          <!-- 슬림 역명 명판 -->
-          <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeColor} border flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
+          <!-- 슬림 명판 -->
+          <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeStyle} border flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
             ${st.num ? `<span class="w-3 h-3 rounded-full bg-[#832569] text-white text-[7px] font-black flex items-center justify-center shadow-xs">${st.num}</span>` : ''}
-            <span class="text-[9.5px] font-extrabold truncate leading-none">${st.name}</span>
+            <span class="${isConn ? 'text-[8.5px] font-bold text-slate-400' : 'text-[9.5px] font-extrabold'} truncate leading-none">${st.name}</span>
             ${st.transfer ? `<span class="text-[7.5px] bg-sky-100 text-sky-800 font-bold px-0.5 rounded leading-tight">${st.transfer}</span>` : ''}
           </div>
 
           <!-- 하선 슬롯 -->
-          <div class="station-dropzone w-full h-[76px] rounded-lg ${dnBg} border flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
+          <div class="station-dropzone w-full h-[76px] rounded-lg ${dnBg} flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
         `;
         container.appendChild(col);
 
@@ -345,7 +353,7 @@
           sec.className = 'flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
           sec.innerHTML = `
             <!-- 본선 상선 -->
-            <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5" data-location="SEC_${st.id}_${nextSt.id}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="SEC_${st.id}_${nextSt.id}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
             
             <!-- 본선 표기 -->
             <div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="SEC_${st.id}_${nextSt.id}">
@@ -353,7 +361,7 @@
             </div>
 
             <!-- 본선 하선 -->
-            <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5" data-location="SEC_${st.id}_${nextSt.id}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="SEC_${st.id}_${nextSt.id}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
           `;
           container.appendChild(sec);
         }
@@ -367,15 +375,12 @@
       const captureArea = document.getElementById('capture-area');
       const captureRect = captureArea.getBoundingClientRect();
 
-      // 1행 시작(사상주박)과 끝(등구-대저 연결본선)
       const r1StartMarker = document.querySelector('[data-marker="st_yard"]');
       const r1ConnMarker = document.querySelector('[data-marker="sec_06_07"]');
 
-      // 2행 시작(대저)과 끝(시청-부원 연결본선)
       const r2DaejeMarker = document.querySelector('[data-marker="st_07"]');
       const r2ConnMarker = document.querySelector('[data-marker="sec_14_15"]');
 
-      // 3행 시작(부원)과 끝(신명기지)
       const r3StartMarker = document.querySelector('[data-marker="st_15"]');
       const r3EndMarker = document.querySelector('[data-marker="st_depot"]');
 
@@ -396,8 +401,6 @@
       const pR3Start = getCenter(r3StartMarker);
       const pR3End = getCenter(r3EndMarker);
 
-      // 우측 꺾임: 1행 끝(등구-대저본선) -> 2행 끝(대저역)
-      // 좌측 꺾임: 2행 시작(시청-부원본선) -> 3행 시작(부원역)
       const rightCurveX = Math.max(pR1Conn.x, pR2Daeje.x) + 48;
       const leftCurveX = Math.min(pR2Conn.x, pR3Start.x) - 48;
 
