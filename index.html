@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>부산김해경전철 열차 종합 운용 현황판 ('ㄹ'자 직결선로)</title>
+  <title>열차 종합 현황판 ('ㄹ'자 직결선로)</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- html2canvas -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <!-- Pretendard Font -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   
@@ -89,6 +87,22 @@
       opacity: 0.75;
     }
 
+    /* WCU 제외 영역 음영(Dim) 처리 */
+    .wcu-dimmed {
+      opacity: 0.22 !important;
+      filter: grayscale(85%) !important;
+      transition: opacity 0.25s ease, filter 0.25s ease;
+    }
+
+    /* WCU 선택 활성화 버튼 스타일 */
+    .wcu-btn.active {
+      background-color: #832569 !important;
+      color: #ffffff !important;
+      border-color: #832569 !important;
+      font-weight: 800 !important;
+      box-shadow: 0 2px 6px rgba(131, 37, 105, 0.35) !important;
+    }
+
     /* 토스트 알림 */
     #toast {
       position: fixed;
@@ -130,35 +144,61 @@
   </div>
 
   <!-- 상단 컨트롤 헤더 -->
-  <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 mb-3">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
-        <i class="fa-solid fa-train-subway text-sm"></i>
-      </div>
-      <div>
+  <header class="bg-white border border-slate-200 rounded-xl px-4 py-2.5 shadow-xs flex flex-col gap-2 mb-3">
+    <!-- 헤더 1행: 타이틀 및 기능 버튼 -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
+          <i class="fa-solid fa-train-subway text-sm"></i>
+        </div>
         <div class="flex items-center gap-2">
-          <h1 class="text-sm font-bold text-slate-900 tracking-tight">부산김해경전철 열차 종합 운용 현황판</h1>
+          <h1 class="text-sm font-bold text-slate-900 tracking-tight">열차 종합 현황판</h1>
           <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 공유 연결됨
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간
           </span>
         </div>
       </div>
+
+      <!-- 우측 컨트롤 버튼 -->
+      <div class="flex items-center gap-1.5 text-xs">
+        <button id="btn-zoom-reset" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium border border-slate-300 transition flex items-center gap-1">
+          <i class="fa-solid fa-magnifying-glass text-[11px]"></i> <span id="zoom-text">100%</span>
+        </button>
+        <button id="btn-return-all" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
+          <i class="fa-solid fa-warehouse text-[11px]"></i> 대기소 복귀
+        </button>
+        <button id="btn-reset-names" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
+          <i class="fa-solid fa-rotate-left text-[11px]"></i> 텍스트 초기화
+        </button>
+      </div>
     </div>
 
-    <!-- 기능 버튼 -->
-    <div class="flex items-center gap-1.5 text-xs">
-      <button id="btn-zoom-reset" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium border border-slate-300 transition flex items-center gap-1" title="화면 크기 100% 원복">
-        <i class="fa-solid fa-magnifying-glass text-[11px]"></i> <span id="zoom-text">100%</span>
-      </button>
-      <button id="btn-return-all" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
-        <i class="fa-solid fa-warehouse text-[11px]"></i> 대기소 복귀
-      </button>
-      <button id="btn-reset-names" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md font-medium transition flex items-center gap-1">
-        <i class="fa-solid fa-rotate-left text-[11px]"></i> 텍스트 초기화
-      </button>
-      <div class="h-5 w-px bg-slate-200 mx-1"></div>
-      <button id="btn-export-slide" class="px-3 py-1.5 bg-[#832569] hover:bg-[#6c1c54] text-white rounded-md font-semibold shadow-xs flex items-center gap-1 transition">
-        <i class="fa-solid fa-image text-[11px]"></i> 슬라이드용 PNG 저장
+    <!-- 헤더 2행: WCU 1~8 다중 선택 버튼 -->
+    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="text-[11px] font-extrabold text-slate-500 mr-1 flex items-center gap-1">
+          <i class="fa-solid fa-filter text-purple-700"></i> WCU 선택:
+        </span>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="1">WCU 1</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="2">WCU 2</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="3">WCU 3</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="4">WCU 4</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="5">WCU 5</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="6">WCU 6</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="7">WCU 7</button>
+        <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="8">WCU 8</button>
+        <button type="button" id="btn-wcu-clear" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-[11px] font-bold transition ml-1">전체해제</button>
+      </div>
+    </div>
+
+    <!-- 헤더 3행: 선택된 WCU별 개별 문구 입력 컨테이너 -->
+    <div id="wcu-inputs-container" class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs hidden">
+      <span class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+        <i class="fa-solid fa-pen text-amber-500"></i> 구역별 문구:
+      </span>
+      <div id="wcu-dynamic-inputs" class="flex flex-wrap items-center gap-1.5"></div>
+      <button type="button" id="btn-wcu-apply-text" class="px-2.5 py-1 rounded bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition shadow-2xs ml-auto">
+        적용
       </button>
     </div>
   </header>
@@ -175,7 +215,7 @@
         <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
       <div class="text-[11px] text-slate-400">
-        💡 열차를 옮기거나 이름을 입력하면 접속한 모든 기기에서 즉시 함께 변경됩니다.
+        💡 열차를 옮기거나 WCU를 선택하면 접속한 모든 기기에서 즉시 함께 변경됩니다.
       </div>
     </div>
 
@@ -236,7 +276,7 @@
 
   <script>
     /* ========================================================
-       0. Firebase 설정[cite: 2]
+       0. Firebase 설정
     ======================================================== */
     const firebaseConfig = {
       apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
@@ -250,59 +290,61 @@
 
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('bgl_train_tracker_state');
+    const wcuStateRef = firebase.database().ref('bgl_wcu_filter_state');
 
     /* ========================================================
        1. 노선 데이터 정의
     ======================================================== */
     const tier1Stations = [
-      { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, tier: 1 },
-      { id: 'st_01', num: '01', name: '사상', transfer: '2호선', tier: 1 },
-      { id: 'st_02', num: '02', name: '괘법', tier: 1 },
-      { id: 'st_03', num: '03', name: '서부산', tier: 1 },
-      { id: 'st_04', num: '04', name: '공항', transfer: '공항', tier: 1 },
-      { id: 'st_05', num: '05', name: '덕두', tier: 1 },
-      { id: 'st_06', num: '06', name: '등구', tier: 1 },
-      { id: 'sec_06_07', name: '등구~대저', isConnector: true, tier: 1 }
+      { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, tier: 1, wcu: 1 },
+      { id: 'st_01', num: '01', name: '사상', transfer: '2호선', tier: 1, wcu: 1 },
+      { id: 'st_02', num: '02', name: '괘법', tier: 1, wcu: 1 },
+      { id: 'st_03', num: '03', name: '서부산', tier: 1, wcu: 2 },
+      { id: 'st_04', num: '04', name: '공항', transfer: '공항', tier: 1, wcu: 2 },
+      { id: 'st_05', num: '05', name: '덕두', tier: 1, wcu: 2 },
+      { id: 'st_06', num: '06', name: '등구', tier: 1, wcu: 3 },
+      { id: 'sec_06_07', name: '등구~대저', isConnector: true, tier: 1, wcu: 3 }
     ];
 
     const tier2Stations = [
-      { id: 'sec_14_15', name: '시청~부원', isConnector: true, tier: 2 },
-      { id: 'st_14', num: '14', name: '김해시청', tier: 2 },
-      { id: 'st_13', num: '13', name: '인제대', tier: 2 },
-      { id: 'st_12', num: '12', name: '김해대학', tier: 2 },
-      { id: 'st_11', num: '11', name: '지내', tier: 2 },
-      { id: 'st_10', num: '10', name: '불암', tier: 2 },
-      { id: 'st_09', num: '09', name: '대사', tier: 2 },
-      { id: 'st_08', num: '08', name: '평강', tier: 2 },
-      { id: 'st_07', num: '07', name: '대저', transfer: '3호선', tier: 2 }
+      { id: 'sec_14_15', name: '시청~부원', isConnector: true, tier: 2, wcu: 6 },
+      { id: 'st_14', num: '14', name: '김해시청', tier: 2, wcu: 6 },
+      { id: 'st_13', num: '13', name: '인제대', tier: 2, wcu: 6 },
+      { id: 'st_12', num: '12', name: '김해대학', tier: 2, wcu: 5 },
+      { id: 'st_11', num: '11', name: '지내', tier: 2, wcu: 5 },
+      { id: 'st_10', num: '10', name: '불암', tier: 2, wcu: 4 },
+      { id: 'st_09', num: '09', name: '대사', tier: 2, wcu: 4 },
+      { id: 'st_08', num: '08', name: '평강', tier: 2, wcu: 3 },
+      { id: 'st_07', num: '07', name: '대저', transfer: '3호선', tier: 2, wcu: 3 }
     ];
 
     const tier3Stations = [
-      { id: 'st_15', num: '15', name: '부원', tier: 3 },
-      { id: 'st_16', num: '16', name: '봉황', tier: 3 },
-      { id: 'st_17', num: '17', name: '수로왕릉', tier: 3 },
-      { id: 'st_18', num: '18', name: '박물관', tier: 3 },
-      { id: 'st_19', num: '19', name: '연지공원', tier: 3 },
-      { id: 'st_20', num: '20', name: '장신대', tier: 3 },
-      { id: 'st_21', num: '21', name: '가야대', tier: 3 },
-      { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true, tier: 3 }
+      { id: 'st_15', num: '15', name: '부원', tier: 3, wcu: 6 },
+      { id: 'st_16', num: '16', name: '봉황', tier: 3, wcu: 7 },
+      { id: 'st_17', num: '17', name: '수로왕릉', tier: 3, wcu: 7 },
+      { id: 'st_18', num: '18', name: '박물관', tier: 3, wcu: 7 },
+      { id: 'st_19', num: '19', name: '연지공원', tier: 3, wcu: 7 },
+      { id: 'st_20', num: '20', name: '장신대', tier: 3, wcu: 8 },
+      { id: 'st_21', num: '21', name: '가야대', tier: 3, wcu: 8 },
+      { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true, tier: 3, wcu: 8 }
     ];
 
     function getWcuEdgeLabels(stIdA, stIdB) {
       const pair = [stIdA, stIdB].sort().join('_');
-      
-      if (pair === 'st_02_st_03') return { left: 'WCU 1', right: 'WCU 2' };
-      if (pair === 'st_05_st_06') return { left: 'WCU 2', right: 'WCU 3' };
-      
-      // 2행: 역방향 (화면 왼쪽: 인제대/시청 방향, 화면 오른쪽: 대저 방향)
-      if (pair === 'st_08_st_09') return { left: 'WCU 4', right: 'WCU 3' };
-      if (pair === 'st_10_st_11') return { left: 'WCU 5', right: 'WCU 4' };
-      if (pair === 'st_12_st_13') return { left: 'WCU 6', right: 'WCU 5' };
-
-      if (pair === 'st_15_st_16') return { left: 'WCU 6', right: 'WCU 7' };
-      if (pair === 'st_19_st_20') return { left: 'WCU 7', right: 'WCU 8' };
-
+      if (pair === 'st_02_st_03') return { left: 'WCU 1', right: 'WCU 2', leftWcu: 1, rightWcu: 2, boundary: [1, 2] };
+      if (pair === 'st_05_st_06') return { left: 'WCU 2', right: 'WCU 3', leftWcu: 2, rightWcu: 3, boundary: [2, 3] };
+      if (pair === 'st_08_st_09') return { left: 'WCU 4', right: 'WCU 3', leftWcu: 4, rightWcu: 3, boundary: [3, 4] };
+      if (pair === 'st_10_st_11') return { left: 'WCU 5', right: 'WCU 4', leftWcu: 5, rightWcu: 4, boundary: [4, 5] };
+      if (pair === 'st_12_st_13') return { left: 'WCU 6', right: 'WCU 5', leftWcu: 6, rightWcu: 5, boundary: [5, 6] };
+      if (pair === 'st_15_st_16') return { left: 'WCU 6', right: 'WCU 7', leftWcu: 6, rightWcu: 7, boundary: [6, 7] };
+      if (pair === 'st_19_st_20') return { left: 'WCU 7', right: 'WCU 8', leftWcu: 7, rightWcu: 8, boundary: [7, 8] };
       return null;
+    }
+
+    function getSectionWcu(stA, stB) {
+      const edge = getWcuEdgeLabels(stA.id, stB.id);
+      if (edge) return null;
+      return stA.wcu || stB.wcu;
     }
 
     let trainsData = {};
@@ -317,11 +359,20 @@
       };
     }
 
+    let wcuFilterState = {
+      selectedWcus: [],
+      memos: {}
+    };
+
     const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_REAL_S';
 
     function syncToCloud() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trainsData));
       dbRef.set(trainsData);
+    }
+
+    function syncWcuFilterToCloud() {
+      wcuStateRef.set(wcuFilterState);
     }
 
     function initRealtimeSync() {
@@ -334,10 +385,125 @@
           dbRef.set(trainsData);
         }
       });
+
+      wcuStateRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          wcuFilterState = {
+            selectedWcus: val.selectedWcus || [],
+            memos: val.memos || {}
+          };
+          renderDynamicInputs();
+          updateWcuUI();
+        }
+      });
     }
 
     /* ========================================================
-       2. UI 렌더링 템플릿
+       2. WCU 개별 입력창 생성 및 음영/텍스트 렌더링
+    ======================================================== */
+    function renderDynamicInputs() {
+      const container = document.getElementById('wcu-inputs-container');
+      const inputsBox = document.getElementById('wcu-dynamic-inputs');
+      const selected = wcuFilterState.selectedWcus || [];
+
+      if (selected.length === 0) {
+        container.classList.add('hidden');
+        inputsBox.innerHTML = '';
+        return;
+      }
+
+      container.classList.remove('hidden');
+      inputsBox.innerHTML = '';
+
+      selected.forEach(num => {
+        const currentVal = (wcuFilterState.memos && wcuFilterState.memos[num]) || '';
+        const wrap = document.createElement('div');
+        wrap.className = 'flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5';
+        wrap.innerHTML = `
+          <span class="text-[10px] font-black text-purple-700">WCU ${num}</span>
+          <input type="text" 
+                 data-wcu-memo-num="${num}" 
+                 value="${escapeHtml(currentVal)}" 
+                 placeholder="문구 입력" 
+                 class="wcu-single-memo-input px-1 py-0.5 text-[11px] rounded border border-slate-300 w-24 bg-white focus:outline-hidden focus:border-purple-600 font-semibold" />
+        `;
+        inputsBox.appendChild(wrap);
+      });
+
+      inputsBox.querySelectorAll('.wcu-single-memo-input').forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') document.getElementById('btn-wcu-apply-text').click();
+        });
+      });
+    }
+
+    function updateWcuUI() {
+      const selected = wcuFilterState.selectedWcus || [];
+      const memos = wcuFilterState.memos || {};
+
+      document.querySelectorAll('.wcu-btn').forEach(btn => {
+        const num = Number(btn.dataset.wcu);
+        if (selected.includes(num)) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      const isFilterActive = selected.length > 0;
+
+      // 궤도 열 음영(Dim) 처리
+      document.querySelectorAll('[data-track-col]').forEach(col => {
+        const wcuAttr = col.dataset.wcuList;
+        if (!wcuAttr) return;
+        const colWcus = wcuAttr.split(',').map(Number);
+
+        if (!isFilterActive) {
+          col.classList.remove('wcu-dimmed');
+        } else {
+          const isMatch = colWcus.some(w => selected.includes(w));
+          if (isMatch) {
+            col.classList.remove('wcu-dimmed');
+          } else {
+            col.classList.add('wcu-dimmed');
+          }
+        }
+      });
+
+      // 1) 일반 본선 명판: 앰버-오렌지 바탕 + 흰색 볼드체
+      document.querySelectorAll('.normal-mainline-badge').forEach(badge => {
+        const forWcu = Number(badge.dataset.forWcu);
+        const textSpan = badge.querySelector('.mainline-text');
+        const customMemo = memos[forWcu] ? memos[forWcu].trim() : '';
+
+        if (selected.includes(forWcu) && customMemo) {
+          textSpan.textContent = customMemo;
+          badge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-amber-500 text-white font-black shadow-xs flex items-center justify-center px-1 border border-amber-600';
+        } else {
+          textSpan.textContent = '본선';
+          badge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 text-slate-400 font-bold border border-slate-300 shadow-xs flex items-center justify-center px-1';
+        }
+      });
+
+      // 2) 경계 본선 뱃지: 좌측/우측 각 WCU별 개별 문구 반영
+      document.querySelectorAll('.boundary-edge-badge').forEach(badge => {
+        const forWcu = Number(badge.dataset.forWcu);
+        const defaultLabel = badge.dataset.defaultLabel;
+        const customMemo = memos[forWcu] ? memos[forWcu].trim() : '';
+
+        if (selected.includes(forWcu) && customMemo) {
+          badge.textContent = customMemo;
+          badge.className = 'boundary-edge-badge text-[8px] select-none truncate bg-amber-500 text-white px-1 py-0.5 rounded font-black shadow-2xs border border-amber-600';
+        } else {
+          badge.textContent = defaultLabel;
+          badge.className = 'boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate';
+        }
+      });
+    }
+
+    /* ========================================================
+       3. UI 렌더링 템플릿
     ======================================================== */
     function createTrainCardHTML(train) {
       return `
@@ -381,7 +547,9 @@
         const isConn = st.isConnector;
 
         const colWidth = isConn ? 'flex-[0.75] max-w-[88px] min-w-[72px]' : 'flex-1 max-w-[104px] min-w-[84px]';
-        col.className = `flex flex-col justify-between items-center h-[190px] px-0.5 z-10 ${colWidth}`;
+        col.className = `flex flex-col justify-between items-center h-[190px] px-0.5 z-10 transition-all duration-200 ${colWidth}`;
+        col.setAttribute('data-track-col', 'true');
+        col.setAttribute('data-wcu-list', String(st.wcu));
         
         let rowClass = `row${st.tier}-style`;
         let dotColor = st.tier === 1 ? '#059669' : (st.tier === 2 ? '#d97706' : '#7c3aed');
@@ -423,18 +591,25 @@
           const nextSt = list[idx + 1];
           const secId = `SEC_${st.id}_${nextSt.id}`;
           const edgeLabels = getWcuEdgeLabels(st.id, nextSt.id);
+          const singleWcu = getSectionWcu(st, nextSt);
 
           const sec = document.createElement('div');
-          sec.className = 'relative flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
+          sec.className = 'relative flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px] transition-all duration-200';
+          sec.setAttribute('data-track-col', 'true');
           
-          // WCU 경계선인 곳은 WCU 1, WCU 2를 살짝 진하게 표시, 아닌 곳은 기본 '본선' 표시
+          if (edgeLabels) {
+            sec.setAttribute('data-wcu-list', edgeLabels.boundary.join(','));
+          } else {
+            sec.setAttribute('data-wcu-list', String(singleWcu));
+          }
+          
           const markerContent = edgeLabels
-            ? `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/80 border border-slate-300 flex items-center justify-between px-1.5 shadow-xs backdrop-blur-xs" data-marker="${secId}">
-                 <span class="text-[8px] font-extrabold text-slate-600 select-none">${edgeLabels.left}</span>
-                 <span class="text-[8px] font-extrabold text-slate-600 select-none">${edgeLabels.right}</span>
+            ? `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/80 border border-slate-300 flex items-center justify-between px-1 shadow-xs backdrop-blur-xs" data-marker="${secId}">
+                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate" data-for-wcu="${edgeLabels.leftWcu}" data-default-label="${edgeLabels.left}">${edgeLabels.left}</span>
+                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate" data-for-wcu="${edgeLabels.rightWcu}" data-default-label="${edgeLabels.right}">${edgeLabels.right}</span>
                </div>`
-            : `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="${secId}">
-                 <span class="text-[8.5px] font-bold text-slate-400">본선</span>
+            : `<div class="normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs px-1" data-marker="${secId}" data-for-wcu="${singleWcu}">
+                 <span class="mainline-text text-[8.5px] font-bold text-slate-400 truncate">본선</span>
                </div>`;
 
           sec.innerHTML = `
@@ -455,7 +630,7 @@
     }
 
     /* ========================================================
-       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도
+       4. 물리적 직결 'ㄹ'자 SVG 단일 궤도
     ======================================================== */
     function drawContinuousRail() {
       const captureArea = document.getElementById('capture-area');
@@ -546,7 +721,7 @@
     }
 
     /* ========================================================
-       4. 드래그 엣지 감지 자동 스크롤 엔진
+       5. 드래그 엣지 감지 자동 스크롤 엔진
     ======================================================== */
     let autoScrollSpeedX = 0;
     let autoScrollSpeedY = 0;
@@ -606,7 +781,7 @@
     }
 
     /* ========================================================
-       5. 드래그 앤 드롭 & 두 손가락 핀치 줌 로직
+       6. 드래그 앤 드롭 & 두 손가락 핀치 줌 로직
     ======================================================== */
     let draggedTrainId = null;
     let touchDraggingCard = null;
@@ -826,8 +1001,45 @@
     }
 
     /* ========================================================
-       6. 컨트롤 버튼 동작
+       7. WCU 선택기 및 컨트롤 이벤트
     ======================================================== */
+    document.querySelectorAll('.wcu-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const num = Number(btn.dataset.wcu);
+        const idx = wcuFilterState.selectedWcus.indexOf(num);
+        if (idx > -1) {
+          wcuFilterState.selectedWcus.splice(idx, 1);
+          delete wcuFilterState.memos[num];
+        } else {
+          wcuFilterState.selectedWcus.push(num);
+          wcuFilterState.selectedWcus.sort((a, b) => a - b);
+          if (!wcuFilterState.memos[num]) wcuFilterState.memos[num] = '';
+        }
+        syncWcuFilterToCloud();
+        renderDynamicInputs();
+        updateWcuUI();
+      });
+    });
+
+    document.getElementById('btn-wcu-clear').addEventListener('click', () => {
+      wcuFilterState.selectedWcus = [];
+      wcuFilterState.memos = {};
+      syncWcuFilterToCloud();
+      renderDynamicInputs();
+      updateWcuUI();
+      showToast('WCU 선택이 전체 해제되었습니다.');
+    });
+
+    document.getElementById('btn-wcu-apply-text').addEventListener('click', () => {
+      document.querySelectorAll('.wcu-single-memo-input').forEach(input => {
+        const num = Number(input.dataset.wcuMemoNum);
+        wcuFilterState.memos[num] = input.value.trim();
+      });
+      syncWcuFilterToCloud();
+      updateWcuUI();
+      showToast('구역별 문구가 실시간 반영되었습니다.');
+    });
+
     let toastTimeout = null;
     function showToast(msg) {
       const toast = document.getElementById('toast');
@@ -855,36 +1067,6 @@
         Object.keys(trainsData).forEach(id => { trainsData[id].label = ''; });
         syncToCloud();
         showToast('텍스트가 초기화되었습니다.');
-      }
-    });
-
-    document.getElementById('btn-export-slide').addEventListener('click', async () => {
-      const captureElem = document.getElementById('capture-area');
-      const btn = document.getElementById('btn-export-slide');
-      const originText = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> 생성 중...';
-
-      const savedScale = currentScale;
-      zoomWrapper.style.transform = 'scale(1)';
-
-      try {
-        const canvas = await html2canvas(captureElem, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
-        const link = document.createElement('a');
-        link.download = `부산김해경전철_노선운용현황_${new Date().toISOString().slice(0, 10)}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('슬라이드용 고화질 이미지가 다운로드되었습니다!');
-      } catch (err) {
-        console.error(err);
-        alert('이미지 생성 중 오류가 발생했습니다.');
-      } finally {
-        zoomWrapper.style.transform = `scale(${savedScale})`;
-        btn.innerHTML = originText;
       }
     });
 
