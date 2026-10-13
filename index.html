@@ -418,7 +418,7 @@
         `;
         container.appendChild(col);
 
-        // 일반 역간 본선 구간 ('본선' 텍스트 제거 완료)
+        // 일반 역간 본선 구간
         if (idx < list.length - 1 && !isConn && !list[idx + 1].isConnector) {
           const nextSt = list[idx + 1];
           const secId = `SEC_${st.id}_${nextSt.id}`;
@@ -427,13 +427,15 @@
           const sec = document.createElement('div');
           sec.className = 'relative flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
           
-          // '본선' 글자 완전 제거: WCU 경계는 양 끝에 WCU 텍스트만, 일반 본선은 깔끔한 빈 바 형태 유지
+          // WCU 경계선인 곳은 WCU 1, WCU 2를 살짝 진하게 표시, 아닌 곳은 기본 '본선' 표시
           const markerContent = edgeLabels
-            ? `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/70 border border-slate-300 flex items-center justify-between px-1.5 shadow-2xs backdrop-blur-xs" data-marker="${secId}">
-                 <span class="text-[8px] font-bold text-slate-400 select-none">${edgeLabels.left}</span>
-                 <span class="text-[8px] font-bold text-slate-400 select-none">${edgeLabels.right}</span>
+            ? `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/80 border border-slate-300 flex items-center justify-between px-1.5 shadow-xs backdrop-blur-xs" data-marker="${secId}">
+                 <span class="text-[8px] font-extrabold text-slate-600 select-none">${edgeLabels.left}</span>
+                 <span class="text-[8px] font-extrabold text-slate-600 select-none">${edgeLabels.right}</span>
                </div>`
-            : `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/40 border border-dashed border-slate-300/80 shadow-2xs" data-marker="${secId}"></div>`;
+            : `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="${secId}">
+                 <span class="text-[8.5px] font-bold text-slate-400">본선</span>
+               </div>`;
 
           sec.innerHTML = `
             ${edgeLabels ? '<div class="wcu-boundary-line" title="WCU 경계 분할선"></div>' : ''}
@@ -441,7 +443,7 @@
             <!-- 본선 상선 -->
             <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="${secId}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
             
-            <!-- 중앙 슬림 마커 ('본선' 글자 없음) -->
+            <!-- 중앙 본선/WCU 명판 -->
             ${markerContent}
 
             <!-- 본선 하선 -->
