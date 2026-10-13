@@ -24,7 +24,7 @@
       -webkit-user-select: none;
     }
 
-    /* 구간별 행 테마 클래스 */
+    /* 관리역별 고유 테마 클래스 */
     .row1-style { border-color: #059669 !important; color: #065f46 !important; }
     .row2-style { border-color: #d97706 !important; color: #92400e !important; }
     .row3-style { border-color: #7c3aed !important; color: #5b21b6 !important; }
@@ -75,6 +75,31 @@
       touch-action: pan-x pan-y pinch-zoom;
     }
 
+    /* WCU 경계 본선 관통 점선 (시인성 극대화) */
+    .wcu-boundary-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      transform: translateX(-50%);
+      border-left: 3px dashed #475569;
+      pointer-events: none;
+      z-index: 28;
+      opacity: 0.85;
+    }
+    .wcu-boundary-line::before, .wcu-boundary-line::after {
+      content: '';
+      position: absolute;
+      left: -4px;
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      background-color: #e11d48;
+    }
+    .wcu-boundary-line::before { top: 2px; }
+    .wcu-boundary-line::after { bottom: 2px; }
+
     /* 토스트 알림 */
     #toast {
       position: fixed;
@@ -115,7 +140,7 @@
     <span id="toast-message">저장되었습니다.</span>
   </div>
 
-  <!-- 상단 컨트롤 헤더 (sticky 고정 제거 완료) -->
+  <!-- 상단 컨트롤 헤더 -->
   <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
@@ -128,14 +153,6 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 공유 연결됨
           </span>
         </div>
-      </div>
-      
-      <!-- 1/2/3관리역 범례 가이드 -->
-      <div class="flex items-center gap-3 text-[11px] font-bold border-l border-slate-200 pl-3">
-        <span class="flex items-center gap-1 text-emerald-700"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>1관리역</span>
-        <span class="flex items-center gap-1 text-amber-700"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>2관리역</span>
-        <span class="flex items-center gap-1 text-purple-700"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>3관리역</span>
-        <span class="flex items-center gap-1 text-amber-900 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300"><i class="fa-solid fa-warehouse text-[10px]"></i> 주박지/기지</span>
       </div>
     </div>
 
@@ -182,10 +199,27 @@
     <div id="zoom-wrapper">
       <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative min-w-[1350px]" id="capture-area">
         
-        <!-- SVG 완전 단일 연속 레일 궤도 -->
+        <!-- SVG 레일: WCU 구역별 독립 단일 파스텔 밴드(Flat Solid) + 관리역 코어 레일 결합 -->
         <svg id="continuous-rail-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+          <!-- WCU 1~8 구역별 100% 단일 파스텔 밴드 레이어 (두께 42px) -->
+          <g id="svg-wcu-bands" stroke-width="42" stroke-linecap="butt" fill="none">
+            <path id="wcu-band-1" stroke="rgba(14, 165, 233, 0.16)" /> <!-- WCU 1 (스카이블루) -->
+            <path id="wcu-band-2" stroke="rgba(16, 185, 129, 0.16)" /> <!-- WCU 2 (에메랄드그린) -->
+            <path id="wcu-band-3" stroke="rgba(245, 158, 11, 0.16)" /> <!-- WCU 3 (웜앰버) -->
+            <path id="wcu-band-4" stroke="rgba(244, 63, 94, 0.16)" />  <!-- WCU 4 (코랄피치) -->
+            <path id="wcu-band-5" stroke="rgba(139, 92, 246, 0.16)" /> <!-- WCU 5 (라벤더) -->
+            <path id="wcu-band-6" stroke="rgba(59, 130, 246, 0.16)" /> <!-- WCU 6 (소프트블루) -->
+            <path id="wcu-band-7" stroke="rgba(20, 184, 166, 0.16)" /> <!-- WCU 7 (아쿠아틸) -->
+            <path id="wcu-band-8" stroke="rgba(168, 85, 247, 0.16)" /> <!-- WCU 8 (오키드퍼플) -->
+          </g>
+
+          <!-- 침목 라인 -->
           <path id="svg-rail-ties" fill="none" stroke="#94a3b8" stroke-width="22" stroke-linecap="round" stroke-dasharray="3, 11" opacity="0.65" />
+          
+          <!-- 주 레일 외곽선 -->
           <path id="svg-rail-outer" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+          
+          <!-- 관리역 선로 코어 라인 (1행: 그린, 2행: 오렌지, 3행: 퍼플) -->
           <path id="svg-rail-row1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
           <path id="svg-rail-curve1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
           <path id="svg-rail-row2" fill="none" stroke="#d97706" stroke-width="8" stroke-linecap="round" />
@@ -193,7 +227,7 @@
           <path id="svg-rail-row3" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round" />
         </svg>
 
-        <!-- [1행: 정방향 좌->우] 사상주박지 ~ 등구 ➔ 등구~대저 본선 (1관리역) -->
+        <!-- [1행: 정방향 좌->우] 사상주박지 ~ 등구 ➔ 등구~대저 본선 -->
         <div class="relative z-10 flex items-center mb-6" id="row-1">
           <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -203,7 +237,7 @@
           <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
         </div>
 
-        <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 (2관리역) -->
+        <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 -->
         <div class="relative z-10 flex items-center mb-6" id="row-2">
           <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -213,7 +247,7 @@
           <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-2"></div>
         </div>
 
-        <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 (3관리역) -->
+        <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 -->
         <div class="relative z-10 flex items-center pb-1" id="row-3">
           <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -229,7 +263,7 @@
 
   <script>
     /* ========================================================
-       0. 사용자 전용 Firebase 설정
+       0. Firebase 설정[cite: 2]
     ======================================================== */
     const firebaseConfig = {
       apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
@@ -245,7 +279,7 @@
     const dbRef = firebase.database().ref('bgl_train_tracker_state');
 
     /* ========================================================
-       1. 노선 데이터 정의
+       1. 노선 데이터 정의 (7개 WCU 경계 본선 완전 매핑)
     ======================================================== */
     const tier1Stations = [
       { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, tier: 1 },
@@ -280,6 +314,21 @@
       { id: 'st_21', num: '21', name: '가야대', tier: 3 },
       { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true, tier: 3 }
     ];
+
+    // 정확한 7개 WCU 경계 검증 함수
+    function checkIsWcuBoundary(idA, idB) {
+      const pair = [idA, idB].sort().join('_');
+      const boundaryPairs = [
+        'st_02_st_03', // 괘법 ~ 서부산 (WCU 1 | 2)
+        'st_05_st_06', // 덕두 ~ 등구 (WCU 2 | 3)
+        'st_08_st_09', // 평강 ~ 대사 (WCU 3 | 4)
+        'st_10_st_11', // 불암 ~ 지내 (WCU 4 | 5)
+        'st_12_st_13', // 김해대 ~ 인제대 (WCU 5 | 6)
+        'st_15_st_16', // 부원 ~ 봉황 (WCU 6 | 7)
+        'st_19_st_20'  // 연지공원 ~ 장신대 (WCU 7 | 8)
+      ];
+      return boundaryPairs.includes(pair);
+    }
 
     let trainsData = {};
     for (let i = 1; i <= 25; i++) {
@@ -361,14 +410,13 @@
         
         let rowClass = `row${st.tier}-style`;
         let dotColor = st.tier === 1 ? '#059669' : (st.tier === 2 ? '#d97706' : '#7c3aed');
-        
         let badgeStyle = `bg-white text-slate-900 border-2 ${rowClass}`;
 
         if (st.isDepot) {
           badgeStyle = 'depot-badge border-2';
           dotColor = '#d97706';
         } else if (isConn) {
-          badgeStyle = 'bg-white/85 text-slate-400 border-slate-300';
+          badgeStyle = 'bg-white/85 text-slate-400 border border-dashed border-slate-300';
         }
         
         const upBg = isConn 
@@ -386,7 +434,7 @@
           <!-- 슬림 명판 -->
           <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeStyle} flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
             ${st.num ? `<span class="w-3 h-3 rounded-full text-white text-[7px] font-black flex items-center justify-center shadow-xs" style="background-color: ${dotColor};">${st.num}</span>` : ''}
-            <span class="${isConn ? 'text-[8.5px] font-bold text-slate-400' : 'text-[9.5px] font-extrabold'} truncate leading-none">${st.name}</span>
+            <span class="${isConn ? 'text-[8.5px] font-bold text-slate-400' : 'text-[9.5px] font-bold'} truncate leading-none">${st.name}</span>
             ${st.transfer ? `<span class="text-[7.5px] bg-sky-100 text-sky-800 font-bold px-0.5 rounded leading-tight">${st.transfer}</span>` : ''}
           </div>
 
@@ -398,19 +446,24 @@
         // 일반 역간 본선 구간
         if (idx < list.length - 1 && !isConn && !list[idx + 1].isConnector) {
           const nextSt = list[idx + 1];
+          const secId = `SEC_${st.id}_${nextSt.id}`;
+          const isWcuBoundary = checkIsWcuBoundary(st.id, nextSt.id);
+
           const sec = document.createElement('div');
-          sec.className = 'flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
+          sec.className = 'relative flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px]';
           sec.innerHTML = `
+            ${isWcuBoundary ? '<div class="wcu-boundary-line" title="WCU 경계 분할선"></div>' : ''}
+            
             <!-- 본선 상선 -->
-            <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="SEC_${st.id}_${nextSt.id}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="${secId}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
             
             <!-- 본선 표기 -->
-            <div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="SEC_${st.id}_${nextSt.id}">
+            <div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs" data-marker="${secId}">
               <span class="text-[8.5px] font-bold text-slate-400">본선</span>
             </div>
 
             <!-- 본선 하선 -->
-            <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="SEC_${st.id}_${nextSt.id}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
+            <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="${secId}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
           `;
           container.appendChild(sec);
         }
@@ -418,24 +471,15 @@
     }
 
     /* ========================================================
-       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도
+       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도 + WCU 구역별 100% 균일 단색 밴드
     ======================================================== */
     function drawContinuousRail() {
       const captureArea = document.getElementById('capture-area');
       const captureRect = captureArea.getBoundingClientRect();
 
-      const r1StartMarker = document.querySelector('[data-marker="st_yard"]');
-      const r1ConnMarker = document.querySelector('[data-marker="sec_06_07"]');
-
-      const r2DaejeMarker = document.querySelector('[data-marker="st_07"]');
-      const r2ConnMarker = document.querySelector('[data-marker="sec_14_15"]');
-
-      const r3StartMarker = document.querySelector('[data-marker="st_15"]');
-      const r3EndMarker = document.querySelector('[data-marker="st_depot"]');
-
-      if (!r1StartMarker || !r1ConnMarker || !r2ConnMarker || !r2DaejeMarker || !r3StartMarker || !r3EndMarker) return;
-
-      const getCenter = (el) => {
+      const getCenter = (markerName) => {
+        const el = document.querySelector(`[data-marker="${markerName}"]`);
+        if (!el) return null;
         const r = el.getBoundingClientRect();
         return {
           x: (r.left + r.width / 2 - captureRect.left) / currentScale,
@@ -443,32 +487,83 @@
         };
       };
 
-      const pR1Start = getCenter(r1StartMarker);
-      const pR1Conn = getCenter(r1ConnMarker);
-      const pR2Daeje = getCenter(r2DaejeMarker);
-      const pR2Conn = getCenter(r2ConnMarker);
-      const pR3Start = getCenter(r3StartMarker);
-      const pR3End = getCenter(r3EndMarker);
+      // 1행 주요 지점
+      const pYard = getCenter('st_yard');
+      const pB1 = getCenter('SEC_st_02_st_03'); // 경계 1: 괘법~서부산 (WCU 1|2)
+      const pB2 = getCenter('SEC_st_05_st_06'); // 경계 2: 덕두~등구 (WCU 2|3)
+      const pR1Conn = getCenter('sec_06_07');
+
+      // 2행 주요 지점 (역방향: 우측 대저(st_07)에서 좌측 시청부원(sec_14_15) 방향)
+      const pR2Daeje = getCenter('st_07');
+      const pB3 = getCenter('SEC_st_09_st_08'); // 경계 3: 대사~평강 (WCU 3|4)
+      const pB4 = getCenter('SEC_st_11_st_10'); // 경계 4: 지내~불암 (WCU 4|5)
+      const pB5 = getCenter('SEC_st_13_st_12'); // 경계 5: 인제대~김해대 (WCU 5|6)
+      const pR2Conn = getCenter('sec_14_15');
+
+      // 3행 주요 지점
+      const pR3Start = getCenter('st_15');
+      const pB6 = getCenter('SEC_st_15_st_16'); // 경계 6: 부원~봉황 (WCU 6|7)
+      const pB7 = getCenter('SEC_st_19_st_20'); // 경계 7: 연지공원~장신대 (WCU 7|8)
+      const pDepot = getCenter('st_depot');
+
+      if (!pYard || !pB1 || !pB2 || !pR1Conn || !pR2Daeje || !pB3 || !pB4 || !pB5 || !pR2Conn || !pR3Start || !pB6 || !pB7 || !pDepot) return;
 
       const rightCurveX = Math.max(pR1Conn.x, pR2Daeje.x) + 48;
       const leftCurveX = Math.min(pR2Conn.x, pR3Start.x) - 48;
 
+      // 1. 전체 베이스 라인 (침목 및 외곽선)
       const fullPath = `
-        M ${pR1Start.x - 12} ${pR1Start.y}
+        M ${pYard.x - 12} ${pYard.y}
         L ${pR1Conn.x} ${pR1Conn.y}
         C ${rightCurveX} ${pR1Conn.y}, ${rightCurveX} ${pR2Daeje.y}, ${pR2Daeje.x} ${pR2Daeje.y}
         L ${pR2Conn.x} ${pR2Conn.y}
         C ${leftCurveX} ${pR2Conn.y}, ${leftCurveX} ${pR3Start.y}, ${pR3Start.x} ${pR3Start.y}
-        L ${pR3End.x + 12} ${pR3End.y}
+        L ${pDepot.x + 12} ${pDepot.y}
       `;
       document.getElementById('svg-rail-ties').setAttribute('d', fullPath);
       document.getElementById('svg-rail-outer').setAttribute('d', fullPath);
 
-      document.getElementById('svg-rail-row1').setAttribute('d', `M ${pR1Start.x - 12} ${pR1Start.y} L ${pR1Conn.x} ${pR1Conn.y}`);
+      // 2. 관리역 코어 선로 색상 (1행: 그린, 2행: 오렌지, 3행: 퍼플)
+      document.getElementById('svg-rail-row1').setAttribute('d', `M ${pYard.x - 12} ${pYard.y} L ${pR1Conn.x} ${pR1Conn.y}`);
       document.getElementById('svg-rail-curve1').setAttribute('d', `M ${pR1Conn.x} ${pR1Conn.y} C ${rightCurveX} ${pR1Conn.y}, ${rightCurveX} ${pR2Daeje.y}, ${pR2Daeje.x} ${pR2Daeje.y}`);
       document.getElementById('svg-rail-row2').setAttribute('d', `M ${pR2Daeje.x} ${pR2Daeje.y} L ${pR2Conn.x} ${pR2Conn.y}`);
       document.getElementById('svg-rail-curve2').setAttribute('d', `M ${pR2Conn.x} ${pR2Conn.y} C ${leftCurveX} ${pR2Conn.y}, ${leftCurveX} ${pR3Start.y}, ${pR3Start.x} ${pR3Start.y}`);
-      document.getElementById('svg-rail-row3').setAttribute('d', `M ${pR3Start.x} ${pR3Start.y} L ${pR3End.x + 12} ${pR3End.y}`);
+      document.getElementById('svg-rail-row3').setAttribute('d', `M ${pR3Start.x} ${pR3Start.y} L ${pDepot.x + 12} ${pDepot.y}`);
+
+      // 3. WCU 1~8 구역별 100% 동일한 단일 파스텔 밴드 패스 (정확한 1:1 매칭)
+      // WCU 1: 사상주박 ~ 괘법/서부산(pB1)
+      document.getElementById('wcu-band-1').setAttribute('d', `M ${pYard.x - 12} ${pYard.y} L ${pB1.x} ${pB1.y}`);
+
+      // WCU 2: 괘법/서부산(pB1) ~ 덕두/등구(pB2)
+      document.getElementById('wcu-band-2').setAttribute('d', `M ${pB1.x} ${pB1.y} L ${pB2.x} ${pB2.y}`);
+
+      // WCU 3: 덕두/등구(pB2) ~ 1행끝 ~ 우측커브1 ~ 대저 ~ 평강/대사(pB3)
+      document.getElementById('wcu-band-3').setAttribute('d', `
+        M ${pB2.x} ${pB2.y} 
+        L ${pR1Conn.x} ${pR1Conn.y}
+        C ${rightCurveX} ${pR1Conn.y}, ${rightCurveX} ${pR2Daeje.y}, ${pR2Daeje.x} ${pR2Daeje.y}
+        L ${pB3.x} ${pB3.y}
+      `);
+
+      // WCU 4: 평강/대사(pB3) ~ 불암/지내(pB4)
+      document.getElementById('wcu-band-4').setAttribute('d', `M ${pB3.x} ${pB3.y} L ${pB4.x} ${pB4.y}`);
+
+      // WCU 5: 불암/지내(pB4) ~ 김해대/인제대(pB5)
+      document.getElementById('wcu-band-5').setAttribute('d', `M ${pB4.x} ${pB4.y} L ${pB5.x} ${pB5.y}`);
+
+      // WCU 6: 김해대/인제대(pB5) ~ 2행끝 ~ 좌측커브2 ~ 부원 ~ 부원/봉황(pB6)
+      document.getElementById('wcu-band-6').setAttribute('d', `
+        M ${pB5.x} ${pB5.y} 
+        L ${pR2Conn.x} ${pR2Conn.y}
+        C ${leftCurveX} ${pR2Conn.y}, ${leftCurveX} ${pR3Start.y}, ${pR3Start.x} ${pR3Start.y}
+        L ${pB6.x} ${pB6.y}
+      `);
+
+      // WCU 7: 부원/봉황(pB6) ~ 연지공원/장신대(pB7)
+      document.getElementById('wcu-band-7').setAttribute('d', `M ${pB6.x} ${pB6.y} L ${pB7.x} ${pB7.y}`);
+
+      // WCU 8: 연지공원/장신대(pB7) ~ 신명기지
+      document.getElementById('wcu-band-8').setAttribute('d', `M ${pB7.x} ${pB7.y} L ${pDepot.x + 12} ${pDepot.y}`);
     }
 
     function renderAllTrains() {
@@ -820,7 +915,6 @@
       }
     });
 
-    // 슬라이드 삽입용 고화질 전체 캡처
     document.getElementById('btn-export-slide').addEventListener('click', async () => {
       const captureElem = document.getElementById('capture-area');
       const btn = document.getElementById('btn-export-slide');
