@@ -87,20 +87,29 @@
       opacity: 0.75;
     }
 
-    /* WCU 제외 영역 음영(Dim) 처리 */
+    /* 선택 제외 영역 음영(Dim) 처리 */
     .wcu-dimmed {
       opacity: 0.22 !important;
       filter: grayscale(85%) !important;
-      transition: opacity 0.25s ease, filter 0.25s ease;
+      transition: opacity 0.2s ease, filter 0.2s ease;
     }
 
-    /* WCU 선택 활성화 버튼 스타일 */
+    /* WCU 프리셋 활성화 버튼 스타일 */
     .wcu-btn.active {
       background-color: #832569 !important;
       color: #ffffff !important;
       border-color: #832569 !important;
       font-weight: 800 !important;
       box-shadow: 0 2px 6px rgba(131, 37, 105, 0.35) !important;
+    }
+
+    /* 수동 드래그 모드 활성화 시 트랙 컬럼에 마우스 포인터 표시 */
+    body.manual-drag-mode [data-track-col] {
+      cursor: pointer !important;
+    }
+    body.manual-drag-mode [data-track-col]:hover {
+      outline: 2px dashed #f59e0b;
+      outline-offset: -2px;
     }
 
     /* 토스트 알림 */
@@ -173,7 +182,7 @@
       </div>
     </div>
 
-    <!-- 헤더 2행: WCU 1~8 다중 선택 버튼 -->
+    <!-- 헤더 2행: WCU 프리셋 및 자유 구간 드래그 선택 모드 -->
     <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
       <div class="flex items-center gap-1.5 flex-wrap">
         <span class="text-[11px] font-extrabold text-slate-500 mr-1 flex items-center gap-1">
@@ -188,18 +197,21 @@
         <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="7">WCU 7</button>
         <button type="button" class="wcu-btn px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-[11px] font-semibold text-slate-700 transition" data-wcu="8">WCU 8</button>
         <button type="button" id="btn-wcu-clear" class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-[11px] font-bold transition ml-1">전체해제</button>
+        
+        <div class="h-4 w-px bg-slate-200 mx-1"></div>
+        
+        <!-- 자유 드래그 모드 버튼 -->
+        <button type="button" id="btn-toggle-drag-mode" class="px-2.5 py-1 rounded border border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
+          <i class="fa-solid fa-arrows-left-right-to-line"></i> <span id="drag-mode-text">구간 직접 드래그/선택</span>
+        </button>
       </div>
-    </div>
 
-    <!-- 헤더 3행: 선택된 WCU별 개별 문구 입력 컨테이너 -->
-    <div id="wcu-inputs-container" class="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100 text-xs hidden">
-      <span class="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-        <i class="fa-solid fa-pen text-amber-500"></i> 구역별 문구:
-      </span>
-      <div id="wcu-dynamic-inputs" class="flex flex-wrap items-center gap-1.5"></div>
-      <button type="button" id="btn-wcu-apply-text" class="px-2.5 py-1 rounded bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition shadow-2xs ml-auto">
-        적용
-      </button>
+      <!-- 선택된 구간 표기문구 입력창 -->
+      <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
+        <label for="wcu-memo-input" class="text-[11px] font-bold text-slate-600">구간 표기문구:</label>
+        <input type="text" id="wcu-memo-input" placeholder="예: 순환승차, 신호점검" class="px-2 py-0.5 rounded border border-slate-300 text-[11px] bg-white focus:outline-hidden focus:border-purple-600 w-36 transition font-semibold" />
+        <button type="button" id="btn-wcu-apply-text" class="px-2.5 py-0.5 rounded bg-purple-700 hover:bg-purple-800 text-white text-[11px] font-bold transition shadow-2xs">적용</button>
+      </div>
     </div>
   </header>
 
@@ -215,7 +227,7 @@
         <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
       <div class="text-[11px] text-slate-400">
-        💡 열차를 옮기거나 WCU를 선택하면 접속한 모든 기기에서 즉시 함께 변경됩니다.
+        💡 열차를 옮기거나 구간을 드래그하면 접속한 모든 기기에서 즉시 함께 변경됩니다.
       </div>
     </div>
 
@@ -242,7 +254,7 @@
 
         <!-- [1행: 정방향 좌->우] 사상주박지 ~ 등구 ➔ 등구~대저 본선 -->
         <div class="relative z-10 flex items-center mb-6" id="row-1">
-          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1 pointer-events-none">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
             <span class="text-[9px] font-bold text-slate-400">선로</span>
             <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
@@ -252,7 +264,7 @@
 
         <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 -->
         <div class="relative z-10 flex items-center mb-6" id="row-2">
-          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1 pointer-events-none">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
             <span class="text-[9px] font-bold text-slate-400">선로</span>
             <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
@@ -262,7 +274,7 @@
 
         <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 -->
         <div class="relative z-10 flex items-center pb-1" id="row-3">
-          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1 pointer-events-none">
             <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
             <span class="text-[9px] font-bold text-slate-400">선로</span>
             <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
@@ -290,10 +302,10 @@
 
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('bgl_train_tracker_state');
-    const wcuStateRef = firebase.database().ref('bgl_wcu_filter_state');
+    const wcuStateRef = firebase.database().ref('bgl_wcu_filter_state_v3');
 
     /* ========================================================
-       1. 노선 데이터 정의
+       1. 노선 데이터 정의 (전체 선로 순서 1D 시퀀스 인덱싱)
     ======================================================== */
     const tier1Stations = [
       { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, tier: 1, wcu: 1 },
@@ -347,6 +359,9 @@
       return stA.wcu || stB.wcu;
     }
 
+    // 선로상의 모든 컬럼을 물리적 순환 순서대로 1차원 등록 (인덱스 부여)
+    const linearTrackKeys = [];
+
     let trainsData = {};
     for (let i = 1; i <= 25; i++) {
       const trainId = `train_${i}`;
@@ -359,10 +374,18 @@
       };
     }
 
-    let wcuFilterState = {
-      selectedWcus: [],
-      memos: {}
+    // 전체 필터 상태 (WCU 프리셋 모드 + 수동 연속 구간 모드 지원)
+    let filterState = {
+      mode: 'wcu',          // 'wcu' | 'manual'
+      selectedWcus: [],     // 예: [1, 2]
+      manualStartIdx: -1,   // 수동 시작 칸 인덱스
+      manualEndIdx: -1,     // 수동 끝 칸 인덱스
+      memo: ''              // 표기 문구
     };
+
+    let isManualDragActive = false; // 상단 버튼으로 켜는 자유 선택 모드 활성화 여부
+    let isPointerDragging = false;
+    let dragAnchorIdx = null;
 
     const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_REAL_S';
 
@@ -371,8 +394,8 @@
       dbRef.set(trainsData);
     }
 
-    function syncWcuFilterToCloud() {
-      wcuStateRef.set(wcuFilterState);
+    function syncFilterToCloud() {
+      wcuStateRef.set(filterState);
     }
 
     function initRealtimeSync() {
@@ -389,166 +412,149 @@
       wcuStateRef.on('value', (snapshot) => {
         const val = snapshot.val();
         if (val) {
-          wcuFilterState = {
+          filterState = {
+            mode: val.mode || 'wcu',
             selectedWcus: val.selectedWcus || [],
-            memos: val.memos || {}
+            manualStartIdx: typeof val.manualStartIdx === 'number' ? val.manualStartIdx : -1,
+            manualEndIdx: typeof val.manualEndIdx === 'number' ? val.manualEndIdx : -1,
+            memo: val.memo || ''
           };
-          renderDynamicInputs();
-          updateWcuUI();
+          updateFilterUI();
         }
       });
     }
 
     /* ========================================================
-       2. WCU 개별 입력창 생성 및 음영/텍스트 렌더링
+       2. UI 렌더링 및 음영/텍스트 갱신 로직
     ======================================================== */
-    function renderDynamicInputs() {
-      const container = document.getElementById('wcu-inputs-container');
-      const inputsBox = document.getElementById('wcu-dynamic-inputs');
-      const selected = wcuFilterState.selectedWcus || [];
-
-      if (selected.length === 0) {
-        container.classList.add('hidden');
-        inputsBox.innerHTML = '';
-        return;
+    function updateFilterUI() {
+      const memo = (filterState.memo || '').trim();
+      const memoInput = document.getElementById('wcu-memo-input');
+      if (memoInput && document.activeElement !== memoInput) {
+        memoInput.value = memo;
       }
 
-      container.classList.remove('hidden');
-      inputsBox.innerHTML = '';
-
-      selected.forEach(num => {
-        const currentVal = (wcuFilterState.memos && wcuFilterState.memos[num]) || '';
-        const wrap = document.createElement('div');
-        wrap.className = 'flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5';
-        wrap.innerHTML = `
-          <span class="text-[10px] font-black text-purple-700">WCU ${num}</span>
-          <input type="text" 
-                 data-wcu-memo-num="${num}" 
-                 value="${escapeHtml(currentVal)}" 
-                 placeholder="문구 입력" 
-                 class="wcu-single-memo-input px-1 py-0.5 text-[11px] rounded border border-slate-300 w-24 bg-white focus:outline-hidden focus:border-purple-600 font-semibold" />
-        `;
-        inputsBox.appendChild(wrap);
-      });
-
-      inputsBox.querySelectorAll('.wcu-single-memo-input').forEach(input => {
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') document.getElementById('btn-wcu-apply-text').click();
-        });
-      });
-    }
-
-    function updateWcuUI() {
-      const selected = wcuFilterState.selectedWcus || [];
-      const memos = wcuFilterState.memos || {};
-
+      // 1) WCU 프리셋 버튼 상태 표시
       document.querySelectorAll('.wcu-btn').forEach(btn => {
         const num = Number(btn.dataset.wcu);
-        if (selected.includes(num)) {
+        if (filterState.mode === 'wcu' && filterState.selectedWcus.includes(num)) {
           btn.classList.add('active');
         } else {
           btn.classList.remove('active');
         }
       });
 
-      const isFilterActive = selected.length > 0;
+      // 2) 자유 드래그 버튼 스타일
+      const dragBtn = document.getElementById('btn-toggle-drag-mode');
+      const dragText = document.getElementById('drag-mode-text');
+      if (filterState.mode === 'manual' || isManualDragActive) {
+        dragBtn.className = 'px-2.5 py-1 rounded border border-amber-600 bg-amber-500 text-white text-[11px] font-black transition flex items-center gap-1 shadow-xs';
+        dragText.textContent = filterState.manualStartIdx >= 0 ? '자유 구간 설정됨' : '구간을 클릭/드래그 하세요';
+        document.body.classList.add('manual-drag-mode');
+      } else {
+        dragBtn.className = 'px-2.5 py-1 rounded border border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs';
+        dragText.textContent = '구간 직접 드래그/선택';
+        document.body.classList.remove('manual-drag-mode');
+      }
 
-      // 궤도 열 음영(Dim) 처리
+      // 3) 각 칸의 활성화 여부 판정
+      const isFilterOn = (filterState.mode === 'wcu' && filterState.selectedWcus.length > 0) ||
+                         (filterState.mode === 'manual' && filterState.manualStartIdx >= 0 && filterState.manualEndIdx >= 0);
+
       document.querySelectorAll('[data-track-col]').forEach(col => {
+        const colIdx = Number(col.dataset.linearIdx);
         const wcuAttr = col.dataset.wcuList;
-        if (!wcuAttr) return;
-        const colWcus = wcuAttr.split(',').map(Number);
+        const colWcus = wcuAttr ? wcuAttr.split(',').map(Number) : [];
 
-        if (!isFilterActive) {
+        let isSelected = false;
+
+        if (!isFilterOn) {
+          isSelected = true; // 아무것도 선택 안 했으면 전체 정상
+        } else if (filterState.mode === 'manual') {
+          const s = Math.min(filterState.manualStartIdx, filterState.manualEndIdx);
+          const e = Math.max(filterState.manualStartIdx, filterState.manualEndIdx);
+          isSelected = (colIdx >= s && colIdx <= e);
+        } else {
+          // WCU 모드
+          isSelected = colWcus.some(w => filterState.selectedWcus.includes(w));
+        }
+
+        // 음영 적용
+        if (isSelected) {
           col.classList.remove('wcu-dimmed');
         } else {
-          const isMatch = colWcus.some(w => selected.includes(w));
-          if (isMatch) {
-            col.classList.remove('wcu-dimmed');
+          col.classList.add('wcu-dimmed');
+        }
+
+        // 일반 본선 배너
+        const normalBadge = col.querySelector('.normal-mainline-badge');
+        if (normalBadge) {
+          const textSpan = normalBadge.querySelector('.mainline-text');
+          if (isFilterOn && isSelected && memo) {
+            textSpan.textContent = memo;
+            normalBadge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded shadow-xs flex items-center justify-center px-1 border border-amber-600';
+            normalBadge.style.cssText = 'background-color: #f59e0b !important; color: #ffffff !important; font-weight: 900 !important;';
+            textSpan.style.cssText = 'color: #ffffff !important; font-weight: 900 !important; font-size: 9px !important;';
           } else {
-            col.classList.add('wcu-dimmed');
+            textSpan.textContent = '본선';
+            normalBadge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 text-slate-400 font-bold border border-slate-300 shadow-xs flex items-center justify-center px-1';
+            normalBadge.style.cssText = '';
+            textSpan.style.cssText = '';
           }
         }
-      });
 
-      // 1) 일반 본선 명판: 앰버-오렌지 바탕 + 흰색 볼드체
-      document.querySelectorAll('.normal-mainline-badge').forEach(badge => {
-        const forWcu = Number(badge.dataset.forWcu);
-        const textSpan = badge.querySelector('.mainline-text');
-        const customMemo = memos[forWcu] ? memos[forWcu].trim() : '';
+        // 경계 본선 배너
+        const boundaryBadges = col.querySelectorAll('.boundary-edge-badge');
+        boundaryBadges.forEach(bBadge => {
+          const forWcu = Number(bBadge.dataset.forWcu);
+          const defaultLabel = bBadge.dataset.defaultLabel;
+          
+          let showMemo = false;
+          if (isFilterOn && memo) {
+            if (filterState.mode === 'manual') {
+              showMemo = isSelected;
+            } else {
+              showMemo = filterState.selectedWcus.includes(forWcu);
+            }
+          }
 
-        if (selected.includes(forWcu) && customMemo) {
-          textSpan.textContent = customMemo;
-          badge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-amber-500 text-white font-black shadow-xs flex items-center justify-center px-1 border border-amber-600';
-        } else {
-          textSpan.textContent = '본선';
-          badge.className = 'normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 text-slate-400 font-bold border border-slate-300 shadow-xs flex items-center justify-center px-1';
-        }
-      });
-
-      // 2) 경계 본선 뱃지: 좌측/우측 각 WCU별 개별 문구 반영
-      document.querySelectorAll('.boundary-edge-badge').forEach(badge => {
-        const forWcu = Number(badge.dataset.forWcu);
-        const defaultLabel = badge.dataset.defaultLabel;
-        const customMemo = memos[forWcu] ? memos[forWcu].trim() : '';
-
-        if (selected.includes(forWcu) && customMemo) {
-          badge.textContent = customMemo;
-          badge.className = 'boundary-edge-badge text-[8px] select-none truncate bg-amber-500 text-white px-1 py-0.5 rounded font-black shadow-2xs border border-amber-600';
-        } else {
-          badge.textContent = defaultLabel;
-          badge.className = 'boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate';
-        }
+          if (showMemo) {
+            bBadge.textContent = memo;
+            bBadge.className = 'boundary-edge-badge px-1 py-0.5 rounded shadow-2xs border border-amber-600 truncate leading-none';
+            bBadge.style.cssText = 'background-color: #f59e0b !important; color: #ffffff !important; font-weight: 900 !important; font-size: 8.5px !important;';
+          } else {
+            bBadge.textContent = defaultLabel;
+            bBadge.className = 'boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate leading-none';
+            bBadge.style.cssText = '';
+          }
+        });
       });
     }
 
     /* ========================================================
-       3. UI 렌더링 템플릿
+       3. 트랙 렌더링 및 1차원 선로 등록
     ======================================================== */
-    function createTrainCardHTML(train) {
-      return `
-        <div id="${train.id}" 
-             class="train-card flex flex-col bg-white border border-slate-300 rounded shadow-xs overflow-hidden select-none"
-             draggable="true">
-          
-          <div class="bg-gradient-to-r from-[#7a2665] via-[#8c2670] to-[#7a2665] px-1 py-0.5 flex items-center justify-center text-white border-b border-purple-900 pointer-events-none">
-            <div class="flex items-center gap-1">
-              <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
-              <span class="text-[12px] font-semibold tracking-tight text-white leading-none">${train.numStr}</span>
-            </div>
-          </div>
-
-          <div class="bg-slate-100 px-1 py-0.5 border-b border-slate-200 flex items-center justify-center pointer-events-none">
-            <div class="flex gap-1 items-center">
-              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
-              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
-              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
-            </div>
-          </div>
-
-          <div class="p-0.5 bg-white">
-            <input type="text" 
-                   value="${escapeHtml(train.label)}" 
-                   placeholder="이름" 
-                   class="train-label-input w-full text-center text-[10px] font-semibold px-1 py-0.5 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-purple-600 rounded text-slate-800 focus:outline-hidden transition leading-tight"
-                   data-train-id="${train.id}" />
-          </div>
-        </div>
-      `;
+    function registerLinearTrackCol(key) {
+      const idx = linearTrackKeys.length;
+      linearTrackKeys.push(key);
+      return idx;
     }
 
-    function renderTrackLine(containerId, list) {
+    function renderTrackLine(containerId, list, isReverse = false) {
       const container = document.getElementById(containerId);
       container.innerHTML = '';
 
       list.forEach((st, idx) => {
         const col = document.createElement('div');
         const isConn = st.isConnector;
-
         const colWidth = isConn ? 'flex-[0.75] max-w-[88px] min-w-[72px]' : 'flex-1 max-w-[104px] min-w-[84px]';
+        
+        const linearIdx = registerLinearTrackCol(st.id);
+
         col.className = `flex flex-col justify-between items-center h-[190px] px-0.5 z-10 transition-all duration-200 ${colWidth}`;
         col.setAttribute('data-track-col', 'true');
+        col.setAttribute('data-linear-idx', String(linearIdx));
+        col.setAttribute('data-col-id', st.id);
         col.setAttribute('data-wcu-list', String(st.wcu));
         
         let rowClass = `row${st.tier}-style`;
@@ -571,31 +577,32 @@
           : (st.isDepot ? 'bg-amber-50/50 border border-amber-300' : 'bg-rose-50/80 border border-rose-200');
 
         col.innerHTML = `
-          <!-- 상선 슬롯 -->
           <div class="station-dropzone w-full h-[76px] rounded-lg ${upBg} flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
           
-          <!-- 슬림 역명판 -->
           <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeStyle} flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
             ${st.num ? `<span class="w-3 h-3 rounded-full text-white text-[7px] font-black flex items-center justify-center shadow-xs" style="background-color: ${dotColor};">${st.num}</span>` : ''}
             <span class="${isConn ? 'text-[8.5px] font-bold text-slate-400' : 'text-[9.5px] font-bold'} truncate leading-none">${st.name}</span>
             ${st.transfer ? `<span class="text-[7.5px] bg-sky-100 text-sky-800 font-bold px-0.5 rounded leading-tight">${st.transfer}</span>` : ''}
           </div>
 
-          <!-- 하선 슬롯 -->
           <div class="station-dropzone w-full h-[76px] rounded-lg ${dnBg} flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_DN" title="${st.name} 하선"></div>
         `;
         container.appendChild(col);
 
-        // 일반 역간 본선 구간
+        // 일반 역간 본선 칸
         if (idx < list.length - 1 && !isConn && !list[idx + 1].isConnector) {
           const nextSt = list[idx + 1];
           const secId = `SEC_${st.id}_${nextSt.id}`;
           const edgeLabels = getWcuEdgeLabels(st.id, nextSt.id);
           const singleWcu = getSectionWcu(st, nextSt);
 
+          const secLinearIdx = registerLinearTrackCol(secId);
+
           const sec = document.createElement('div');
           sec.className = 'relative flex flex-col justify-between items-center h-[190px] flex-[0.75] px-0.5 z-10 max-w-[88px] min-w-[72px] transition-all duration-200';
           sec.setAttribute('data-track-col', 'true');
+          sec.setAttribute('data-linear-idx', String(secLinearIdx));
+          sec.setAttribute('data-col-id', secId);
           
           if (edgeLabels) {
             sec.setAttribute('data-wcu-list', edgeLabels.boundary.join(','));
@@ -605,23 +612,17 @@
           
           const markerContent = edgeLabels
             ? `<div class="station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/80 border border-slate-300 flex items-center justify-between px-1 shadow-xs backdrop-blur-xs" data-marker="${secId}">
-                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate" data-for-wcu="${edgeLabels.leftWcu}" data-default-label="${edgeLabels.left}">${edgeLabels.left}</span>
-                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate" data-for-wcu="${edgeLabels.rightWcu}" data-default-label="${edgeLabels.right}">${edgeLabels.right}</span>
+                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate leading-none" data-for-wcu="${edgeLabels.leftWcu}" data-default-label="${edgeLabels.left}">${edgeLabels.left}</span>
+                 <span class="boundary-edge-badge text-[8px] font-extrabold text-slate-600 select-none truncate leading-none" data-for-wcu="${edgeLabels.rightWcu}" data-default-label="${edgeLabels.right}">${edgeLabels.right}</span>
                </div>`
-            : `<div class="normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs px-1" data-marker="${secId}" data-for-wcu="${singleWcu}">
+            : `<div class="normal-mainline-badge station-mid-marker relative z-20 w-full h-[20px] rounded bg-white/85 border border-slate-300 flex items-center justify-center shadow-xs px-1 text-slate-400 font-bold text-[8.5px]" data-marker="${secId}" data-for-wcu="${singleWcu}">
                  <span class="mainline-text text-[8.5px] font-bold text-slate-400 truncate">본선</span>
                </div>`;
 
           sec.innerHTML = `
             ${edgeLabels ? '<div class="wcu-boundary-line" title="WCU 경계 분할선"></div>' : ''}
-            
-            <!-- 본선 상선 -->
             <div class="station-dropzone w-full h-[76px] rounded-lg bg-sky-50/40 border border-dashed border-sky-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="${secId}_UP" title="${st.name}~${nextSt.name} 본선 상선"></div>
-            
-            <!-- 중앙 본선/WCU 명판 -->
             ${markerContent}
-
-            <!-- 본선 하선 -->
             <div class="station-dropzone w-full h-[76px] rounded-lg bg-rose-50/40 border border-dashed border-rose-200 flex items-center justify-center p-0.5 shadow-2xs" data-location="${secId}_DN" title="${st.name}~${nextSt.name} 본선 하선"></div>
           `;
           container.appendChild(sec);
@@ -630,7 +631,57 @@
     }
 
     /* ========================================================
-       4. 물리적 직결 'ㄹ'자 SVG 단일 궤도
+       4. 수동 구간 드래그 & 클릭 선택 이벤트 리스너
+    ======================================================== */
+    function attachManualRangeEvents() {
+      const captureArea = document.getElementById('capture-area');
+
+      // 마우스/터치 다운
+      captureArea.addEventListener('pointerdown', (e) => {
+        const col = e.target.closest('[data-track-col]');
+        // 열차 카드를 끄는 중이거나 모드가 꺼져있을 땐 드래그 모드 무시
+        if (!col || e.target.closest('.train-card') || (!isManualDragActive && filterState.mode !== 'manual')) return;
+
+        const idx = Number(col.dataset.linearIdx);
+        if (isNaN(idx)) return;
+
+        isPointerDragging = true;
+        dragAnchorIdx = idx;
+
+        // 시작점 설정
+        filterState.mode = 'manual';
+        filterState.manualStartIdx = idx;
+        filterState.manualEndIdx = idx;
+        updateFilterUI();
+      });
+
+      // 마우스/터치 이동 (드래그하여 원하는 만큼 늘림)
+      window.addEventListener('pointermove', (e) => {
+        if (!isPointerDragging || dragAnchorIdx === null) return;
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        const col = elem ? elem.closest('[data-track-col]') : null;
+        if (!col) return;
+
+        const currentIdx = Number(col.dataset.linearIdx);
+        if (!isNaN(currentIdx) && currentIdx !== filterState.manualEndIdx) {
+          filterState.manualEndIdx = currentIdx;
+          updateFilterUI();
+        }
+      });
+
+      // 마우스/터치 업 (범위 확정 및 클라우드 저장)
+      window.addEventListener('pointerup', () => {
+        if (isPointerDragging) {
+          isPointerDragging = false;
+          dragAnchorIdx = null;
+          syncFilterToCloud();
+          showToast('선택한 구간이 실시간 반영되었습니다.');
+        }
+      });
+    }
+
+    /* ========================================================
+       5. 물리적 직결 'ㄹ'자 SVG 단일 궤도
     ======================================================== */
     function drawContinuousRail() {
       const captureArea = document.getElementById('capture-area');
@@ -684,6 +735,42 @@
       document.getElementById('svg-rail-row3').setAttribute('d', `M ${pR3Start.x} ${pR3Start.y} L ${pR3End.x + 12} ${pR3End.y}`);
     }
 
+    /* ========================================================
+       6. 열차 렌더링 및 드래그 앤 드롭
+    ======================================================== */
+    function createTrainCardHTML(train) {
+      return `
+        <div id="${train.id}" 
+             class="train-card flex flex-col bg-white border border-slate-300 rounded shadow-xs overflow-hidden select-none"
+             draggable="true">
+          
+          <div class="bg-gradient-to-r from-[#7a2665] via-[#8c2670] to-[#7a2665] px-1 py-0.5 flex items-center justify-center text-white border-b border-purple-900 pointer-events-none">
+            <div class="flex items-center gap-1">
+              <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
+              <span class="text-[12px] font-semibold tracking-tight text-white leading-none">${train.numStr}</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-100 px-1 py-0.5 border-b border-slate-200 flex items-center justify-center pointer-events-none">
+            <div class="flex gap-1 items-center">
+              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
+              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
+              <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
+            </div>
+          </div>
+
+          <div class="p-0.5 bg-white">
+            <input type="text" 
+                   value="${escapeHtml(train.label)}" 
+                   placeholder="이름" 
+                   class="train-label-input w-full text-center text-[10px] font-semibold px-1 py-0.5 bg-slate-50 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-purple-600 rounded text-slate-800 focus:outline-hidden transition leading-tight"
+                   data-train-id="${train.id}" />
+          </div>
+        </div>
+      `;
+    }
+
     function renderAllTrains() {
       const activeInput = document.activeElement;
       const activeTrainId = activeInput && activeInput.classList.contains('train-label-input') 
@@ -720,81 +807,7 @@
       attachTrainEvents();
     }
 
-    /* ========================================================
-       5. 드래그 엣지 감지 자동 스크롤 엔진
-    ======================================================== */
-    let autoScrollSpeedX = 0;
-    let autoScrollSpeedY = 0;
-    let autoScrollRaf = null;
-
-    function handleAutoScroll(clientX, clientY) {
-      const scrollContainer = document.getElementById('scroll-container');
-      const edgeThreshold = 75;
-      const maxSpeed = 16;
-
-      const windowHeight = window.innerHeight;
-      if (clientY > windowHeight - edgeThreshold) {
-        const ratio = (clientY - (windowHeight - edgeThreshold)) / edgeThreshold;
-        autoScrollSpeedY = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else if (clientY < edgeThreshold + 10) {
-        const ratio = ((edgeThreshold + 10) - clientY) / edgeThreshold;
-        autoScrollSpeedY = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else {
-        autoScrollSpeedY = 0;
-      }
-
-      const cRect = scrollContainer.getBoundingClientRect();
-      if (clientX > cRect.right - edgeThreshold) {
-        const ratio = (clientX - (cRect.right - edgeThreshold)) / edgeThreshold;
-        autoScrollSpeedX = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else if (clientX < cRect.left + edgeThreshold) {
-        const ratio = ((cRect.left + edgeThreshold) - clientX) / edgeThreshold;
-        autoScrollSpeedX = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else {
-        autoScrollSpeedX = 0;
-      }
-
-      if ((autoScrollSpeedX !== 0 || autoScrollSpeedY !== 0) && !autoScrollRaf) {
-        autoScrollLoop();
-      }
-    }
-
-    function autoScrollLoop() {
-      if (autoScrollSpeedX !== 0 || autoScrollSpeedY !== 0) {
-        const scrollContainer = document.getElementById('scroll-container');
-        if (autoScrollSpeedY !== 0) window.scrollBy(0, autoScrollSpeedY);
-        if (autoScrollSpeedX !== 0) scrollContainer.scrollLeft += autoScrollSpeedX;
-        autoScrollRaf = requestAnimationFrame(autoScrollLoop);
-      } else {
-        cancelAnimationFrame(autoScrollRaf);
-        autoScrollRaf = null;
-      }
-    }
-
-    function stopAutoScroll() {
-      autoScrollSpeedX = 0;
-      autoScrollSpeedY = 0;
-      if (autoScrollRaf) {
-        cancelAnimationFrame(autoScrollRaf);
-        autoScrollRaf = null;
-      }
-    }
-
-    /* ========================================================
-       6. 드래그 앤 드롭 & 두 손가락 핀치 줌 로직
-    ======================================================== */
-    let draggedTrainId = null;
-    let touchDraggingCard = null;
-    let touchClone = null;
-    let touchOffsetX = 0;
-    let touchOffsetY = 0;
-    let touchTimer = null;
-    let isDragMode = false;
-
     let currentScale = 1.0;
-    let initialPinchDist = 0;
-    let startScale = 1.0;
-
     const zoomWrapper = document.getElementById('zoom-wrapper');
     const scrollContainer = document.getElementById('scroll-container');
     const zoomText = document.getElementById('zoom-text');
@@ -806,152 +819,20 @@
       drawContinuousRail();
     }
 
-    document.getElementById('btn-zoom-reset').addEventListener('click', () => {
-      setScale(1.0);
-    });
-
-    function getDistance(touches) {
-      return Math.hypot(
-        touches[0].clientX - touches[1].clientX,
-        touches[0].clientY - touches[1].clientY
-      );
-    }
-
-    scrollContainer.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        clearTimeout(touchTimer);
-        isDragMode = false;
-        stopAutoScroll();
-        if (touchClone) { touchClone.remove(); touchClone = null; }
-        if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
-        
-        initialPinchDist = getDistance(e.touches);
-        startScale = currentScale;
-      }
-    }, { passive: false });
-
-    scrollContainer.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const dist = getDistance(e.touches);
-        if (initialPinchDist > 0) {
-          const factor = dist / initialPinchDist;
-          setScale(startScale * factor);
-        }
-      }
-    }, { passive: false });
-
-    scrollContainer.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) initialPinchDist = 0;
-    });
+    document.getElementById('btn-zoom-reset').addEventListener('click', () => { setScale(1.0); });
 
     function attachTrainEvents() {
       document.querySelectorAll('.train-card').forEach(card => {
         card.addEventListener('dragstart', (e) => {
-          draggedTrainId = card.id;
+          e.stopPropagation();
           card.classList.add('dragging');
           e.dataTransfer.setData('text/plain', card.id);
           e.dataTransfer.effectAllowed = 'move';
         });
 
-        card.addEventListener('drag', (e) => {
-          if (e.clientX !== 0 || e.clientY !== 0) {
-            handleAutoScroll(e.clientX, e.clientY);
-          }
-        });
-
         card.addEventListener('dragend', () => {
           card.classList.remove('dragging');
-          draggedTrainId = null;
-          stopAutoScroll();
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('touchstart', (e) => {
-          if (e.target.tagName.toLowerCase() === 'input' || e.touches.length > 1) return;
-          const touch = e.touches[0];
-          isDragMode = false;
-
-          const startX = touch.clientX;
-          const startY = touch.clientY;
-
-          touchTimer = setTimeout(() => {
-            isDragMode = true;
-            touchDraggingCard = card;
-            draggedTrainId = card.id;
-
-            const rect = card.getBoundingClientRect();
-            touchOffsetX = startX - rect.left;
-            touchOffsetY = startY - rect.top;
-
-            touchClone = card.cloneNode(true);
-            touchClone.style.position = 'fixed';
-            touchClone.style.zIndex = '9999';
-            touchClone.style.opacity = '0.9';
-            touchClone.style.pointerEvents = 'none';
-            touchClone.style.transform = `scale(${currentScale * 1.05})`;
-            touchClone.style.left = `${rect.left}px`;
-            touchClone.style.top = `${rect.top}px`;
-            document.body.appendChild(touchClone);
-
-            card.classList.add('dragging');
-          }, 140);
-        }, { passive: true });
-
-        card.addEventListener('touchmove', (e) => {
-          if (e.touches.length > 1) {
-            clearTimeout(touchTimer);
-            stopAutoScroll();
-            return;
-          }
-          if (!isDragMode) {
-            clearTimeout(touchTimer);
-            return;
-          }
-          e.preventDefault();
-          const touch = e.touches[0];
-          if (touchClone) {
-            touchClone.style.left = `${touch.clientX - touchOffsetX}px`;
-            touchClone.style.top = `${touch.clientY - touchOffsetY}px`;
-          }
-
-          handleAutoScroll(touch.clientX, touch.clientY);
-
-          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-          const dropZone = elemBelow ? elemBelow.closest('.station-dropzone') : null;
-
-          document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
-          if (dropZone) dropZone.classList.add('drag-over');
-        }, { passive: false });
-
-        card.addEventListener('touchend', (e) => {
-          clearTimeout(touchTimer);
-          stopAutoScroll();
-          if (!isDragMode) return;
-
-          const touch = e.changedTouches[0];
-          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-          const dropZone = elemBelow ? elemBelow.closest('.station-dropzone') : null;
-
-          if (dropZone && trainsData[draggedTrainId]) {
-            trainsData[draggedTrainId].location = dropZone.dataset.location;
-            syncToCloud();
-            showToast('실시간 위치가 공유되었습니다.');
-          }
-
-          if (touchClone) { touchClone.remove(); touchClone = null; }
-          if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
-          draggedTrainId = null;
-          isDragMode = false;
-          document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
-        });
-
-        card.addEventListener('touchcancel', () => {
-          clearTimeout(touchTimer);
-          stopAutoScroll();
-          if (touchClone) { touchClone.remove(); touchClone = null; }
-          if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
-          isDragMode = false;
         });
       });
 
@@ -976,7 +857,6 @@
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
           zone.classList.add('drag-over');
-          handleAutoScroll(e.clientX, e.clientY);
         });
 
         zone.addEventListener('dragleave', (e) => {
@@ -988,9 +868,8 @@
         zone.addEventListener('drop', (e) => {
           e.preventDefault();
           zone.classList.remove('drag-over');
-          stopAutoScroll();
 
-          const trainId = e.dataTransfer.getData('text/plain') || draggedTrainId;
+          const trainId = e.dataTransfer.getData('text/plain');
           if (trainId && trainsData[trainId]) {
             trainsData[trainId].location = zone.dataset.location;
             syncToCloud();
@@ -1001,43 +880,61 @@
     }
 
     /* ========================================================
-       7. WCU 선택기 및 컨트롤 이벤트
+       7. 상단 헤더 컨트롤러 이벤트
     ======================================================== */
+    // WCU 프리셋 버튼 클릭
     document.querySelectorAll('.wcu-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const num = Number(btn.dataset.wcu);
-        const idx = wcuFilterState.selectedWcus.indexOf(num);
+        filterState.mode = 'wcu';
+        isManualDragActive = false;
+
+        const idx = filterState.selectedWcus.indexOf(num);
         if (idx > -1) {
-          wcuFilterState.selectedWcus.splice(idx, 1);
-          delete wcuFilterState.memos[num];
+          filterState.selectedWcus.splice(idx, 1);
         } else {
-          wcuFilterState.selectedWcus.push(num);
-          wcuFilterState.selectedWcus.sort((a, b) => a - b);
-          if (!wcuFilterState.memos[num]) wcuFilterState.memos[num] = '';
+          filterState.selectedWcus.push(num);
+          filterState.selectedWcus.sort((a, b) => a - b);
         }
-        syncWcuFilterToCloud();
-        renderDynamicInputs();
-        updateWcuUI();
+        syncFilterToCloud();
+        updateFilterUI();
       });
     });
 
+    // 전체 해제 버튼
     document.getElementById('btn-wcu-clear').addEventListener('click', () => {
-      wcuFilterState.selectedWcus = [];
-      wcuFilterState.memos = {};
-      syncWcuFilterToCloud();
-      renderDynamicInputs();
-      updateWcuUI();
-      showToast('WCU 선택이 전체 해제되었습니다.');
+      filterState.mode = 'wcu';
+      filterState.selectedWcus = [];
+      filterState.manualStartIdx = -1;
+      filterState.manualEndIdx = -1;
+      filterState.memo = '';
+      isManualDragActive = false;
+      syncFilterToCloud();
+      updateFilterUI();
+      showToast('구간 선택 및 문구가 전체 해제되었습니다.');
     });
 
+    // 수동 드래그 모드 토글 버튼
+    document.getElementById('btn-toggle-drag-mode').addEventListener('click', () => {
+      isManualDragActive = !isManualDragActive;
+      if (isManualDragActive) {
+        filterState.mode = 'manual';
+        showToast('노선 위의 시작역과 끝역을 드래그하거나 클릭하세요.');
+      }
+      updateFilterUI();
+    });
+
+    // 문구 적용 버튼
     document.getElementById('btn-wcu-apply-text').addEventListener('click', () => {
-      document.querySelectorAll('.wcu-single-memo-input').forEach(input => {
-        const num = Number(input.dataset.wcuMemoNum);
-        wcuFilterState.memos[num] = input.value.trim();
-      });
-      syncWcuFilterToCloud();
-      updateWcuUI();
-      showToast('구역별 문구가 실시간 반영되었습니다.');
+      const input = document.getElementById('wcu-memo-input');
+      filterState.memo = input.value.trim();
+      syncFilterToCloud();
+      updateFilterUI();
+      showToast('구간 표기문구가 실시간 반영되었습니다.');
+    });
+
+    document.getElementById('wcu-memo-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-wcu-apply-text').click();
     });
 
     let toastTimeout = null;
@@ -1080,8 +977,9 @@
       renderTrackLine('track-tier-1', tier1Stations);
       renderTrackLine('track-tier-2', tier2Stations);
       renderTrackLine('track-tier-3', tier3Stations);
-      initDropZones();
       
+      initDropZones();
+      attachManualRangeEvents();
       initRealtimeSync();
 
       setTimeout(drawContinuousRail, 200);
