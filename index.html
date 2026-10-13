@@ -73,6 +73,33 @@
       opacity: 0.7;
     }
 
+    /* 알림 토스트 (확실한 노출을 위한 CSS 강제 적용) */
+    #toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      border: 1px solid #334155;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* 스크롤바 */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -81,6 +108,12 @@
   </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col p-4">
+
+  <!-- 상단 중앙 확실한 토스트 팝업 알림 -->
+  <div id="toast">
+    <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+    <span id="toast-message">저장되었습니다.</span>
+  </div>
 
   <!-- 상단 컨트롤 헤더 -->
   <header class="bg-white border border-slate-200 rounded-2xl px-5 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4 sticky top-2 z-50 mb-4">
@@ -227,12 +260,6 @@
 
   </main>
 
-  <!-- 알림 토스트 -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <i class="fa-solid fa-circle-check text-emerald-400"></i>
-    <span id="toast-message">저장되었습니다.</span>
-  </div>
-
   <script>
     /* ========================================================
        1. 데이터 정의
@@ -308,7 +335,7 @@
     }
 
     /* ========================================================
-       2. UI 렌더링 템플릿 (몇호 텍스트 완전 제거)
+       2. UI 렌더링 템플릿
     ======================================================== */
 
     function createTrainCardHTML(train) {
@@ -317,7 +344,7 @@
              class="train-card flex flex-col bg-white border border-slate-300 rounded-lg shadow-sm overflow-hidden select-none"
              draggable="true">
           
-          <!-- 전동차 헤더 (호수 없이 편성 번호만 중앙 정렬) -->
+          <!-- 전동차 헤더 -->
           <div class="bg-gradient-to-r from-[#7a2665] via-[#942777] to-[#7a2665] px-2 py-1 flex items-center justify-center text-white border-b border-purple-900">
             <div class="flex items-center gap-1.5">
               <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
@@ -325,7 +352,7 @@
             </div>
           </div>
 
-          <!-- 전동차 창문 그래픽 (호수 표기 삭제) -->
+          <!-- 전동차 창문 그래픽 -->
           <div class="bg-slate-100 px-2 py-1 border-b border-slate-200 flex items-center justify-center">
             <div class="flex gap-1.5 items-center">
               <div class="w-2.5 h-1.5 bg-slate-700 rounded-xs"></div>
@@ -494,8 +521,23 @@
     }
 
     /* ========================================================
-       4. 상단 컨트롤 버튼 동작
+       4. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
     ======================================================== */
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const msgSpan = document.getElementById('toast-message');
+      msgSpan.textContent = msg;
+
+      // 기존 타이머 취소 후 즉시 표시
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toast.classList.add('show');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
     document.getElementById('btn-save').addEventListener('click', () => {
       saveStateToStorageQuiet();
       showToast('편성 배치 및 상태가 저장되었습니다.');
@@ -538,7 +580,7 @@
         link.download = `부산김해경전철_노선운용현황_${new Date().toISOString().slice(0, 10)}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showToast('슬라이드 삽입용 고해상도 이미지가 다운로드되었습니다!');
+        showToast('슬라이드용 고화질 이미지가 다운로드되었습니다!');
       } catch (err) {
         console.error(err);
         alert('이미지 생성 중 오류가 발생했습니다.');
@@ -546,14 +588,6 @@
         btn.innerHTML = originText;
       }
     });
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const msgSpan = document.getElementById('toast-message');
-      msgSpan.textContent = msg;
-      toast.classList.remove('translate-y-20', 'opacity-0');
-      setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 2200);
-    }
 
     function escapeHtml(str) {
       if (!str) return '';
