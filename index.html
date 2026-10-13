@@ -135,7 +135,6 @@
 
     <!-- 기능 버튼 -->
     <div class="flex items-center gap-1.5 text-xs">
-      <!-- 줌 배율 초기화 버튼 -->
       <button id="btn-zoom-reset" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium border border-slate-300 transition flex items-center gap-1" title="화면 크기 100% 원복">
         <i class="fa-solid fa-magnifying-glass text-[11px]"></i> <span id="zoom-text">100%</span>
       </button>
@@ -167,7 +166,7 @@
         <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
       <div class="text-[11px] text-slate-400">
-        💡 두 손가락으로 화면을 확대/축소하고, 열차를 꾹 눌러 이동할 수 있습니다.
+        💡 열차를 화면 가장자리(위/아래)로 가져가면 화면이 자동으로 스크롤됩니다.
       </div>
     </div>
 
@@ -175,7 +174,7 @@
     <div id="train-dock" class="station-dropzone min-h-[92px] p-2 rounded-lg bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap gap-1.5 items-start justify-start" data-location="dock"></div>
   </section>
 
-  <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 (핀치 줌 & 슬라이드 뷰포트) -->
+  <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 -->
   <div class="scroll-container w-full rounded-xl" id="scroll-container">
     <div id="zoom-wrapper">
       <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative min-w-[1350px]" id="capture-area">
@@ -227,9 +226,8 @@
 
   <script>
     /* ========================================================
-       1. 노선 데이터 정의 (1관리역, 2관리역, 3관리역)
+       1. 노선 데이터 정의
     ======================================================== */
-    
     const tier1Stations = [
       { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, tier: 1 },
       { id: 'st_01', num: '01', name: '사상', transfer: '2호선', tier: 1 },
@@ -485,7 +483,77 @@
     }
 
     /* ========================================================
-       4. 드래그 앤 드롭 & 두 손가락 핀치 줌 로직
+       4. 드래그 엣지 감지 자동 스크롤 엔진 (Auto-Scroll)
+    ======================================================== */
+    let autoScrollSpeedX = 0;
+    let autoScrollSpeedY = 0;
+    let autoScrollRaf = null;
+
+    function handleAutoScroll(clientX, clientY) {
+      const scrollContainer = document.getElementById('scroll-container');
+      const edgeThreshold = 75; // 화면 끝에서 75px 이내 진입 시 자동 스크롤 시작
+      const maxSpeed = 16;      // 최대 스크롤 속도
+
+      // 1. 세로 스크롤 (전체 윈도우 창 기준)
+      const windowHeight = window.innerHeight;
+      if (clientY > windowHeight - edgeThreshold) {
+        const ratio = (clientY - (windowHeight - edgeThreshold)) / edgeThreshold;
+        autoScrollSpeedY = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
+      } else if (clientY < edgeThreshold + 60) { // 상단 헤더 고려
+        const ratio = ((edgeThreshold + 60) - clientY) / edgeThreshold;
+        autoScrollSpeedY = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
+      } else {
+        autoScrollSpeedY = 0;
+      }
+
+      // 2. 가로 스크롤 (노선도 컨테이너 기준)
+      const cRect = scrollContainer.getBoundingClientRect();
+      if (clientX > cRect.right - edgeThreshold) {
+        const ratio = (clientX - (cRect.right - edgeThreshold)) / edgeThreshold;
+        autoScrollSpeedX = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
+      } else if (clientX < cRect.left + edgeThreshold) {
+        const ratio = ((cRect.left + edgeThreshold) - clientX) / edgeThreshold;
+        autoScrollSpeedX = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
+      } else {
+        autoScrollSpeedX = 0;
+      }
+
+      if ((autoScrollSpeedX !== 0 || autoScrollSpeedY !== 0) && !autoScrollRaf) {
+        autoScrollLoop();
+      }
+    }
+
+    function autoScrollLoop() {
+      if (autoScrollSpeedX !== 0 || autoScrollSpeedY !== 0) {
+        const scrollContainer = document.getElementById('scroll-container');
+        
+        // 윈도우 세로 스크롤 이동
+        if (autoScrollSpeedY !== 0) {
+          window.scrollBy(0, autoScrollSpeedY);
+        }
+        // 노선도 가로 스크롤 이동
+        if (autoScrollSpeedX !== 0) {
+          scrollContainer.scrollLeft += autoScrollSpeedX;
+        }
+
+        autoScrollRaf = requestAnimationFrame(autoScrollLoop);
+      } else {
+        cancelAnimationFrame(autoScrollRaf);
+        autoScrollRaf = null;
+      }
+    }
+
+    function stopAutoScroll() {
+      autoScrollSpeedX = 0;
+      autoScrollSpeedY = 0;
+      if (autoScrollRaf) {
+        cancelAnimationFrame(autoScrollRaf);
+        autoScrollRaf = null;
+      }
+    }
+
+    /* ========================================================
+       5. 드래그 앤 드롭 & 두 손가락 핀치 줌 로직
     ======================================================== */
     let draggedTrainId = null;
     let touchDraggingCard = null;
@@ -495,7 +563,6 @@
     let touchTimer = null;
     let isDragMode = false;
 
-    // 핀치 줌 상태 관리
     let currentScale = 1.0;
     let initialPinchDist = 0;
     let startScale = 1.0;
@@ -505,18 +572,16 @@
     const zoomText = document.getElementById('zoom-text');
 
     function setScale(scale) {
-      currentScale = Math.min(Math.max(scale, 0.5), 2.5); // 최소 50% ~ 최대 250%
+      currentScale = Math.min(Math.max(scale, 0.5), 2.5);
       zoomWrapper.style.transform = `scale(${currentScale})`;
       zoomText.textContent = `${Math.round(currentScale * 100)}%`;
       drawContinuousRail();
     }
 
-    // 줌 초기화 버튼
     document.getElementById('btn-zoom-reset').addEventListener('click', () => {
       setScale(1.0);
     });
 
-    // 두 손가락 거리 계산 함수
     function getDistance(touches) {
       return Math.hypot(
         touches[0].clientX - touches[1].clientX,
@@ -524,12 +589,12 @@
       );
     }
 
-    // 뷰포트 터치 핀치 줌 이벤트
+    // 핀치 줌 이벤트
     scrollContainer.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
-        // 두 손가락 감지 시 열차 드래그 즉시 취소 후 핀치 줌 모드 진입
         clearTimeout(touchTimer);
         isDragMode = false;
+        stopAutoScroll();
         if (touchClone) { touchClone.remove(); touchClone = null; }
         if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
         
@@ -565,13 +630,20 @@
           e.dataTransfer.effectAllowed = 'move';
         });
 
+        card.addEventListener('drag', (e) => {
+          if (e.clientX !== 0 || e.clientY !== 0) {
+            handleAutoScroll(e.clientX, e.clientY);
+          }
+        });
+
         card.addEventListener('dragend', () => {
           card.classList.remove('dragging');
           draggedTrainId = null;
+          stopAutoScroll();
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
         });
 
-        // 스마트폰 / 태블릿 터치 드래그 (한 손가락 롱프레스 시에만 실행)
+        // 스마트폰 / 태블릿 터치 드래그
         card.addEventListener('touchstart', (e) => {
           if (e.target.tagName.toLowerCase() === 'input' || e.touches.length > 1) return;
           const touch = e.touches[0];
@@ -606,6 +678,7 @@
         card.addEventListener('touchmove', (e) => {
           if (e.touches.length > 1) {
             clearTimeout(touchTimer);
+            stopAutoScroll();
             return;
           }
           if (!isDragMode) {
@@ -619,6 +692,9 @@
             touchClone.style.top = `${touch.clientY - touchOffsetY}px`;
           }
 
+          // 드래그 중 화면 끝 도달 시 자동 스크롤 트리거
+          handleAutoScroll(touch.clientX, touch.clientY);
+
           const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
           const dropZone = elemBelow ? elemBelow.closest('.station-dropzone') : null;
 
@@ -628,6 +704,7 @@
 
         card.addEventListener('touchend', (e) => {
           clearTimeout(touchTimer);
+          stopAutoScroll();
           if (!isDragMode) return;
 
           const touch = e.changedTouches[0];
@@ -655,6 +732,7 @@
 
         card.addEventListener('touchcancel', () => {
           clearTimeout(touchTimer);
+          stopAutoScroll();
           if (touchClone) { touchClone.remove(); touchClone = null; }
           if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
           isDragMode = false;
@@ -682,6 +760,7 @@
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
           zone.classList.add('drag-over');
+          handleAutoScroll(e.clientX, e.clientY);
         });
 
         zone.addEventListener('dragleave', (e) => {
@@ -693,6 +772,7 @@
         zone.addEventListener('drop', (e) => {
           e.preventDefault();
           zone.classList.remove('drag-over');
+          stopAutoScroll();
 
           const trainId = e.dataTransfer.getData('text/plain') || draggedTrainId;
           if (trainId && trainsData[trainId]) {
@@ -705,7 +785,7 @@
     }
 
     /* ========================================================
-       5. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
+       6. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
     ======================================================== */
     let toastTimeout = null;
     function showToast(msg) {
@@ -751,7 +831,6 @@
       const originText = btn.innerHTML;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> 생성 중...';
 
-      // 캡처 전 스케일 임시 100%로 고정 후 원복
       const savedScale = currentScale;
       zoomWrapper.style.transform = 'scale(1)';
 
