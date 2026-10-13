@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>부산김해경전철 열차 종합 운용 현황판 ('ㄹ'자 직결선로)</title>
+  <title>부산김해경전철 열차 종합 운용 현황판 (관리역별 색상 구분)</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
@@ -19,10 +19,11 @@
       user-select: none;
     }
 
-    /* BGL 상징 와인/마젠타 */
-    .bgl-primary { background-color: #832569; }
-    .bgl-border { border-color: #832569; }
-    .bgl-text { color: #832569; }
+    /* 관리역별 테마 클래스 */
+    .zone-sasang { border-color: #059669 !important; color: #065f46 !important; }
+    .zone-daeje { border-color: #d97706 !important; color: #92400e !important; }
+    .zone-gimhae { border-color: #0284c7 !important; color: #075985 !important; }
+    .zone-gayadae { border-color: #9333ea !important; color: #6b21a8 !important; }
 
     /* 열차 카드 (94px 슬림 규격) */
     .train-card {
@@ -91,7 +92,7 @@
 
   <!-- 상단 컨트롤 헤더 -->
   <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 sticky top-1 z-50 mb-3">
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
         <i class="fa-solid fa-train-subway text-sm"></i>
       </div>
@@ -100,6 +101,14 @@
           <h1 class="text-sm font-bold text-slate-900 tracking-tight">부산김해경전철 열차 종합 운용 현황판</h1>
           <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">1~25편성 관제</span>
         </div>
+      </div>
+      
+      <!-- 관리역 범례 가이드 -->
+      <div class="flex items-center gap-3 text-[11px] font-bold border-l border-slate-200 pl-3">
+        <span class="flex items-center gap-1 text-emerald-700"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>사상구간</span>
+        <span class="flex items-center gap-1 text-amber-700"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>대저구간</span>
+        <span class="flex items-center gap-1 text-sky-700"><span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>인제대/김해구간</span>
+        <span class="flex items-center gap-1 text-purple-700"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>가야대/기지구간</span>
       </div>
     </div>
 
@@ -144,13 +153,15 @@
   <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 -->
   <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative w-full overflow-hidden" id="capture-area">
     
-    <!-- SVG 완전 단일 연속 레일 궤도 -->
+    <!-- SVG 완전 단일 연속 레일 궤도 (관리역 구간별 다색 그라디언트) -->
     <svg id="continuous-rail-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
       <defs>
+        <!-- 관리역별 연속 그라디언트 선로 색상 -->
         <linearGradient id="railGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#7e22ce" />
-          <stop offset="50%" stop-color="#9d174d" />
-          <stop offset="100%" stop-color="#7e22ce" />
+          <stop offset="0%" stop-color="#059669" />    <!-- 사상 권역 (에메랄드 그린) -->
+          <stop offset="35%" stop-color="#d97706" />   <!-- 대저 권역 (골드 오렌지) -->
+          <stop offset="68%" stop-color="#0284c7" />   <!-- 인제대/김해 권역 (스카이 블루) -->
+          <stop offset="100%" stop-color="#9333ea" />  <!-- 가야대/기지 권역 (퍼플 마젠타) -->
         </linearGradient>
       </defs>
 
@@ -158,11 +169,11 @@
       <path id="svg-rail-ties" fill="none" stroke="#94a3b8" stroke-width="22" stroke-linecap="round" stroke-dasharray="3, 11" opacity="0.65" />
       <!-- 주 레일 외곽선 -->
       <path id="svg-rail-outer" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" />
-      <!-- 주 레일 코어 라인 -->
+      <!-- 주 레일 코어 라인 (구간별 멀티 컬러) -->
       <path id="svg-rail-core" fill="none" stroke="url(#railGrad)" stroke-width="8" stroke-linecap="round" />
     </svg>
 
-    <!-- [1행: 정방향 좌->우] 사상주박지 ~ 사상 ~ 등구 ➔ 등구~대저 본선 -->
+    <!-- [1행: 정방향 좌->우] 사상 권역 ➔ 등구~대저 본선 -->
     <div class="relative z-10 flex items-center mb-6" id="row-1">
       <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
         <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -172,7 +183,7 @@
       <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
     </div>
 
-    <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 -->
+    <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해/대저 권역 -->
     <div class="relative z-10 flex items-center mb-6" id="row-2">
       <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
         <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -182,7 +193,7 @@
       <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-2"></div>
     </div>
 
-    <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 -->
+    <!-- [3행: 정방향 좌->우] 김해/가야대 권역 ~ 신명기지 -->
     <div class="relative z-10 flex items-center pb-1" id="row-3">
       <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
         <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
@@ -196,46 +207,48 @@
 
   <script>
     /* ========================================================
-       1. 노선 데이터 정의 (물리적 ㄹ자 배치)
+       1. 노선 데이터 정의 (역명 축약 및 관리역 구역 설정)
+       - zone: sasang(녹색), daeje(황색), gimhae(청색), gayadae(자색)
     ======================================================== */
     
-    // 1행: 주박지 ~ 등구 (맨 오른쪽에 등구-대저 본선)
+    // 1행: 사상 관리역 권역 (괘법, 서부산 축약 적용)
     const tier1Stations = [
-      { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true },
-      { id: 'st_01', num: '01', name: '사상', transfer: '2호선' },
-      { id: 'st_02', num: '02', name: '괘법르네' },
-      { id: 'st_03', num: '03', name: '서부산유통' },
-      { id: 'st_04', num: '04', name: '공항', transfer: '공항' },
-      { id: 'st_05', num: '05', name: '덕두' },
-      { id: 'st_06', num: '06', name: '등구' },
+      { id: 'st_yard', num: '주박', name: '사상주박', isDepot: true, zone: 'sasang' },
+      { id: 'st_01', num: '01', name: '사상', transfer: '2호선', zone: 'sasang' },
+      { id: 'st_02', num: '02', name: '괘법', zone: 'sasang' },
+      { id: 'st_03', num: '03', name: '서부산', zone: 'sasang' },
+      { id: 'st_04', num: '04', name: '공항', transfer: '공항', zone: 'sasang' },
+      { id: 'st_05', num: '05', name: '덕두', zone: 'sasang' },
+      { id: 'st_06', num: '06', name: '등구', zone: 'sasang' },
       { id: 'sec_06_07', name: '등구~대저', isConnector: true }
     ];
 
-    // 2행: 좌측 끝에 '시청-부원 본선', 우측 끝에 '대저'
+    // 2행: 김해/대저 권역
     const tier2Stations = [
       { id: 'sec_14_15', name: '시청~부원', isConnector: true },
-      { id: 'st_14', num: '14', name: '김해시청' },
-      { id: 'st_13', num: '13', name: '인제대' },
-      { id: 'st_12', num: '12', name: '김해대학' },
-      { id: 'st_11', num: '11', name: '지내' },
-      { id: 'st_10', num: '10', name: '불암' },
-      { id: 'st_09', num: '09', name: '대사' },
-      { id: 'st_08', num: '08', name: '평강' },
-      { id: 'st_07', num: '07', name: '대저', transfer: '3호선' }
+      { id: 'st_14', num: '14', name: '김해시청', zone: 'gimhae' },
+      { id: 'st_13', num: '13', name: '인제대', zone: 'gimhae' },
+      { id: 'st_12', num: '12', name: '김해대학', zone: 'gimhae' },
+      { id: 'st_11', num: '11', name: '지내', zone: 'daeje' },
+      { id: 'st_10', num: '10', name: '불암', zone: 'daeje' },
+      { id: 'st_09', num: '09', name: '대사', zone: 'daeje' },
+      { id: 'st_08', num: '08', name: '평강', zone: 'daeje' },
+      { id: 'st_07', num: '07', name: '대저', transfer: '3호선', zone: 'daeje' }
     ];
 
-    // 3행: 부원 ~ 신명차량기지
+    // 3행: 김해/가야대 권역
     const tier3Stations = [
-      { id: 'st_15', num: '15', name: '부원' },
-      { id: 'st_16', num: '16', name: '봉황' },
-      { id: 'st_17', num: '17', name: '수로왕릉' },
-      { id: 'st_18', num: '18', name: '박물관' },
-      { id: 'st_19', num: '19', name: '연지공원' },
-      { id: 'st_20', num: '20', name: '장신대' },
-      { id: 'st_21', num: '21', name: '가야대' },
-      { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true }
+      { id: 'st_15', num: '15', name: '부원', zone: 'gimhae' },
+      { id: 'st_16', num: '16', name: '봉황', zone: 'gimhae' },
+      { id: 'st_17', num: '17', name: '수로왕릉', zone: 'gimhae' },
+      { id: 'st_18', num: '18', name: '박물관', zone: 'gayadae' },
+      { id: 'st_19', num: '19', name: '연지공원', zone: 'gayadae' },
+      { id: 'st_20', num: '20', name: '장신대', zone: 'gayadae' },
+      { id: 'st_21', num: '21', name: '가야대', zone: 'gayadae' },
+      { id: 'st_depot', num: '기지', name: '신명기지', isDepot: true, zone: 'gayadae' }
     ];
 
+    // 1~25편성 데이터
     let trainsData = {};
     for (let i = 1; i <= 25; i++) {
       const trainId = `train_${i}`;
@@ -314,13 +327,20 @@
         const col = document.createElement('div');
         const isConn = st.isConnector;
 
-        // 연결 본선(등구~대저, 시청~부원)도 일반 본선처럼 흐리게(bg-sky-50/40, bg-rose-50/40) 및 점선(border-dashed) 처리
         const colWidth = isConn ? 'flex-[0.75] max-w-[88px] min-w-[72px]' : 'flex-1 max-w-[104px] min-w-[84px]';
         col.className = `flex flex-col justify-between items-center h-[190px] px-0.5 z-10 ${colWidth}`;
         
+        // 관리역 구역별 뱃지 테두리/포인트 색상 설정
+        let zoneClass = '';
+        let dotColor = '#832569';
+        if (st.zone === 'sasang') { zoneClass = 'zone-sasang'; dotColor = '#059669'; }
+        else if (st.zone === 'daeje') { zoneClass = 'zone-daeje'; dotColor = '#d97706'; }
+        else if (st.zone === 'gimhae') { zoneClass = 'zone-gimhae'; dotColor = '#0284c7'; }
+        else if (st.zone === 'gayadae') { zoneClass = 'zone-gayadae'; dotColor = '#9333ea'; }
+
         const badgeStyle = isConn 
-          ? 'bg-white/85 text-slate-500 border-slate-300' 
-          : 'bg-white text-slate-900 border-[#832569]';
+          ? 'bg-white/85 text-slate-400 border-slate-300' 
+          : `bg-white text-slate-900 border-2 ${zoneClass}`;
         
         const upBg = isConn 
           ? 'bg-sky-50/40 border border-dashed border-sky-200' 
@@ -334,9 +354,9 @@
           <!-- 상선 슬롯 -->
           <div class="station-dropzone w-full h-[76px] rounded-lg ${upBg} flex items-center justify-center p-0.5 shadow-2xs backdrop-blur-xs" data-location="${st.id}_UP" title="${st.name} 상선"></div>
           
-          <!-- 슬림 명판 -->
-          <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeStyle} border flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
-            ${st.num ? `<span class="w-3 h-3 rounded-full bg-[#832569] text-white text-[7px] font-black flex items-center justify-center shadow-xs">${st.num}</span>` : ''}
+          <!-- 슬림 명판 (관리역별 색상 테두리) -->
+          <div class="station-mid-marker relative z-20 w-full h-[20px] rounded ${badgeStyle} flex items-center justify-center shadow-xs px-1 gap-1" data-marker="${st.id}">
+            ${st.num ? `<span class="w-3 h-3 rounded-full text-white text-[7px] font-black flex items-center justify-center shadow-xs" style="background-color: ${dotColor};">${st.num}</span>` : ''}
             <span class="${isConn ? 'text-[8.5px] font-bold text-slate-400' : 'text-[9.5px] font-extrabold'} truncate leading-none">${st.name}</span>
             ${st.transfer ? `<span class="text-[7.5px] bg-sky-100 text-sky-800 font-bold px-0.5 rounded leading-tight">${st.transfer}</span>` : ''}
           </div>
