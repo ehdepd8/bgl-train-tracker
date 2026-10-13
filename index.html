@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
   <title>부산김해경전철 열차 종합 운용 현황판 ('ㄹ'자 직결선로)</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,6 +18,7 @@
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     /* 구간별 행 테마 클래스 */
@@ -33,14 +34,14 @@
       box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25) !important;
     }
 
-    /* 열차 카드 (94px 슬림 규격, 터치 최적화) */
+    /* 열차 카드 */
     .train-card {
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       cursor: grab;
       width: 94px;
       flex-shrink: 0;
       z-index: 30;
-      touch-action: none; /* 모바일 드래그 시 화면 스크롤 간섭 방지 */
+      touch-action: pan-x pan-y; /* 기본적으로는 화면 슬라이드 허용 */
     }
     .train-card:active {
       cursor: grabbing;
@@ -57,6 +58,14 @@
       border-color: #db2777 !important;
       transform: scale(1.02);
       box-shadow: 0 0 0 2px rgba(219, 39, 119, 0.35);
+    }
+
+    /* 화면 슬라이드 뷰포트 */
+    .scroll-container {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
 
     /* 토스트 알림 */
@@ -151,7 +160,7 @@
         <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
       <div class="text-[11px] text-slate-400">
-        💡 PC 마우스 드래그 및 모바일/태블릿 터치 드래그를 지원합니다.
+        💡 열차를 꾹 누르면 이동할 수 있고, 화면 빈 곳을 밀면 슬라이드됩니다.
       </div>
     </div>
 
@@ -159,51 +168,53 @@
     <div id="train-dock" class="station-dropzone min-h-[92px] p-2 rounded-lg bg-slate-50 border-2 border-dashed border-slate-300 flex flex-wrap gap-1.5 items-start justify-start" data-location="dock"></div>
   </section>
 
-  <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 -->
-  <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative w-full overflow-hidden" id="capture-area">
-    
-    <!-- SVG 완전 단일 연속 레일 궤도 -->
-    <svg id="continuous-rail-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
-      <path id="svg-rail-ties" fill="none" stroke="#94a3b8" stroke-width="22" stroke-linecap="round" stroke-dasharray="3, 11" opacity="0.65" />
-      <path id="svg-rail-outer" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" />
-      <path id="svg-rail-row1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
-      <path id="svg-rail-curve1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
-      <path id="svg-rail-row2" fill="none" stroke="#d97706" stroke-width="8" stroke-linecap="round" />
-      <path id="svg-rail-curve2" fill="none" stroke="#d97706" stroke-width="8" stroke-linecap="round" />
-      <path id="svg-rail-row3" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round" />
-    </svg>
+  <!-- 2. 메인 단일 연속 'ㄹ'자 궤도망 영역 (터치 슬라이드 뷰포트 감싸기) -->
+  <div class="scroll-container w-full rounded-xl">
+    <main class="bg-white rounded-xl p-4 shadow-xs border border-slate-200 flex flex-col relative min-w-[1350px]" id="capture-area">
+      
+      <!-- SVG 완전 단일 연속 레일 궤도 -->
+      <svg id="continuous-rail-svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
+        <path id="svg-rail-ties" fill="none" stroke="#94a3b8" stroke-width="22" stroke-linecap="round" stroke-dasharray="3, 11" opacity="0.65" />
+        <path id="svg-rail-outer" fill="none" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+        <path id="svg-rail-row1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
+        <path id="svg-rail-curve1" fill="none" stroke="#059669" stroke-width="8" stroke-linecap="round" />
+        <path id="svg-rail-row2" fill="none" stroke="#d97706" stroke-width="8" stroke-linecap="round" />
+        <path id="svg-rail-curve2" fill="none" stroke="#d97706" stroke-width="8" stroke-linecap="round" />
+        <path id="svg-rail-row3" fill="none" stroke="#7c3aed" stroke-width="8" stroke-linecap="round" />
+      </svg>
 
-    <!-- [1행: 정방향 좌->우] 사상주박지 ~ 등구 ➔ 등구~대저 본선 (1관리역) -->
-    <div class="relative z-10 flex items-center mb-6" id="row-1">
-      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
-        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
-        <span class="text-[9px] font-bold text-slate-400">선로</span>
-        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+      <!-- [1행: 정방향 좌->우] 사상주박지 ~ 등구 ➔ 등구~대저 본선 (1관리역) -->
+      <div class="relative z-10 flex items-center mb-6" id="row-1">
+        <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+          <span class="text-[9px] font-bold text-slate-400">선로</span>
+          <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+        </div>
+        <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
       </div>
-      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-1"></div>
-    </div>
 
-    <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 (2관리역) -->
-    <div class="relative z-10 flex items-center mb-6" id="row-2">
-      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
-        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
-        <span class="text-[9px] font-bold text-slate-400">선로</span>
-        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+      <!-- [2행: 역방향 우->좌] 시청~부원 본선 ➔ 김해시청 ~ 대저 (2관리역) -->
+      <div class="relative z-10 flex items-center mb-6" id="row-2">
+        <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+          <span class="text-[9px] font-bold text-slate-400">선로</span>
+          <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+        </div>
+        <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-2"></div>
       </div>
-      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-2"></div>
-    </div>
 
-    <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 (3관리역) -->
-    <div class="relative z-10 flex items-center pb-1" id="row-3">
-      <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
-        <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
-        <span class="text-[9px] font-bold text-slate-400">선로</span>
-        <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+      <!-- [3행: 정방향 좌->우] 부원 ~ 신명차량기지 (3관리역) -->
+      <div class="relative z-10 flex items-center pb-1" id="row-3">
+        <div class="flex flex-col justify-between items-center h-[190px] w-[30px] shrink-0 mr-1.5 py-1">
+          <span class="text-[10px] font-black text-sky-700 bg-sky-100 border border-sky-300 rounded px-1 py-0.5 shadow-2xs">상</span>
+          <span class="text-[9px] font-bold text-slate-400">선로</span>
+          <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 rounded px-1 py-0.5 shadow-2xs">하</span>
+        </div>
+        <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-3"></div>
       </div>
-      <div class="flex flex-1 items-center justify-between gap-1" id="track-tier-3"></div>
-    </div>
 
-  </main>
+    </main>
+  </div>
 
   <script>
     /* ========================================================
@@ -281,7 +292,7 @@
     }
 
     /* ========================================================
-       2. UI 렌더링 템플릿 (깔끔한 흰색 글씨 & 적절한 굵기)
+       2. UI 렌더링 템플릿
     ======================================================== */
 
     function createTrainCardHTML(train) {
@@ -290,15 +301,14 @@
              class="train-card flex flex-col bg-white border border-slate-300 rounded shadow-xs overflow-hidden select-none"
              draggable="true">
           
-          <!-- 헤더: 깔끔한 흰색 폰트 (font-semibold, text-white) -->
-          <div class="bg-gradient-to-r from-[#7a2665] via-[#8c2670] to-[#7a2665] px-1 py-0.5 flex items-center justify-center text-white border-b border-purple-900">
+          <div class="bg-gradient-to-r from-[#7a2665] via-[#8c2670] to-[#7a2665] px-1 py-0.5 flex items-center justify-center text-white border-b border-purple-900 pointer-events-none">
             <div class="flex items-center gap-1">
               <i class="fa-solid fa-train-subway text-[10px] text-purple-200"></i>
               <span class="text-[12px] font-semibold tracking-tight text-white leading-none">${train.numStr}</span>
             </div>
           </div>
 
-          <div class="bg-slate-100 px-1 py-0.5 border-b border-slate-200 flex items-center justify-center">
+          <div class="bg-slate-100 px-1 py-0.5 border-b border-slate-200 flex items-center justify-center pointer-events-none">
             <div class="flex gap-1 items-center">
               <div class="w-2 h-1 bg-slate-700 rounded-xs"></div>
               <div class="w-3.5 h-1 bg-sky-200 border border-slate-400 rounded-xs"></div>
@@ -469,17 +479,19 @@
     }
 
     /* ========================================================
-       4. 드래그 앤 드롭 및 모바일/태블릿 터치 지원 (Polyfill)
+       4. 드래그 앤 드롭 및 스마트폰/태블릿 슬라이드 최적화
     ======================================================== */
     let draggedTrainId = null;
     let touchDraggingCard = null;
     let touchClone = null;
     let touchOffsetX = 0;
     let touchOffsetY = 0;
+    let touchTimer = null;
+    let isDragMode = false;
 
     function attachTrainEvents() {
       document.querySelectorAll('.train-card').forEach(card => {
-        // PC 마우스 드래그 이벤트
+        // PC 마우스 드래그
         card.addEventListener('dragstart', (e) => {
           draggedTrainId = card.id;
           card.classList.add('dragging');
@@ -493,39 +505,53 @@
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
         });
 
-        // 모바일 & 태블릿 터치 드래그 이벤트 지원
+        // 스마트폰 / 태블릿 터치 드래그 및 화면 슬라이드 분리 (롱프레스 감지)
         card.addEventListener('touchstart', (e) => {
-          if (e.target.tagName.toLowerCase() === 'input') return; // 입력란 클릭 시에는 터치 드래그 제외
+          if (e.target.tagName.toLowerCase() === 'input') return;
           const touch = e.touches[0];
-          touchDraggingCard = card;
-          draggedTrainId = card.id;
+          isDragMode = false;
 
-          const rect = card.getBoundingClientRect();
-          touchOffsetX = touch.clientX - rect.left;
-          touchOffsetY = touch.clientY - rect.top;
+          const startX = touch.clientX;
+          const startY = touch.clientY;
 
-          // 터치 중 손가락을 따라다니는 클론 생성
-          touchClone = card.cloneNode(true);
-          touchClone.style.position = 'fixed';
-          touchClone.style.zIndex = '9999';
-          touchClone.style.opacity = '0.85';
-          touchClone.style.pointerEvents = 'none';
-          touchClone.style.transform = 'scale(1.05)';
-          touchClone.style.left = `${rect.left}px`;
-          touchClone.style.top = `${rect.top}px`;
-          document.body.appendChild(touchClone);
+          // 120ms 이상 누르고 있을 때만 열차 이동 모드 시작 (가볍게 긁으면 화면 슬라이드)
+          touchTimer = setTimeout(() => {
+            isDragMode = true;
+            touchDraggingCard = card;
+            draggedTrainId = card.id;
 
-          card.classList.add('dragging');
-        }, { passive: false });
+            const rect = card.getBoundingClientRect();
+            touchOffsetX = startX - rect.left;
+            touchOffsetY = startY - rect.top;
+
+            touchClone = card.cloneNode(true);
+            touchClone.style.position = 'fixed';
+            touchClone.style.zIndex = '9999';
+            touchClone.style.opacity = '0.9';
+            touchClone.style.pointerEvents = 'none';
+            touchClone.style.transform = 'scale(1.05)';
+            touchClone.style.left = `${rect.left}px`;
+            touchClone.style.top = `${rect.top}px`;
+            document.body.appendChild(touchClone);
+
+            card.classList.add('dragging');
+          }, 120);
+        }, { passive: true });
 
         card.addEventListener('touchmove', (e) => {
-          if (!touchDraggingCard || !touchClone) return;
+          if (!isDragMode) {
+            // 아직 드래그 모드가 아니면 타이머 취소하고 화면 스크롤/슬라이드 허용
+            clearTimeout(touchTimer);
+            return;
+          }
+          // 드래그 모드 진입 시에는 화면 스크롤을 막고 열차 이동에 집중
           e.preventDefault();
           const touch = e.touches[0];
-          touchClone.style.left = `${touch.clientX - touchOffsetX}px`;
-          touchClone.style.top = `${touch.clientY - touchOffsetY}px`;
+          if (touchClone) {
+            touchClone.style.left = `${touch.clientX - touchOffsetX}px`;
+            touchClone.style.top = `${touch.clientY - touchOffsetY}px`;
+          }
 
-          // 손가락 아래의 드롭존 하이라이트
           const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
           const dropZone = elemBelow ? elemBelow.closest('.station-dropzone') : null;
 
@@ -534,7 +560,9 @@
         }, { passive: false });
 
         card.addEventListener('touchend', (e) => {
-          if (!touchDraggingCard) return;
+          clearTimeout(touchTimer);
+          if (!isDragMode) return;
+
           const touch = e.changedTouches[0];
           const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
           const dropZone = elemBelow ? elemBelow.closest('.station-dropzone') : null;
@@ -554,7 +582,15 @@
             touchDraggingCard = null;
           }
           draggedTrainId = null;
+          isDragMode = false;
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
+        });
+
+        card.addEventListener('touchcancel', () => {
+          clearTimeout(touchTimer);
+          if (touchClone) { touchClone.remove(); touchClone = null; }
+          if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
+          isDragMode = false;
         });
       });
 
