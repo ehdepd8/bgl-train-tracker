@@ -115,8 +115,8 @@
     <span id="toast-message">저장되었습니다.</span>
   </div>
 
-  <!-- 상단 컨트롤 헤더 -->
-  <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 sticky top-1 z-50 mb-3">
+  <!-- 상단 컨트롤 헤더 (sticky 고정 제거 완료) -->
+  <header class="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-xs flex flex-wrap items-center justify-between gap-3 mb-3">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#832569] to-[#b8328f] flex items-center justify-center text-white shadow-xs">
         <i class="fa-solid fa-train-subway text-sm"></i>
@@ -229,7 +229,7 @@
 
   <script>
     /* ========================================================
-       0. 사용자 전용 Firebase 설정 (완전 자동 연동)
+       0. 사용자 전용 Firebase 설정
     ======================================================== */
     const firebaseConfig = {
       apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
@@ -295,13 +295,11 @@
 
     const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_REAL_S';
 
-    // 클라우드 저장
     function syncToCloud() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trainsData));
       dbRef.set(trainsData);
     }
 
-    // 실시간 클라우드 감지 리스너
     function initRealtimeSync() {
       dbRef.on('value', (snapshot) => {
         const val = snapshot.val();
@@ -309,7 +307,6 @@
           trainsData = { ...trainsData, ...val };
           renderAllTrains();
         } else {
-          // 최초 실행 시 기본값 등록
           dbRef.set(trainsData);
         }
       });
@@ -526,8 +523,8 @@
       if (clientY > windowHeight - edgeThreshold) {
         const ratio = (clientY - (windowHeight - edgeThreshold)) / edgeThreshold;
         autoScrollSpeedY = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else if (clientY < edgeThreshold + 60) {
-        const ratio = ((edgeThreshold + 60) - clientY) / edgeThreshold;
+      } else if (clientY < edgeThreshold + 10) {
+        const ratio = ((edgeThreshold + 10) - clientY) / edgeThreshold;
         autoScrollSpeedY = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
       } else {
         autoScrollSpeedY = 0;
