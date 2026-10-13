@@ -13,6 +13,10 @@
   <!-- Pretendard Font -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   
+  <!-- Firebase 실시간 연동 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
   <style>
     body {
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -33,7 +37,7 @@
       box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25) !important;
     }
 
-    /* 열차 카드 */
+    /* 열차 카드 (터치 최적화) */
     .train-card {
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       cursor: grab;
@@ -59,7 +63,7 @@
       box-shadow: 0 0 0 2px rgba(219, 39, 119, 0.35);
     }
 
-    /* 화면 슬라이드 및 줌 컨테이너 */
+    /* 뷰포트 줌 래퍼 */
     #zoom-wrapper {
       transform-origin: 0 0;
       transition: transform 0.05s ease-out;
@@ -120,7 +124,9 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-sm font-bold text-slate-900 tracking-tight">부산김해경전철 열차 종합 운용 현황판</h1>
-          <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">1~25편성</span>
+          <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 공유 연결됨
+          </span>
         </div>
       </div>
       
@@ -137,9 +143,6 @@
     <div class="flex items-center gap-1.5 text-xs">
       <button id="btn-zoom-reset" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium border border-slate-300 transition flex items-center gap-1" title="화면 크기 100% 원복">
         <i class="fa-solid fa-magnifying-glass text-[11px]"></i> <span id="zoom-text">100%</span>
-      </button>
-      <button id="btn-save" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
-        <i class="fa-solid fa-floppy-disk text-[11px]"></i> 상태 저장
       </button>
       <button id="btn-return-all" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-md font-medium shadow-xs flex items-center gap-1 transition">
         <i class="fa-solid fa-warehouse text-[11px]"></i> 대기소 복귀
@@ -166,7 +169,7 @@
         <span id="depot-count" class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-semibold">25편성 대기중</span>
       </div>
       <div class="text-[11px] text-slate-400">
-        💡 열차를 화면 가장자리(위/아래)로 가져가면 화면이 자동으로 스크롤됩니다.
+        💡 열차를 옮기거나 이름을 입력하면 접속한 모든 기기에서 즉시 함께 변경됩니다.
       </div>
     </div>
 
@@ -226,6 +229,22 @@
 
   <script>
     /* ========================================================
+       0. 사용자 전용 Firebase 설정 (완전 자동 연동)
+    ======================================================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
+      authDomain: "bgl-train-tracker-e32b6.firebaseapp.com",
+      databaseURL: "https://bgl-train-tracker-e32b6-default-rtdb.firebaseio.com",
+      projectId: "bgl-train-tracker-e32b6",
+      storageBucket: "bgl-train-tracker-e32b6.firebasestorage.app",
+      messagingSenderId: "551417141815",
+      appId: "1:551417141815:web:7ab03c5840cc28bc5f3db2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('bgl_train_tracker_state');
+
+    /* ========================================================
        1. 노선 데이터 정의
     ======================================================== */
     const tier1Stations = [
@@ -275,30 +294,30 @@
     }
 
     const STORAGE_KEY = 'BGL_TRAIN_TRACKER_STATE_REAL_S';
-    function loadSavedData() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          trainsData = { ...trainsData, ...parsed };
-        }
-      } catch (e) {
-        console.error(e);
-      }
+
+    // 클라우드 저장
+    function syncToCloud() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trainsData));
+      dbRef.set(trainsData);
     }
 
-    function saveStateToStorageQuiet() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(trainsData));
-      } catch (e) {
-        console.error(e);
-      }
+    // 실시간 클라우드 감지 리스너
+    function initRealtimeSync() {
+      dbRef.on('value', (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          trainsData = { ...trainsData, ...val };
+          renderAllTrains();
+        } else {
+          // 최초 실행 시 기본값 등록
+          dbRef.set(trainsData);
+        }
+      });
     }
 
     /* ========================================================
        2. UI 렌더링 템플릿
     ======================================================== */
-
     function createTrainCardHTML(train) {
       return `
         <div id="${train.id}" 
@@ -402,7 +421,7 @@
     }
 
     /* ========================================================
-       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도 (행별 독립 색상)
+       3. 물리적 직결 'ㄹ'자 SVG 단일 궤도
     ======================================================== */
     function drawContinuousRail() {
       const captureArea = document.getElementById('capture-area');
@@ -456,6 +475,10 @@
     }
 
     function renderAllTrains() {
+      const activeInput = document.activeElement;
+      const activeTrainId = activeInput && activeInput.classList.contains('train-label-input') 
+                            ? activeInput.dataset.trainId : null;
+
       document.querySelectorAll('.station-dropzone').forEach(zone => {
         zone.querySelectorAll('.train-card').forEach(c => c.remove());
       });
@@ -479,11 +502,16 @@
       const countLabel = document.getElementById('depot-count');
       if (countLabel) countLabel.textContent = `${dockCount}편성 대기중`;
 
+      if (activeTrainId) {
+        const restoredInput = document.querySelector(`input[data-train-id="${activeTrainId}"]`);
+        if (restoredInput) restoredInput.focus();
+      }
+
       attachTrainEvents();
     }
 
     /* ========================================================
-       4. 드래그 엣지 감지 자동 스크롤 엔진 (Auto-Scroll)
+       4. 드래그 엣지 감지 자동 스크롤 엔진
     ======================================================== */
     let autoScrollSpeedX = 0;
     let autoScrollSpeedY = 0;
@@ -491,22 +519,20 @@
 
     function handleAutoScroll(clientX, clientY) {
       const scrollContainer = document.getElementById('scroll-container');
-      const edgeThreshold = 75; // 화면 끝에서 75px 이내 진입 시 자동 스크롤 시작
-      const maxSpeed = 16;      // 최대 스크롤 속도
+      const edgeThreshold = 75;
+      const maxSpeed = 16;
 
-      // 1. 세로 스크롤 (전체 윈도우 창 기준)
       const windowHeight = window.innerHeight;
       if (clientY > windowHeight - edgeThreshold) {
         const ratio = (clientY - (windowHeight - edgeThreshold)) / edgeThreshold;
         autoScrollSpeedY = Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
-      } else if (clientY < edgeThreshold + 60) { // 상단 헤더 고려
+      } else if (clientY < edgeThreshold + 60) {
         const ratio = ((edgeThreshold + 60) - clientY) / edgeThreshold;
         autoScrollSpeedY = -Math.min(maxSpeed, Math.max(3, ratio * maxSpeed));
       } else {
         autoScrollSpeedY = 0;
       }
 
-      // 2. 가로 스크롤 (노선도 컨테이너 기준)
       const cRect = scrollContainer.getBoundingClientRect();
       if (clientX > cRect.right - edgeThreshold) {
         const ratio = (clientX - (cRect.right - edgeThreshold)) / edgeThreshold;
@@ -526,16 +552,8 @@
     function autoScrollLoop() {
       if (autoScrollSpeedX !== 0 || autoScrollSpeedY !== 0) {
         const scrollContainer = document.getElementById('scroll-container');
-        
-        // 윈도우 세로 스크롤 이동
-        if (autoScrollSpeedY !== 0) {
-          window.scrollBy(0, autoScrollSpeedY);
-        }
-        // 노선도 가로 스크롤 이동
-        if (autoScrollSpeedX !== 0) {
-          scrollContainer.scrollLeft += autoScrollSpeedX;
-        }
-
+        if (autoScrollSpeedY !== 0) window.scrollBy(0, autoScrollSpeedY);
+        if (autoScrollSpeedX !== 0) scrollContainer.scrollLeft += autoScrollSpeedX;
         autoScrollRaf = requestAnimationFrame(autoScrollLoop);
       } else {
         cancelAnimationFrame(autoScrollRaf);
@@ -589,7 +607,6 @@
       );
     }
 
-    // 핀치 줌 이벤트
     scrollContainer.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
         clearTimeout(touchTimer);
@@ -615,14 +632,11 @@
     }, { passive: false });
 
     scrollContainer.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        initialPinchDist = 0;
-      }
+      if (e.touches.length < 2) initialPinchDist = 0;
     });
 
     function attachTrainEvents() {
       document.querySelectorAll('.train-card').forEach(card => {
-        // PC 마우스 드래그
         card.addEventListener('dragstart', (e) => {
           draggedTrainId = card.id;
           card.classList.add('dragging');
@@ -643,7 +657,6 @@
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
         });
 
-        // 스마트폰 / 태블릿 터치 드래그
         card.addEventListener('touchstart', (e) => {
           if (e.target.tagName.toLowerCase() === 'input' || e.touches.length > 1) return;
           const touch = e.touches[0];
@@ -692,7 +705,6 @@
             touchClone.style.top = `${touch.clientY - touchOffsetY}px`;
           }
 
-          // 드래그 중 화면 끝 도달 시 자동 스크롤 트리거
           handleAutoScroll(touch.clientX, touch.clientY);
 
           const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -713,18 +725,12 @@
 
           if (dropZone && trainsData[draggedTrainId]) {
             trainsData[draggedTrainId].location = dropZone.dataset.location;
-            renderAllTrains();
-            saveStateToStorageQuiet();
+            syncToCloud();
+            showToast('실시간 위치가 공유되었습니다.');
           }
 
-          if (touchClone) {
-            touchClone.remove();
-            touchClone = null;
-          }
-          if (touchDraggingCard) {
-            touchDraggingCard.classList.remove('dragging');
-            touchDraggingCard = null;
-          }
+          if (touchClone) { touchClone.remove(); touchClone = null; }
+          if (touchDraggingCard) { touchDraggingCard.classList.remove('dragging'); touchDraggingCard = null; }
           draggedTrainId = null;
           isDragMode = false;
           document.querySelectorAll('.station-dropzone').forEach(z => z.classList.remove('drag-over'));
@@ -739,13 +745,13 @@
         });
       });
 
-      // 이름 인라인 편집
       document.querySelectorAll('.train-label-input').forEach(input => {
         input.addEventListener('change', (e) => {
           const tId = e.target.dataset.trainId;
           if (trainsData[tId]) {
             trainsData[tId].label = e.target.value.trim();
-            saveStateToStorageQuiet();
+            syncToCloud();
+            showToast('편성 정보가 실시간 업데이트되었습니다.');
           }
         });
         input.addEventListener('keydown', (e) => {
@@ -777,15 +783,15 @@
           const trainId = e.dataTransfer.getData('text/plain') || draggedTrainId;
           if (trainId && trainsData[trainId]) {
             trainsData[trainId].location = zone.dataset.location;
-            renderAllTrains();
-            saveStateToStorageQuiet();
+            syncToCloud();
+            showToast('실시간 위치가 공유되었습니다.');
           }
         });
       });
     }
 
     /* ========================================================
-       6. 상단 컨트롤 버튼 동작 및 토스트 팝업 제어
+       6. 컨트롤 버튼 동작
     ======================================================== */
     let toastTimeout = null;
     function showToast(msg) {
@@ -801,25 +807,18 @@
       }, 2000);
     }
 
-    document.getElementById('btn-save').addEventListener('click', () => {
-      saveStateToStorageQuiet();
-      showToast('편성 배치 및 상태가 저장되었습니다.');
-    });
-
     document.getElementById('btn-return-all').addEventListener('click', () => {
-      if (confirm('모든 편성을 대기소로 복귀시키겠습니까?')) {
+      if (confirm('모든 편성을 대기소로 복귀시키겠습니까?\n(접속된 모든 기기에서 즉시 복귀됩니다)')) {
         Object.keys(trainsData).forEach(id => { trainsData[id].location = 'dock'; });
-        renderAllTrains();
-        saveStateToStorageQuiet();
+        syncToCloud();
         showToast('전체 편성이 대기소로 복귀되었습니다.');
       }
     });
 
     document.getElementById('btn-reset-names').addEventListener('click', () => {
-      if (confirm('모든 열차에 작성된 메모/이름을 초기화하시겠습니까?')) {
+      if (confirm('모든 열차에 작성된 메모/이름을 초기화하시겠습니까?\n(접속된 모든 기기에 반영됩니다)')) {
         Object.keys(trainsData).forEach(id => { trainsData[id].label = ''; });
-        renderAllTrains();
-        saveStateToStorageQuiet();
+        syncToCloud();
         showToast('텍스트가 초기화되었습니다.');
       }
     });
@@ -862,12 +861,12 @@
 
     /* 초기 실행 */
     window.addEventListener('DOMContentLoaded', () => {
-      loadSavedData();
       renderTrackLine('track-tier-1', tier1Stations);
       renderTrackLine('track-tier-2', tier2Stations);
       renderTrackLine('track-tier-3', tier3Stations);
       initDropZones();
-      renderAllTrains();
+      
+      initRealtimeSync();
 
       setTimeout(drawContinuousRail, 200);
     });
