@@ -279,7 +279,7 @@
     </div>
 
     <!-- 1-4 장신대 [9620] -->
-    <div class="station-card bg-white border border-slate-300 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="장신대 [9620]">
+    <div class="station-card bg-white border border-slate-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="장신대 [9620]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-slate-300">
         <span class="tracking-tight">장신대</span>
         <span class="font-mono text-xs font-semibold text-slate-500">[9620]</span>
@@ -335,7 +335,7 @@
 
     <!-- [2행 2~9열]: 김해시청 ~ 대저 -->
     <!-- 2-2 김해시청 [9614] -->
-    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="김해시청 [9614]">
+    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-300">
         <span class="tracking-tight">김해시청</span>
         <span class="font-mono text-xs font-semibold text-emerald-700">[9614]</span>
@@ -353,7 +353,7 @@
     </div>
 
     <!-- 2-4 김해대학 [9612] -->
-    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="김해대학 [9612]">
+    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해대학 [9612]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-300">
         <span class="tracking-tight">김해대학</span>
         <span class="font-mono text-xs font-semibold text-emerald-700">[9612]</span>
@@ -371,7 +371,7 @@
     </div>
 
     <!-- 2-6 불암 [9610] -->
-    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="불암 [9610]">
+    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="불암 [9610]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-300">
         <span class="tracking-tight">불암</span>
         <span class="font-mono text-xs font-semibold text-emerald-700">[9610]</span>
@@ -389,7 +389,7 @@
     </div>
 
     <!-- 2-8 평강 [9608] -->
-    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="평강 [9608]">
+    <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="평강 [9608]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-300">
         <span class="tracking-tight">평강</span>
         <span class="font-mono text-xs font-semibold text-emerald-700">[9608]</span>
@@ -444,7 +444,7 @@
     </div>
 
     <!-- 3-5 덕두 [9605] -->
-    <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs is-unmanned" data-zone-id="덕두 [9605]">
+    <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="덕두 [9605]">
       <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100 hover:bg-indigo-200 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
         <span class="tracking-tight">덕두</span>
         <span class="font-mono text-xs font-semibold text-indigo-700">[9605]</span>
@@ -673,7 +673,6 @@
 
       appState.awayStations[zoneId] = !appState.awayStations[zoneId];
       
-      // 화면 즉시 반영
       render();
       syncToCloud();
       showToast(`${zoneId} 외부 출장 상태가 변경되었습니다.`);
@@ -754,9 +753,11 @@
         }
       });
 
-      // 1인/2인/3인/다인 정렬 클래스 적용
+      // 1인/2인/3인/다인 정렬 클래스 적용 및 근무자 없는 모든 역사에 '무 인' 표기
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
+        if (!zoneId) return;
+
         const staffList = appState.staff.filter(s => s.location === zoneId);
         const dropzone = card.querySelector('.station-dropzone');
         if (!dropzone) return;
@@ -772,7 +773,8 @@
           dropzone.classList.add('count-many');
         }
 
-        if (staffList.length === 0 && card.classList.contains('is-unmanned')) {
+        // 근무자가 0명인 모든 역사 칸(열차 및 휴무자 제외)에 '무 인' 워터마크 표시
+        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
