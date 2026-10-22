@@ -621,7 +621,12 @@
       const savedLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedLocal) {
         try {
-          appState = JSON.parse(savedLocal);
+          const parsed = JSON.parse(savedLocal);
+          appState = {
+            trains: parsed.trains || DEFAULT_FLEET,
+            staff: parsed.staff || INITIAL_STAFF,
+            awayStations: parsed.awayStations || {}
+          };
           render();
         } catch (e) {}
       }
@@ -637,7 +642,6 @@
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
           render();
         } else {
-          // Firebase 초기 데이터 세팅
           dbRef.set(appState);
         }
       });
@@ -650,17 +654,29 @@
           staff: JSON.parse(JSON.stringify(INITIAL_STAFF)),
           awayStations: {}
         };
+        render();
         syncToCloud();
         showToast('초기 상태로 복원되었습니다.');
       }
     }
 
+    /* 역 헤더 클릭 시 즉시 화면에 외부 표시 & 흐려짐 적용 후 클라우드 동기화 */
     function toggleStationAway(headerEl) {
       const card = headerEl.closest('.station-card');
       if (!card) return;
       const zoneId = card.getAttribute('data-zone-id');
+      if (!zoneId) return;
+
+      if (!appState.awayStations) {
+        appState.awayStations = {};
+      }
+
       appState.awayStations[zoneId] = !appState.awayStations[zoneId];
+      
+      // 화면 즉시 반영
+      render();
       syncToCloud();
+      showToast(`${zoneId} 외부 출장 상태가 변경되었습니다.`);
     }
 
     function render() {
@@ -718,6 +734,7 @@
       const tr = appState.trains.find(t => t.id === trainId);
       if (tr) {
         tr.status = tr.status === 'active' ? 'depot' : 'active';
+        render();
         syncToCloud();
         showToast(`${tr.num}편성 운용 상태가 변경되었습니다.`);
       }
@@ -726,9 +743,11 @@
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
+      // 외부(is-away) 상태 반영
+      const awayMap = appState.awayStations || {};
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
-        if (appState.awayStations[zoneId]) {
+        if (zoneId && awayMap[zoneId]) {
           card.classList.add('is-away');
         } else {
           card.classList.remove('is-away');
@@ -903,6 +922,7 @@
       const staff = appState.staff.find(s => s.id === staffId);
       if (staff && staff.location !== newLocation) {
         staff.location = newLocation;
+        render();
         syncToCloud();
         showToast(`${staff.name} 근무자 배치가 변경되었습니다.`);
       }
@@ -924,7 +944,7 @@
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
-      // 215px 너비에 맞춘 정갈한 3분할 그리드 배지 (편성-이름-번호 간격 일정)
+      // 215px 너비에 맞춘 정갈한 3분할 그리드 배지
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
@@ -986,6 +1006,7 @@
         location,
         color
       });
+      render();
       syncToCloud();
       showToast(`${name} 근무자가 새로 등록되었습니다.`);
       closeAddModal();
@@ -1007,6 +1028,7 @@
       modal.querySelector('#del-cancel').onclick = () => modal.remove();
       modal.querySelector('#del-ok').onclick = () => {
         appState.staff = appState.staff.filter(s => s.id !== staff.id);
+        render();
         syncToCloud();
         showToast(`${staff.name} 근무자가 삭제되었습니다.`);
         modal.remove();
