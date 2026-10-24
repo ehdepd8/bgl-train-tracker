@@ -59,7 +59,7 @@
       gap: 3px;
     }
 
-    /* 9열 그리드: 1열(승무현황 215px) + 2~9열(8개 역사 균등 열) */
+    /* 9열 그리드: 1열(승무현황/특이사항 215px) + 2~9열(8개 역사 균등 열) */
     .matrix-layout-grid {
       display: grid;
       grid-template-columns: 215px repeat(8, minmax(0, 1fr));
@@ -141,26 +141,42 @@
       outline-offset: -2px;
     }
 
-    /* 역사 외부 출장/부재 모드 (흐리게 & 반투명) */
+    /* 역사 외부 출장/부재 모드 (시인성 극대화: 흑백화 + 빗금 사선 오버레이 + 강렬한 레드 뱃지) */
     .station-card.is-away {
-      opacity: 0.58;
-      filter: saturate(0.65);
+      position: relative;
+      background-color: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+    .station-card.is-away .station-dropzone {
+      filter: grayscale(85%) contrast(80%) opacity(0.45);
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(203, 213, 225, 0.35),
+        rgba(203, 213, 225, 0.35) 6px,
+        transparent 6px,
+        transparent 12px
+      ) !important;
+    }
+    .station-card.is-away .station-header {
+      filter: grayscale(60%) opacity(0.85);
       position: relative;
     }
     .station-card.is-away::after {
       content: '외 부';
       position: absolute;
-      top: 2px;
+      top: 3px;
       right: 4px;
       font-size: 11px;
       font-weight: 900;
-      background-color: #ef4444;
+      letter-spacing: 0.5px;
+      background-color: #dc2626;
       color: #ffffff;
-      padding: 0 4px;
-      border-radius: 3px;
+      padding: 1px 6px;
+      border-radius: 4px;
       pointer-events: none;
-      z-index: 10;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      z-index: 20;
+      box-shadow: 0 2px 4px rgba(220, 38, 38, 0.45);
+      border: 1px solid #ffffff;
     }
 
     /* 커스텀 스크롤 */
@@ -287,7 +303,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 9열 그리드 (1열: 승무현황 215px + 2~9열: 8개 역사 열) -->
+      <!-- 2. 중앙 메인: 9열 그리드 (1열: 승무현황 2칸 + 특이사항 1칸 / 2~9열: 8개 역사 열) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -433,8 +449,21 @@
           <div class="station-dropzone station-slot-height bg-white/80"></div>
         </div>
 
-        <!-- [3행 1열]: 승무현황 아래 빈공간 유지 -->
-        <div></div>
+        <!-- [3행 1열]: 좌측 하단 신설 '관제 특이사항' 실시간 메모 박스 -->
+        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
+          <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
+            <span class="flex items-center gap-1">
+              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 관제 특이사항
+            </span>
+            <span class="text-[9.5px] font-bold text-amber-900 opacity-80">실시간 연동</span>
+          </div>
+          <div class="p-1 flex-1 flex flex-col bg-white">
+            <textarea id="notice-memo-input" 
+                      placeholder="예: 4편성 통신불량 점검중&#10;특이사항 입력 시 전 기기 동기화" 
+                      class="w-full flex-1 p-1 text-xs font-semibold text-slate-800 bg-amber-50/30 rounded border border-amber-200 focus:outline-none focus:border-amber-500 focus:bg-white resize-none leading-relaxed custom-scroll"
+                      onchange="updateNoticeMemo(this.value)"></textarea>
+          </div>
+        </div>
 
         <!-- [3행 2~9열]: 김해시청 시작점부터 시작되는 사전점검 + 등구 ~ 사상 -->
         <div class="col-span-2 border-2 border-amber-400 rounded-md overflow-hidden shadow-xs flex flex-col bg-white">
@@ -539,7 +568,7 @@
       <div class="space-y-2.5 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1">성명</label>
-          <input type="text" id="input-name" placeholder="예: 김주연" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-sky-500">
+          <input type="text" id="input-name" placeholder="예: 홍길동" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-sky-500">
         </div>
         <div>
           <label class="block font-bold text-slate-700 mb-1">연락처</label>
@@ -564,42 +593,36 @@
         <div>
           <label class="block font-bold text-slate-700 mb-1">직무 및 팀 구분 (네임택 색상)</label>
           <div class="grid grid-cols-2 gap-1.5">
-            <!-- 일근자 (보라색 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="purple" class="accent-purple-700"> 일근자
               </span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
             </label>
-            <!-- 고객안전원 (하늘색 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#e0f2fe] border border-[#38bdf8] font-bold text-[#0369a1] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="skyblue" class="accent-sky-600"> 고객안전원
               </span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#0284c7]"></span>
             </label>
-            <!-- 1팀 (초록 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team1" checked class="accent-emerald-600"> 1팀
               </span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
             </label>
-            <!-- 2팀 (오렌지 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team2" class="accent-orange-600"> 2팀
               </span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
             </label>
-            <!-- 3팀 (황색 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team3" class="accent-yellow-500"> 3팀
               </span>
               <span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>
             </label>
-            <!-- 4팀 (블루 계열) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team4" class="accent-blue-600"> 4팀
@@ -634,28 +657,28 @@
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('bgl_dispatch_board_realtime_state_v1');
 
-    /* 1팀 기본 데이터 (팀별 및 직무별 색상 태그 매핑) */
+    /* 1팀 기본 데이터 */
     const INITIAL_STAFF = [
       { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
       { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
       { id: 'st-3', name: '양건영', phone: '010-2940-1766', location: '연지공원 [9619]', color: 'team1' },
-      { id: 'st-4', name: '장인석', phone: '010-4909-2225', location: '박물관 [9618]', color: 'purple' }, // 일근자
+      { id: 'st-4', name: '장인석', phone: '010-4909-2225', location: '박물관 [9618]', color: 'purple' },
       { id: 'st-5', name: '조대희', phone: '010-4021-8946', location: '수로왕릉 [9617]', color: 'team1' },
-      { id: 'st-6', name: '문동혁', phone: '010-7704-7853', location: '봉황 [9616]', color: 'team1', icon: 'smile' }, // 신입
+      { id: 'st-6', name: '문동혁', phone: '010-7704-7853', location: '봉황 [9616]', color: 'team1', icon: 'smile' },
       { id: 'st-7', name: '김경훈', phone: '010-7767-7962', location: '부원 [9615]', color: 'team1' },
       { id: 'st-8', name: '이상준', phone: '010-3015-2960', location: '인제대 [9613]', color: 'team1' },
       { id: 'st-9', name: '윤영진', phone: '010-9305-0587', location: '지내 [9611]', color: 'team1' },
       { id: 'st-10', name: '윤형중', phone: '010-4179-7465', location: '대사 [9609]', color: 'team1' },
       { id: 'st-11', name: '유재만', phone: '010-7457-0413', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-12', name: '김태욱', phone: '010-3839-4662', location: '대저 [9607]', color: 'purple' }, // 일근자
+      { id: 'st-12', name: '김태욱', phone: '010-3839-4662', location: '대저 [9607]', color: 'purple' },
       { id: 'st-13', name: '정재성', phone: '010-4607-3400', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' }, // 신입
+      { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' },
       { id: 'st-15', name: '이우진', phone: '010-9303-0702', location: '김해공항 [9604]', color: 'team1' },
       { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
       { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1' },
       { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'team3' },
       { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '휴무자', color: 'team1' },
-      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '휴무자', color: 'purple' }  // 일근자
+      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '휴무자', color: 'purple' }
     ];
 
     const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
@@ -668,12 +691,11 @@
     let appState = {
       trains: DEFAULT_FLEET,
       staff: INITIAL_STAFF,
-      awayStations: {}
+      awayStations: {},
+      noticeMemo: ''
     };
 
     const LOCAL_STORAGE_KEY = 'BGLRT_DISPATCH_BOARD_REALTIME_SYNC_STATE';
-
-    /* 모바일 전용 더블 탭 선택 상태 관리 */
     let selectedStaffIdForMove = null;
 
     /* 로컬 및 Firebase 양방향 실시간 동기화 */
@@ -690,7 +712,8 @@
           appState = {
             trains: parsed.trains || DEFAULT_FLEET,
             staff: parsed.staff || INITIAL_STAFF,
-            awayStations: parsed.awayStations || {}
+            awayStations: parsed.awayStations || {},
+            noticeMemo: parsed.noticeMemo || ''
           };
           render();
         } catch (e) {}
@@ -702,7 +725,8 @@
           appState = {
             trains: cloudData.trains || DEFAULT_FLEET,
             staff: cloudData.staff || INITIAL_STAFF,
-            awayStations: cloudData.awayStations || {}
+            awayStations: cloudData.awayStations || {},
+            noticeMemo: cloudData.noticeMemo || ''
           };
           localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
           render();
@@ -712,12 +736,20 @@
       });
     }
 
+    /* 특이사항 메모 실시간 업데이트 */
+    function updateNoticeMemo(val) {
+      appState.noticeMemo = val;
+      syncToCloud();
+      showToast('특이사항이 실시간 저장되었습니다.');
+    }
+
     function resetData() {
       if (confirm('모든 근무자 및 열차 배치를 기본 초기 상태로 복원하시겠습니까?\n(접속된 모든 기기에 즉시 반영됩니다)')) {
         appState = {
           trains: JSON.parse(JSON.stringify(DEFAULT_FLEET)),
           staff: JSON.parse(JSON.stringify(INITIAL_STAFF)),
-          awayStations: {}
+          awayStations: {},
+          noticeMemo: ''
         };
         selectedStaffIdForMove = null;
         render();
@@ -748,6 +780,12 @@
       renderStaffAndStations();
       renderStatistics();
       populateLocationOptions();
+
+      // 특이사항 메모창 업데이트
+      const memoInput = document.getElementById('notice-memo-input');
+      if (memoInput && document.activeElement !== memoInput) {
+        memoInput.value = appState.noticeMemo || '';
+      }
     }
 
     function renderTrains25Grid() {
@@ -968,7 +1006,6 @@
       stationCards.forEach(card => {
         card.addEventListener('touchend', (e) => {
           if (!selectedStaffIdForMove) return;
-
           if (e.target.closest('.nametag')) return;
 
           const newZone = card.getAttribute('data-zone-id');
