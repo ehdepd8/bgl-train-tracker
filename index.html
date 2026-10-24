@@ -44,7 +44,7 @@
     /* PC 관제 레이아웃 고정 규격 */
     .app-viewport-container {
       width: 1420px;
-      min-height: 760px;
+      min-height: 820px;
       height: 100vh;
       display: flex;
       flex-direction: column;
@@ -67,7 +67,7 @@
       gap: 4px;
     }
 
-    /* 네임택 드래그 상태 */
+    /* 네임택 기본 규격 (1인, 2인 및 휴무/대기자) */
     .nametag {
       cursor: grab;
       transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease;
@@ -95,9 +95,10 @@
       50% { outline-color: #ea580c; }
     }
 
-    /* 역사 드롭존 기본 높이 */
+    /* 역사 드롭존 기본 높이: 3인 탑승 시에도 잘리지 않도록 140px로 넉넉하게 확장 */
     .station-slot-height {
-      height: 104px;
+      min-height: 140px;
+      height: 100%;
     }
 
     /* 상하/좌우 완벽한 중앙 정렬 플렉스박스 */
@@ -107,7 +108,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2px;
+      padding: 3px 2px;
       gap: 3px;
     }
     .station-dropzone.count-1 {
@@ -118,15 +119,31 @@
     .station-dropzone.count-2 {
       justify-content: center;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
+    
+    /* 3인 탑승 시: 세로 잘림 완벽 방지 슬림 모드 */
     .station-dropzone.count-3 {
-      justify-content: center;
+      justify-content: space-evenly;
       align-items: center;
-      gap: 1.5px;
-      padding-top: 1px;
-      padding-bottom: 1px;
+      gap: 2px;
+      padding: 2px 1px;
     }
+    .station-dropzone.count-3 .nametag {
+      height: 42px !important;
+      padding-top: 1px !important;
+      padding-bottom: 1px !important;
+    }
+    .station-dropzone.count-3 .staff-name-text {
+      font-size: 16.5px !important;
+      line-height: 1.1 !important;
+    }
+    .station-dropzone.count-3 .staff-phone-text {
+      font-size: 11.5px !important;
+      line-height: 1 !important;
+      margin-top: 1px !important;
+    }
+
     .station-dropzone.count-many {
       justify-content: flex-start;
       align-items: center;
@@ -460,6 +477,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
+        <!-- 2-9 대저 [9607] (3명 배치 시에도 안 잘리는 최적화 드롭존) -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
           <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
             <span class="tracking-tight">대저</span>
@@ -554,7 +572,7 @@
 
       </main>
 
-      <!-- 3. 하단 구역: [휴무자] + [대기자 (왼쪽 정렬)] -->
+      <!-- 3. 하단 구역: [휴무자] + [대기자] -->
       <footer class="shrink-0 flex gap-1.5 w-full">
         <div class="flex-[6] max-w-[1020px] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
@@ -716,10 +734,7 @@
       { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '대기자', color: 'purple' }
     ];
 
-    /* 현재 활성화된 팀 (기본값: URL ?team=X 또는 1팀) */
     let currentTeamKey = 'team1';
-
-    /* 전역 애플리케이션 상태 (열차 25편성은 공통) */
     let sharedTrains = DEFAULT_FLEET;
 
     let teamsData = {
@@ -731,7 +746,6 @@
 
     let selectedStaffIdForMove = null;
 
-    /* URL 파라미터 확인 (?team=1 ~ ?team=4) */
     function checkUrlTeamParam() {
       const urlParams = new URLSearchParams(window.location.search);
       const teamParam = urlParams.get('team');
@@ -742,13 +756,11 @@
       }
     }
 
-    /* 팀 전환 함수 */
     function switchTeam(teamKey) {
       if (currentTeamKey === teamKey) return;
       currentTeamKey = teamKey;
       selectedStaffIdForMove = null;
 
-      // 탭 버튼 스타일 갱신
       document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`tab-${teamKey}`);
       if (activeBtn) activeBtn.classList.add('active');
@@ -760,7 +772,6 @@
       const modalTitle = document.getElementById('modal-team-title');
       if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
 
-      // 기본 라디오 색상도 해당 팀으로 자동 체크
       const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
       if (teamRadio) teamRadio.checked = true;
 
@@ -768,7 +779,6 @@
       showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
     }
 
-    /* Firebase 저장 */
     function syncTrainsToCloud() {
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
@@ -777,11 +787,9 @@
       rootDbRef.child(currentTeamKey).set(teamsData[currentTeamKey]);
     }
 
-    /* 실시간 연동 리스너 */
     function initRealtimeSync() {
       checkUrlTeamParam();
 
-      // 1) 25편성 열차 공통 상태 실시간 리스너
       rootDbRef.child('shared_trains').on('value', (snapshot) => {
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
@@ -793,7 +801,6 @@
         }
       });
 
-      // 2) 4개 팀별 근무 현황 실시간 리스너
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).on('value', (snapshot) => {
           const cloudTeam = snapshot.val();
@@ -807,7 +814,6 @@
               render();
             }
           } else {
-            // 초기 1팀만 기본 데이터 업로드
             if (tKey === 'team1') {
               syncCurrentTeamToCloud();
             }
@@ -815,7 +821,6 @@
         });
       });
 
-      // 탭 초기 버튼 활성화
       document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
       const initialTab = document.getElementById(`tab-${currentTeamKey}`);
       if (initialTab) initialTab.classList.add('active');
@@ -874,7 +879,6 @@
       }
     }
 
-    /* 1~25편성 헤더: 공통 열차 데이터 렌더링 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
@@ -923,7 +927,6 @@
       });
     }
 
-    /* 25편성 상태 전환: 공통 클라우드 동기화 */
     function toggleTrainStatus(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (tr) {
