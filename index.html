@@ -20,30 +20,28 @@
       user-select: none;
     }
 
+    /* 상하좌우 자유 스크롤 허용 및 터치 최적화 */
     html, body {
       width: 100%;
-      height: 100%;
+      min-height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #0f172a; /* 축소 시 배경 여백 */
-      overflow: hidden;
+      background-color: #f1f5f9;
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    /* PC 관제 기준 고정 작업 캔버스 (1440x780 기준) */
-    #dashboard-scaler {
-      width: 1440px;
-      height: 780px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform-origin: center center;
-      background-color: #f1f5f9;
+    /* PC 관제 레이아웃 최소 규격 보장 컨테이너 (모바일에서 끝까지 밀어서 볼 수 있음) */
+    .app-viewport-container {
+      min-width: 1420px;
+      min-height: 760px;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       padding: 8px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
     }
 
     /* 25열 균등 그리드 (1~25편성 한 줄 배치) */
@@ -187,8 +185,8 @@
 </head>
 <body>
 
-  <!-- 자동 스케일링 컨테이너 -->
-  <div id="dashboard-scaler">
+  <!-- 전체 레이아웃 유지 및 자유 스크롤 지원 래퍼 -->
+  <div class="app-viewport-container">
 
     <!-- 토스트 알림 -->
     <div id="toast">
@@ -266,7 +264,7 @@
     </section>
 
     <!-- 2. 중앙 메인: 9열 그리드 (1열: 승무현황 215px + 2~9열: 8개 역사 열) -->
-    <main class="flex-1 matrix-layout-grid min-h-0 w-full">
+    <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
       <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
       <div class="row-span-2 station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs">
@@ -486,7 +484,7 @@
     </main>
 
     <!-- 3. 하단 구역: 넓고 시원한 휴무자 와이드 구역 -->
-    <footer class="mt-1 shrink-0">
+    <footer class="shrink-0">
       <div class="w-full bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
         <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
           <div class="flex items-center gap-1.5 font-black text-slate-800">
@@ -1056,34 +1054,7 @@
       }
     }, 1000);
 
-    /* ========================================================
-       스마트폰 / 태블릿 자동 배율 축소 (Auto-Scale) 엔진
-    ======================================================== */
-    function adjustScale() {
-      const target = document.getElementById('dashboard-scaler');
-      if (!target) return;
-
-      const screenWidth = window.innerWidth;
-      const screenHeight = window.innerHeight;
-
-      const targetWidth = 1440;
-      const targetHeight = 780;
-
-      // 화면 너비와 높이 중 더 많이 줄여야 하는 축에 맞춤
-      const scaleX = screenWidth / targetWidth;
-      const scaleY = screenHeight / targetHeight;
-      const scale = Math.min(scaleX, scaleY, 1.0); // PC 화면 이상은 1.0 유지
-
-      target.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    }
-
-    window.addEventListener('resize', adjustScale);
-    window.addEventListener('orientationchange', () => {
-      setTimeout(adjustScale, 200);
-    });
-
     window.onload = function() {
-      adjustScale();
       initRealtimeSync();
     };
   </script>
