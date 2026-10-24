@@ -141,7 +141,7 @@
       outline-offset: -2px;
     }
 
-    /* 역사 외부 출장/부재 모드 (시인성 극대화) */
+    /* 역사 외부 출장/부재 모드 */
     .station-card.is-away {
       position: relative;
       background-color: #f1f5f9 !important;
@@ -303,7 +303,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 9열 그리드 (행별 관리역 테마 색상 분리) -->
+      <!-- 2. 중앙 메인: 9열 그리드 (관리역별 전체 역사 헤더/테두리 통일) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -320,7 +320,7 @@
         </div>
 
         <!-- ==========================================
-             [1행]: 1관리역 구역 (로즈/버건디 테마)
+             [1행]: 1관리역 구역 (일반역사 규격 로즈 톤 일괄 통일)
         ========================================== -->
         <!-- 1-2 기지입환 -->
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
@@ -332,12 +332,12 @@
         </div>
 
         <!-- 1-3 가야대 [9621] -->
-        <div class="station-card bg-white border-2 border-rose-500 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="가야대 [9621]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-600 hover:bg-rose-700 text-white font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-700">
+        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="가야대 [9621]">
+          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
             <span class="tracking-tight">가야대</span>
-            <span class="font-mono text-xs font-semibold text-rose-100">[9621]</span>
+            <span class="font-mono text-xs font-semibold text-rose-700">[9621]</span>
           </div>
-          <div class="station-dropzone station-slot-height bg-rose-50/20"></div>
+          <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <!-- 1-4 장신대 [9620] -->
@@ -386,20 +386,20 @@
         </div>
 
         <!-- 1-9 부원 [9615] -->
-        <div class="station-card bg-white border-2 border-rose-500 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="부원 [9615]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-600 hover:bg-rose-700 text-white font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-700">
+        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="부원 [9615]">
+          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
             <span class="tracking-tight">부원</span>
-            <span class="font-mono text-xs font-semibold text-rose-100">[9615]</span>
+            <span class="font-mono text-xs font-semibold text-rose-700">[9615]</span>
           </div>
-          <div class="station-dropzone station-slot-height bg-rose-50/20"></div>
+          <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <!-- ==========================================
-             [2행]: 2관리역 구역 (에메랄드/그린 테마)
+             [2행]: 2관리역 구역 (일반역사 규격 에메랄드 톤 일괄 통일)
         ========================================== -->
         <!-- 2-2 김해시청 [9614] -->
-        <div class="station-card bg-white border-2 border-emerald-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-300">
+        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
+          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
             <span class="tracking-tight">김해시청</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9614]</span>
           </div>
@@ -460,17 +460,17 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 2-9 대저 [9607] (환승역) -->
-        <div class="station-card bg-emerald-50/50 border-2 border-emerald-500 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-600">
+        <!-- 2-9 대저 [9607] -->
+        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
+          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
             <span class="tracking-tight">대저</span>
-            <span class="font-mono text-xs font-semibold text-white bg-emerald-700/60 px-1 rounded">[9607]</span>
+            <span class="font-mono text-xs font-semibold text-emerald-700">[9607]</span>
           </div>
-          <div class="station-dropzone station-slot-height bg-white/80"></div>
+          <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <!-- ==========================================
-             [3행]: 관제 특이사항 + 사전점검 + 3관리역 (인디고/블루 테마)
+             [3행]: 특이사항 + 사전점검 + 3관리역 (일반역사 규격 인디고 톤 일괄 통일)
         ========================================== -->
         <!-- [3행 1열]: 좌측 하단 관제 특이사항 메모 박스 -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
@@ -554,13 +554,13 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 3-9 사상 [9601] (환승역) -->
-        <div class="station-card bg-indigo-50/50 border-2 border-indigo-600 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="사상 [9601]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-700">
+        <!-- 3-9 사상 [9601] -->
+        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="사상 [9601]">
+          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
             <span class="tracking-tight">사상</span>
-            <span class="font-mono text-xs font-semibold text-indigo-100 bg-indigo-800/60 px-1 rounded">[9601]</span>
+            <span class="font-mono text-xs font-semibold text-indigo-700">[9601]</span>
           </div>
-          <div class="station-dropzone station-slot-height bg-white/80"></div>
+          <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
       </main>
