@@ -41,7 +41,7 @@
       height: max-content;
     }
 
-    /* PC 관제 레이아웃 고정 규격: 모바일에서 눌리지 않도록 min-height 확보 */
+    /* PC 관제 레이아웃 고정 규격 */
     .app-viewport-container {
       width: 1420px;
       min-height: 860px;
@@ -58,7 +58,7 @@
       gap: 3px;
     }
 
-    /* 9열 그리드: 행별 최소 168px 높이를 보장하여 50px 네임택 3개가 여유 있게 수용 */
+    /* 9열 그리드: 행별 168px 보장 */
     .matrix-layout-grid {
       display: grid;
       grid-template-columns: 215px repeat(8, minmax(0, 1fr));
@@ -66,7 +66,7 @@
       gap: 4px;
     }
 
-    /* 네임택 기본 규격 (1인, 2인, 3인 모두 100% 동일한 50px 고정) */
+    /* 네임택 기본 규격 (1인, 2인, 3인 모두 항상 50px 고정) */
     .nametag {
       cursor: grab;
       transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease;
@@ -94,13 +94,13 @@
       50% { outline-color: #ea580c; }
     }
 
-    /* 역사 드롭존: 3명이 들어가도 네임택 크기 축소 없이 100% 여유 있는 높이 */
+    /* 역사 드롭존 기본 높이 */
     .station-slot-height {
       min-height: 136px;
       height: 100%;
     }
 
-    /* 상하/좌우 완벽한 중앙 정렬 플렉스박스 */
+    /* 상하/좌우 완벽한 중앙 정렬 플렉스박스 (역사 칸 전용) */
     .station-dropzone {
       height: 100%;
       display: flex;
@@ -120,7 +120,6 @@
       align-items: center;
       gap: 6px;
     }
-    /* 3인 탑승 시에도 크기 줄임 없이 상하 균등 정렬 */
     .station-dropzone.count-3 {
       justify-content: space-evenly;
       align-items: center;
@@ -132,6 +131,18 @@
       align-items: center;
       overflow-y: auto;
       gap: 2px;
+    }
+
+    /* 하단 휴무자 전용 드롭존: 무조건 왼쪽부터 차례차례 배치 */
+    .off-duty-dropzone {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+      align-content: flex-start !important;
+      justify-content: flex-start !important;
+      gap: 8px !important;
+      padding: 6px !important;
     }
 
     /* 드롭 하이라이트 */
@@ -189,7 +200,7 @@
       border-radius: 4px;
     }
 
-    /* 팀 선택 탭 버튼 스타일 */
+    /* 팀 선택 탭 버튼 */
     .team-tab-btn {
       transition: all 0.15s ease;
     }
@@ -460,7 +471,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 2-9 대저 [9607] (3명 배치 시에도 네임택 크기 축소 없이 100% 수용) -->
+        <!-- 2-9 대저 [9607] -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
           <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
             <span class="tracking-tight">대저</span>
@@ -555,9 +566,9 @@
 
       </main>
 
-      <!-- 3. 하단 구역: [휴무자] + [대기자] -->
-      <footer class="shrink-0 flex gap-1.5 w-full mt-1">
-        <div class="flex-[6] max-w-[1020px] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
+      <!-- 3. 하단 구역: [휴무자 단일 와이드 구역 (왼쪽부터 차례대로 정렬)] -->
+      <footer class="shrink-0 w-full mt-1">
+        <div class="w-full bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
               <i class="fa-solid fa-bed text-amber-500"></i>
@@ -565,19 +576,7 @@
             </div>
             <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
           </div>
-          <div class="station-dropzone custom-scroll flex-1 min-h-[58px] max-h-[66px] flex flex-row flex-wrap content-start items-center justify-start gap-1.5 overflow-y-auto bg-slate-50/60 p-1 rounded border border-slate-200">
-          </div>
-        </div>
-
-        <div class="flex-[3] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="대기자">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
-            <div class="flex items-center gap-1.5 font-black text-slate-800">
-              <i class="fa-solid fa-clock-rotate-left text-sky-600"></i>
-              <span>대 기 자</span>
-            </div>
-            <span id="badge-standby-count" class="font-black text-xs px-2 py-0.2 rounded bg-sky-100 text-sky-800 border border-sky-300">0명</span>
-          </div>
-          <div class="station-dropzone custom-scroll flex-1 min-h-[58px] max-h-[66px] flex flex-row flex-wrap content-start items-center justify-start gap-1.5 overflow-y-auto bg-slate-50/60 p-1 rounded border border-slate-200">
+          <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] max-h-[72px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200">
           </div>
         </div>
       </footer>
@@ -713,8 +712,8 @@
       { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
       { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1' },
       { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'team3' },
-      { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '대기자', color: 'team1' },
-      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '대기자', color: 'purple' }
+      { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '휴무자', color: 'team1' },
+      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '휴무자', color: 'purple' }
     ];
 
     let currentTeamKey = 'team1';
@@ -957,7 +956,7 @@
           dropzone.classList.add('count-many');
         }
 
-        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '대기자' && zoneId !== '승무현황') {
+        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
@@ -976,7 +975,6 @@
       attachEvents();
     }
 
-    /* 1인, 2인, 3인 모두 항상 50px, 성명 19px, 번호 13.5px 크기 유지 */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -991,7 +989,7 @@
           <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
         `;
       } else {
-        el.className = `nametag w-[94%] max-w-[136px] h-[50px] rounded-md px-1.5 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        el.className = `nametag w-[136px] h-[50px] rounded-md px-1.5 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-0.5 text-xs select-none" title="신입 사원">😊</span>` : '';
 
         el.innerHTML = `
@@ -1138,13 +1136,8 @@
       const offStaff = currentStaff.filter(s => s.location === '휴무자');
       document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
 
-      const standbyStaff = currentStaff.filter(s => s.location === '대기자');
-      const badgeStandby = document.getElementById('badge-standby-count');
-      if (badgeStandby) {
-        badgeStandby.textContent = `${standbyStaff.length}명`;
-      }
-
-      const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '대기자').length;
+      /* 총원: 현재 팀 근무자 중 휴무자를 제외한 실제 근무 인원 집계 */
+      const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
       const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
@@ -1181,7 +1174,7 @@
       let opts = `<optgroup label="역사">`;
       document.querySelectorAll('.station-card').forEach(c => {
         const id = c.getAttribute('data-zone-id');
-        if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '대기자' && id !== '승무현황') {
+        if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '승무현황') {
           opts += `<option value="${id}">${id}</option>`;
         }
       });
@@ -1189,7 +1182,7 @@
       sharedTrains.forEach(t => {
         opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : '기지'})</option>`;
       });
-      opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option><option value="대기자">대기자</option></optgroup>`;
+      opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option></optgroup>`;
       sel.innerHTML = opts;
     }
 
