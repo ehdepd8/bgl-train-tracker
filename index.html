@@ -189,6 +189,17 @@
       border-radius: 4px;
     }
 
+    /* 팀 선택 탭 버튼 스타일 */
+    .team-tab-btn {
+      transition: all 0.15s ease;
+    }
+    .team-tab-btn.active {
+      background-color: #0284c7;
+      color: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
+    }
+
     /* 토스트 알림 */
     #toast {
       position: fixed;
@@ -239,6 +250,15 @@
             <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900">
               팀별근무자배치
             </h1>
+            
+            <!-- 1팀 ~ 4팀 전환 탭 -->
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
+              <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">1팀</button>
+              <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">2팀</button>
+              <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">3팀</button>
+              <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">4팀</button>
+            </div>
+
             <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
             </span>
@@ -285,12 +305,12 @@
         </div>
       </header>
 
-      <!-- 1. 상단 25편성 한 줄 꽉 찬 배치 (1~25편성 가로 25분할) -->
+      <!-- 1. 상단 25편성 한 줄 꽉 찬 배치 (1~25편성 공통 운용) -->
       <section class="bg-white border border-slate-300 rounded-lg p-1 shadow-xs shrink-0 mb-1">
         <div class="flex items-center justify-between text-[11px] mb-0.5 px-1">
           <div class="font-black text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-arrows-split-up-and-left text-blue-600"></i>
-            열차 편성 운용 (1 ~ 25편성)
+            열차 편성 운용 (1 ~ 25편성 공통)
             <span class="text-slate-400 font-normal ml-1">클릭 시 운행(본선) ↔ 기지(대기) 상태 전환 | 1인 승무 드롭존</span>
           </div>
           <div class="flex items-center gap-2 font-bold text-[10px]">
@@ -302,7 +322,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 9열 그리드 (관리역별 전체 역사 헤더/테두리 통일) -->
+      <!-- 2. 중앙 메인: 9열 그리드 -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -454,7 +474,7 @@
             <span class="flex items-center gap-1">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
             </span>
-            <span class="text-[9.5px] font-bold text-amber-900 opacity-80">실시간 연동</span>
+            <span id="current-memo-team-badge" class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1 rounded">1팀</span>
           </div>
           <div class="p-1 flex-1 flex flex-col bg-white">
             <textarea id="notice-memo-input" 
@@ -536,7 +556,6 @@
 
       <!-- 3. 하단 구역: [휴무자] + [대기자 (왼쪽 정렬)] -->
       <footer class="shrink-0 flex gap-1.5 w-full">
-        <!-- 3-A. 휴 무 자 -->
         <div class="flex-[6] max-w-[1020px] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
@@ -549,7 +568,6 @@
           </div>
         </div>
 
-        <!-- 3-B. 대 기 자 (왼쪽 정렬) -->
         <div class="flex-[3] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="대기자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
@@ -571,7 +589,7 @@
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
         <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-user-plus text-sky-600"></i> 근무자 등록
+          <i class="fa-solid fa-user-plus text-sky-600"></i> 근무자 등록 (<span id="modal-team-title">1팀</span>)
         </h3>
         <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -664,10 +682,18 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('bgl_dispatch_board_realtime_state_v1');
+    const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
 
-    /* 1팀 기본 데이터 */
-    const INITIAL_STAFF = [
+    /* 열차 25편성 기본 상태 (전체 4개 팀 공통 공유) */
+    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
+      id: `train-${i + 1}`,
+      num: i + 1,
+      name: `${i + 1}편성`,
+      status: i + 1 <= 16 ? 'active' : 'depot'
+    }));
+
+    /* 1팀 초기 기본 데이터 */
+    const INITIAL_STAFF_TEAM1 = [
       { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
       { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
       { id: 'st-3', name: '양건영', phone: '010-2940-1766', location: '연지공원 [9619]', color: 'team1' },
@@ -690,78 +716,133 @@
       { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '대기자', color: 'purple' }
     ];
 
-    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
-      id: `train-${i + 1}`,
-      num: i + 1,
-      name: `${i + 1}편성`,
-      status: i + 1 <= 16 ? 'active' : 'depot'
-    }));
+    /* 현재 활성화된 팀 (기본값: URL ?team=X 또는 1팀) */
+    let currentTeamKey = 'team1';
 
-    let appState = {
-      trains: DEFAULT_FLEET,
-      staff: INITIAL_STAFF,
-      awayStations: {},
-      noticeMemo: ''
+    /* 전역 애플리케이션 상태 (열차 25편성은 공통) */
+    let sharedTrains = DEFAULT_FLEET;
+
+    let teamsData = {
+      team1: { staff: INITIAL_STAFF_TEAM1, awayStations: {}, noticeMemo: '' },
+      team2: { staff: [], awayStations: {}, noticeMemo: '' },
+      team3: { staff: [], awayStations: {}, noticeMemo: '' },
+      team4: { staff: [], awayStations: {}, noticeMemo: '' }
     };
 
-    const LOCAL_STORAGE_KEY = 'BGLRT_DISPATCH_BOARD_REALTIME_SYNC_STATE';
     let selectedStaffIdForMove = null;
 
-    function syncToCloud() {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-      dbRef.set(appState);
+    /* URL 파라미터 확인 (?team=1 ~ ?team=4) */
+    function checkUrlTeamParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const teamParam = urlParams.get('team');
+      if (teamParam && ['1', '2', '3', '4'].includes(teamParam)) {
+        currentTeamKey = `team${teamParam}`;
+      } else if (teamParam && ['team1', 'team2', 'team3', 'team4'].includes(teamParam)) {
+        currentTeamKey = teamParam;
+      }
     }
 
-    function initRealtimeSync() {
-      const savedLocal = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedLocal) {
-        try {
-          const parsed = JSON.parse(savedLocal);
-          appState = {
-            trains: parsed.trains || DEFAULT_FLEET,
-            staff: parsed.staff || INITIAL_STAFF,
-            awayStations: parsed.awayStations || {},
-            noticeMemo: parsed.noticeMemo || ''
-          };
-          render();
-        } catch (e) {}
-      }
+    /* 팀 전환 함수 */
+    function switchTeam(teamKey) {
+      if (currentTeamKey === teamKey) return;
+      currentTeamKey = teamKey;
+      selectedStaffIdForMove = null;
 
-      dbRef.on('value', (snapshot) => {
-        const cloudData = snapshot.val();
-        if (cloudData) {
-          appState = {
-            trains: cloudData.trains || DEFAULT_FLEET,
-            staff: cloudData.staff || INITIAL_STAFF,
-            awayStations: cloudData.awayStations || {},
-            noticeMemo: cloudData.noticeMemo || ''
-          };
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
-          render();
+      // 탭 버튼 스타일 갱신
+      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-${teamKey}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const teamNum = teamKey.replace('team', '');
+      const memoBadge = document.getElementById('current-memo-team-badge');
+      if (memoBadge) memoBadge.textContent = `${teamNum}팀`;
+
+      const modalTitle = document.getElementById('modal-team-title');
+      if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
+
+      // 기본 라디오 색상도 해당 팀으로 자동 체크
+      const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
+      if (teamRadio) teamRadio.checked = true;
+
+      render();
+      showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
+    }
+
+    /* Firebase 저장 */
+    function syncTrainsToCloud() {
+      rootDbRef.child('shared_trains').set(sharedTrains);
+    }
+
+    function syncCurrentTeamToCloud() {
+      rootDbRef.child(currentTeamKey).set(teamsData[currentTeamKey]);
+    }
+
+    /* 실시간 연동 리스너 */
+    function initRealtimeSync() {
+      checkUrlTeamParam();
+
+      // 1) 25편성 열차 공통 상태 실시간 리스너
+      rootDbRef.child('shared_trains').on('value', (snapshot) => {
+        const cloudTrains = snapshot.val();
+        if (cloudTrains) {
+          sharedTrains = cloudTrains;
+          renderTrains25Grid();
+          renderStatistics();
         } else {
-          dbRef.set(appState);
+          syncTrainsToCloud();
         }
       });
+
+      // 2) 4개 팀별 근무 현황 실시간 리스너
+      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
+        rootDbRef.child(tKey).on('value', (snapshot) => {
+          const cloudTeam = snapshot.val();
+          if (cloudTeam) {
+            teamsData[tKey] = {
+              staff: cloudTeam.staff || [],
+              awayStations: cloudTeam.awayStations || {},
+              noticeMemo: cloudTeam.noticeMemo || ''
+            };
+            if (currentTeamKey === tKey) {
+              render();
+            }
+          } else {
+            // 초기 1팀만 기본 데이터 업로드
+            if (tKey === 'team1') {
+              syncCurrentTeamToCloud();
+            }
+          }
+        });
+      });
+
+      // 탭 초기 버튼 활성화
+      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const initialTab = document.getElementById(`tab-${currentTeamKey}`);
+      if (initialTab) initialTab.classList.add('active');
+
+      const teamNum = currentTeamKey.replace('team', '');
+      document.getElementById('current-memo-team-badge').textContent = `${teamNum}팀`;
+      document.getElementById('modal-team-title').textContent = `${teamNum}팀`;
     }
 
     function updateNoticeMemo(val) {
-      appState.noticeMemo = val;
-      syncToCloud();
+      teamsData[currentTeamKey].noticeMemo = val;
+      syncCurrentTeamToCloud();
       showToast('특이사항이 실시간 저장되었습니다.');
     }
 
     function resetData() {
-      if (confirm('모든 근무자 및 열차 배치를 기본 초기 상태로 복원하시겠습니까?\n(접속된 모든 기기에 즉시 반영됩니다)')) {
-        appState = {
-          trains: JSON.parse(JSON.stringify(DEFAULT_FLEET)),
-          staff: JSON.parse(JSON.stringify(INITIAL_STAFF)),
+      const teamNum = currentTeamKey.replace('team', '');
+      if (confirm(`현재 [${teamNum}팀] 근무자 배치 및 특이사항을 초기화하시겠습니까?\n(공통 25편성 열차 상태는 그대로 유지됩니다)`)) {
+        teamsData[currentTeamKey] = {
+          staff: currentTeamKey === 'team1' ? JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1)) : [],
           awayStations: {},
           noticeMemo: ''
         };
         selectedStaffIdForMove = null;
         render();
-        syncToCloud();
-        showToast('초기 상태로 복원되었습니다.');
+        syncCurrentTeamToCloud();
+        showToast(`${teamNum}팀 데이터가 초기화되었습니다.`);
       }
     }
 
@@ -771,14 +852,12 @@
       const zoneId = card.getAttribute('data-zone-id');
       if (!zoneId) return;
 
-      if (!appState.awayStations) {
-        appState.awayStations = {};
-      }
-
-      appState.awayStations[zoneId] = !appState.awayStations[zoneId];
+      const currentTeam = teamsData[currentTeamKey];
+      if (!currentTeam.awayStations) currentTeam.awayStations = {};
+      currentTeam.awayStations[zoneId] = !currentTeam.awayStations[zoneId];
       
       render();
-      syncToCloud();
+      syncCurrentTeamToCloud();
       showToast(`${zoneId} 외부 출장 상태가 변경되었습니다.`);
     }
 
@@ -789,17 +868,21 @@
       populateLocationOptions();
 
       const memoInput = document.getElementById('notice-memo-input');
+      const currentTeam = teamsData[currentTeamKey];
       if (memoInput && document.activeElement !== memoInput) {
-        memoInput.value = appState.noticeMemo || '';
+        memoInput.value = currentTeam.noticeMemo || '';
       }
     }
 
+    /* 1~25편성 헤더: 공통 열차 데이터 렌더링 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
 
-      appState.trains.forEach(t => {
-        const ridingStaff = appState.staff.filter(s => s.location === t.id);
+      const currentStaff = teamsData[currentTeamKey].staff || [];
+
+      sharedTrains.forEach(t => {
+        const ridingStaff = currentStaff.filter(s => s.location === t.id);
         const isActive = t.status === 'active';
 
         const trainBox = document.createElement('div');
@@ -817,7 +900,7 @@
             ? 'bg-emerald-500 text-white border-emerald-600' 
             : 'bg-slate-200 text-slate-600 border-slate-300'
         }`;
-        header.title = '클릭: 운행 ↔ 기지 전환';
+        header.title = '클릭: 운행 ↔ 기지 전환 (전체 팀 공통 반영)';
         header.onclick = (e) => {
           e.stopPropagation();
           toggleTrainStatus(t.id);
@@ -840,20 +923,24 @@
       });
     }
 
+    /* 25편성 상태 전환: 공통 클라우드 동기화 */
     function toggleTrainStatus(trainId) {
-      const tr = appState.trains.find(t => t.id === trainId);
+      const tr = sharedTrains.find(t => t.id === trainId);
       if (tr) {
         tr.status = tr.status === 'active' ? 'depot' : 'active';
-        render();
-        syncToCloud();
-        showToast(`${tr.num}편성 운용 상태가 변경되었습니다.`);
+        renderTrains25Grid();
+        renderStatistics();
+        syncTrainsToCloud();
+        showToast(`${tr.num}편성 상태가 변경되었습니다. (전체 팀 공통)`);
       }
     }
 
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
-      const awayMap = appState.awayStations || {};
+      const currentTeam = teamsData[currentTeamKey];
+      const awayMap = currentTeam.awayStations || {};
+
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (zoneId && awayMap[zoneId]) {
@@ -863,11 +950,13 @@
         }
       });
 
+      const currentStaff = currentTeam.staff || [];
+
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
 
-        const staffList = appState.staff.filter(s => s.location === zoneId);
+        const staffList = currentStaff.filter(s => s.location === zoneId);
         const dropzone = card.querySelector('.station-dropzone');
         if (!dropzone) return;
 
@@ -887,7 +976,7 @@
         }
       });
 
-      appState.staff.forEach(staff => {
+      currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
           const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
@@ -968,6 +1057,7 @@
       const dropzones = document.querySelectorAll('.station-dropzone');
       const stationCards = document.querySelectorAll('.station-card');
 
+      /* PC 마우스 드래그 앤 드롭 */
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
@@ -980,6 +1070,7 @@
           document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
         });
 
+        /* 모바일 더블 탭 선택 이동 */
         tag.addEventListener('touchend', (e) => {
           const currentTime = Date.now();
           const tapLength = currentTime - lastTapTime;
@@ -993,7 +1084,7 @@
               showToast('선택이 해제되었습니다.');
             } else {
               selectedStaffIdForMove = tag.id;
-              const staff = appState.staff.find(s => s.id === tag.id);
+              const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
               showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸을 터치하세요.`);
             }
             render();
@@ -1004,6 +1095,7 @@
         });
       });
 
+      /* 모바일: 선택 상태에서 목표 칸 터치 이동 */
       stationCards.forEach(card => {
         card.addEventListener('touchend', (e) => {
           if (!selectedStaffIdForMove) return;
@@ -1019,6 +1111,7 @@
         });
       });
 
+      /* PC 마우스 드롭존 이벤트 */
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -1041,35 +1134,38 @@
     }
 
     function moveStaff(staffId, newLocation) {
-      const staff = appState.staff.find(s => s.id === staffId);
+      const staffList = teamsData[currentTeamKey].staff;
+      const staff = staffList.find(s => s.id === staffId);
       if (staff && staff.location !== newLocation) {
         staff.location = newLocation;
         render();
-        syncToCloud();
+        syncCurrentTeamToCloud();
         showToast(`${staff.name} 근무자가 이동 배치되었습니다.`);
       }
     }
 
     function renderStatistics() {
-      const activeTrains = appState.trains.filter(t => t.status === 'active').length;
-      const depotTrains = appState.trains.filter(t => t.status === 'depot').length;
+      const activeTrains = sharedTrains.filter(t => t.status === 'active').length;
+      const depotTrains = sharedTrains.filter(t => t.status === 'depot').length;
       document.getElementById('stat-active').textContent = activeTrains;
       document.getElementById('stat-depot').textContent = depotTrains;
 
-      const offStaff = appState.staff.filter(s => s.location === '휴무자');
+      const currentStaff = teamsData[currentTeamKey].staff || [];
+
+      const offStaff = currentStaff.filter(s => s.location === '휴무자');
       document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
 
-      const standbyStaff = appState.staff.filter(s => s.location === '대기자');
+      const standbyStaff = currentStaff.filter(s => s.location === '대기자');
       const badgeStandby = document.getElementById('badge-standby-count');
       if (badgeStandby) {
         badgeStandby.textContent = `${standbyStaff.length}명`;
       }
 
-      /* 총원: 전체 인원 중 휴무자와 대기자를 제외한 인원만 집계 */
-      const activeDutyCount = appState.staff.filter(s => s.location !== '휴무자' && s.location !== '대기자').length;
+      /* 총원: 현재 팀 근무자 중 휴무자/대기자를 제외한 인원만 집계 */
+      const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '대기자').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
-      const trainStaff = appState.staff.filter(s => s.location.startsWith('train-'));
+      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
         trainBadge.textContent = `${trainStaff.length}명`;
@@ -1108,7 +1204,7 @@
         }
       });
       opts += `</optgroup><optgroup label="열차 직접 탑승">`;
-      appState.trains.forEach(t => {
+      sharedTrains.forEach(t => {
         opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : '기지'})</option>`;
       });
       opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option><option value="대기자">대기자</option></optgroup>`;
@@ -1134,7 +1230,9 @@
       const isNewbie = document.getElementById('input-is-newbie').checked;
 
       if (!name) return;
-      appState.staff.push({
+
+      const currentTeam = teamsData[currentTeamKey];
+      currentTeam.staff.push({
         id: 'st-' + Date.now(),
         name,
         phone,
@@ -1143,7 +1241,7 @@
         icon: isNewbie ? 'smile' : null
       });
       render();
-      syncToCloud();
+      syncCurrentTeamToCloud();
       showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 새로 등록되었습니다.`);
       closeAddModal();
     }
@@ -1163,9 +1261,9 @@
       document.body.appendChild(modal);
       modal.querySelector('#del-cancel').onclick = () => modal.remove();
       modal.querySelector('#del-ok').onclick = () => {
-        appState.staff = appState.staff.filter(s => s.id !== staff.id);
+        teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
         render();
-        syncToCloud();
+        syncCurrentTeamToCloud();
         showToast(`${staff.name} 근무자가 삭제되었습니다.`);
         modal.remove();
       };
