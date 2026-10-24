@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>부산김해경전철 관제실 통합 운영 현황판</title>
+  <title>팀별근무자배치</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -236,9 +236,8 @@
             <i class="fa-solid fa-train-subway"></i>
           </div>
           <div class="flex items-center gap-2">
-            <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
-              부산김해경전철 역사 근무자 배치표 및 열차 운용 현황
-              <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">[ 관제실 ]</span>
+            <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900">
+              팀별근무자배치
             </h1>
             <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
@@ -261,7 +260,7 @@
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <i class="fa-solid fa-user-check text-sky-600"></i>
             <span class="text-slate-600 font-semibold">총원:</span>
-            <strong id="stat-total" class="text-sky-800 font-black">20명</strong>
+            <strong id="stat-total" class="text-sky-800 font-black">0명</strong>
           </div>
 
           <!-- 배율 표시 및 100% 원복 버튼 -->
@@ -472,11 +471,11 @@
         <!-- ==========================================
              [3행]: 특이사항 + 사전점검 + 3관리역 (일반역사 규격 인디고 톤 일괄 통일)
         ========================================== -->
-        <!-- [3행 1열]: 좌측 하단 관제 특이사항 메모 박스 -->
+        <!-- [3행 1열]: 좌측 하단 특이사항 메모 박스 -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1">
-              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 관제 특이사항
+              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
             </span>
             <span class="text-[9.5px] font-bold text-amber-900 opacity-80">실시간 연동</span>
           </div>
@@ -565,15 +564,14 @@
 
       </main>
 
-      <!-- 3. 하단 구역: [휴무자 (7명 규격)] + [대기자 (우측 분할 신설)] -->
+      <!-- 3. 하단 구역: [휴무자] + [대기자] -->
       <footer class="shrink-0 flex gap-1.5 w-full">
-        <!-- 3-A. 휴 무 자 (최대 7명 네임택이 여유롭게 들어가는 고정 폭) -->
+        <!-- 3-A. 휴 무 자 -->
         <div class="flex-[6] max-w-[1020px] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
               <i class="fa-solid fa-bed text-amber-500"></i>
-              <span>휴 무 자 (비번 / 휴가)</span>
-              <span class="text-[11px] font-normal text-slate-400 ml-1">네임택 이동 시 휴무 지정</span>
+              <span>휴 무 자</span>
             </div>
             <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
           </div>
@@ -581,12 +579,12 @@
           </div>
         </div>
 
-        <!-- 3-B. 대 기 자 (나머지 우측 공간) -->
+        <!-- 3-B. 대 기 자 -->
         <div class="flex-[3] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="대기자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
               <i class="fa-solid fa-clock-rotate-left text-sky-600"></i>
-              <span>대 기 자 (역무 대기 / 출동 대기)</span>
+              <span>대 기 자</span>
             </div>
             <span id="badge-standby-count" class="font-black text-xs px-2 py-0.2 rounded bg-sky-100 text-sky-800 border border-sky-300">0명</span>
           </div>
@@ -1094,7 +1092,6 @@
       const depotTrains = appState.trains.filter(t => t.status === 'depot').length;
       document.getElementById('stat-active').textContent = activeTrains;
       document.getElementById('stat-depot').textContent = depotTrains;
-      document.getElementById('stat-total').textContent = `${appState.staff.length}명`;
 
       const offStaff = appState.staff.filter(s => s.location === '휴무자');
       document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
@@ -1104,6 +1101,10 @@
       if (badgeStandby) {
         badgeStandby.textContent = `${standbyStaff.length}명`;
       }
+
+      /* 총원: 전체 인원 중 휴무자와 대기자를 제외한 인원만 집계 */
+      const activeDutyCount = appState.staff.filter(s => s.location !== '휴무자' && s.location !== '대기자').length;
+      document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
       const trainStaff = appState.staff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
