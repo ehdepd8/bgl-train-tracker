@@ -70,7 +70,7 @@
     /* 네임택 드래그 상태 */
     .nametag {
       cursor: grab;
-      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease;
       touch-action: none;
     }
     .nametag:active {
@@ -79,6 +79,20 @@
     }
     .nametag.dragging {
       opacity: 0.35;
+    }
+
+    /* 모바일 더블 탭 선택 시 강조 스타일 */
+    .nametag.mobile-selected {
+      outline: 3px solid #f97316 !important;
+      outline-offset: 1px;
+      transform: scale(1.04);
+      box-shadow: 0 0 12px rgba(249, 115, 22, 0.6) !important;
+      animation: pulse-selection 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-selection {
+      0%, 100% { outline-color: #f97316; }
+      50% { outline-color: #ea580c; }
     }
 
     /* 역사 드롭존 기본 높이 */
@@ -277,7 +291,7 @@
       <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
-        <div class="row-span-2 station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs">
+        <div class="row-span-2 station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="승무현황">
           <div class="bg-sky-500 text-white text-xs font-black py-1 px-2 flex items-center justify-between border-b border-sky-600 shrink-0">
             <span class="flex items-center gap-1">
               <i class="fa-solid fa-id-badge text-sky-100"></i> 열차 승무 현황
@@ -617,6 +631,9 @@
 
     const LOCAL_STORAGE_KEY = 'BGLRT_DISPATCH_BOARD_REALTIME_SYNC_STATE';
 
+    /* 모바일 전용 더블 탭 선택 상태 관리 */
+    let selectedStaffIdForMove = null;
+
     /* 로컬 및 Firebase 양방향 실시간 동기화 */
     function syncToCloud() {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState));
@@ -660,13 +677,13 @@
           staff: JSON.parse(JSON.stringify(INITIAL_STAFF)),
           awayStations: {}
         };
+        selectedStaffIdForMove = null;
         render();
         syncToCloud();
         showToast('초기 상태로 복원되었습니다.');
       }
     }
 
-    /* 역 헤더 클릭 시 즉시 화면에 외부 표시 & 흐려짐 적용 후 클라우드 동기화 */
     function toggleStationAway(headerEl) {
       const card = headerEl.closest('.station-card');
       if (!card) return;
@@ -691,7 +708,6 @@
       populateLocationOptions();
     }
 
-    /* 1~25편성 헤더: 'X편성'으로 통일 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
@@ -716,7 +732,10 @@
             : 'bg-slate-200 text-slate-600 border-slate-300'
         }`;
         header.title = '클릭: 운행 ↔ 기지 전환';
-        header.onclick = () => toggleTrainStatus(t.id);
+        header.onclick = (e) => {
+          e.stopPropagation();
+          toggleTrainStatus(t.id);
+        };
         header.innerHTML = `
           <span class="leading-none text-[10.5px] font-black">${t.num}편성</span>
           <span class="text-[8px] font-bold mt-0.5 opacity-90">${isActive ? '본선' : '기지'}</span>
@@ -748,7 +767,6 @@
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
-      // 외부(is-away) 상태 반영
       const awayMap = appState.awayStations || {};
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
@@ -759,7 +777,6 @@
         }
       });
 
-      // 1인/2인/3인/다인 정렬 클래스 적용 및 근무자 없는 모든 역사에 '무 인' 표기
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -779,8 +796,7 @@
           dropzone.classList.add('count-many');
         }
 
-        // 근무자가 0명인 모든 역사 칸에 '무 인' 워터마크 표시
-        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자') {
+        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
@@ -796,7 +812,7 @@
         }
       });
 
-      attachDragEvents();
+      attachEvents();
     }
 
     /* 네임택 빌드: 높이 50px, 성명 19px, 번호 13.5px */
@@ -806,14 +822,15 @@
       el.draggable = true;
 
       const isOnTrain = staff.location.startsWith('train-');
+      const isSelected = (selectedStaffIdForMove === staff.id);
 
       if (isOnTrain) {
-        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)}`;
+        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         el.innerHTML = `
           <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
         `;
       } else {
-        el.className = `nametag w-[94%] max-w-[136px] h-[50px] rounded-md px-1.5 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)}`;
+        el.className = `nametag w-[94%] max-w-[136px] h-[50px] rounded-md px-1.5 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-1 text-xs">😊</span>` : '';
 
         el.innerHTML = `
@@ -850,11 +867,15 @@
     }
 
     let draggedId = null;
+    let lastTapTime = 0;
+    let lastTapTargetId = null;
 
-    function attachDragEvents() {
+    function attachEvents() {
       const nametags = document.querySelectorAll('.nametag');
       const dropzones = document.querySelectorAll('.station-dropzone');
+      const stationCards = document.querySelectorAll('.station-card');
 
+      /* 1) PC 마우스 드래그 앤 드롭 */
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
@@ -867,11 +888,51 @@
           document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
         });
 
-        tag.addEventListener('touchstart', handleTouchStart, { passive: false });
-        tag.addEventListener('touchmove', handleTouchMove, { passive: false });
-        tag.addEventListener('touchend', handleTouchEnd, { passive: false });
+        /* 2) 모바일 터치: 더블 탭(더블 클릭) 감지 이동 모드 */
+        tag.addEventListener('touchend', (e) => {
+          const currentTime = Date.now();
+          const tapLength = currentTime - lastTapTime;
+
+          if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
+            // 더블 탭 감지됨
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (selectedStaffIdForMove === tag.id) {
+              selectedStaffIdForMove = null;
+              showToast('선택이 해제되었습니다.');
+            } else {
+              selectedStaffIdForMove = tag.id;
+              const staff = appState.staff.find(s => s.id === tag.id);
+              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸을 터치하세요.`);
+            }
+            render();
+          }
+
+          lastTapTime = currentTime;
+          lastTapTargetId = tag.id;
+        });
       });
 
+      /* 3) 모바일: 선택된 상태에서 목표 칸 터치 시 즉시 이동 */
+      stationCards.forEach(card => {
+        card.addEventListener('touchend', (e) => {
+          if (!selectedStaffIdForMove) return;
+
+          // 네임택 자체를 연속으로 탭하는 경우는 위에서 처리
+          if (e.target.closest('.nametag')) return;
+
+          const newZone = card.getAttribute('data-zone-id');
+          if (newZone) {
+            e.preventDefault();
+            const staffId = selectedStaffIdForMove;
+            selectedStaffIdForMove = null;
+            moveStaff(staffId, newZone);
+          }
+        });
+      });
+
+      /* 4) PC 마우스 드롭존 이벤트 */
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -893,50 +954,13 @@
       });
     }
 
-    let touchTarget = null;
-    function handleTouchStart(e) {
-      // 두 손가락 핀치 줌 제스처일 때는 네임택 단독 터치 무시
-      if (e.touches.length > 1) return;
-      touchTarget = e.currentTarget;
-      draggedId = touchTarget.id;
-      touchTarget.classList.add('dragging');
-    }
-    function handleTouchMove(e) {
-      if (e.touches.length > 1) return;
-      if (!touchTarget) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-      document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
-      if (elemBelow) {
-        const dropzone = elemBelow.closest('.station-dropzone');
-        if (dropzone) dropzone.classList.add('drag-hover');
-      }
-    }
-    function handleTouchEnd(e) {
-      if (!touchTarget) return;
-      touchTarget.classList.remove('dragging');
-      const touch = e.changedTouches[0];
-      const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (elemBelow) {
-        const card = elemBelow.closest('.station-card');
-        if (card && draggedId) {
-          const newZone = card.getAttribute('data-zone-id');
-          moveStaff(draggedId, newZone);
-        }
-      }
-      document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
-      touchTarget = null;
-      draggedId = null;
-    }
-
     function moveStaff(staffId, newLocation) {
       const staff = appState.staff.find(s => s.id === staffId);
       if (staff && staff.location !== newLocation) {
         staff.location = newLocation;
         render();
         syncToCloud();
-        showToast(`${staff.name} 근무자 배치가 변경되었습니다.`);
+        showToast(`${staff.name} 근무자가 이동 배치되었습니다.`);
       }
     }
 
@@ -981,7 +1005,7 @@
       let opts = `<optgroup label="역사">`;
       document.querySelectorAll('.station-card').forEach(c => {
         const id = c.getAttribute('data-zone-id');
-        if (id && !id.startsWith('train-') && id !== '휴무자') {
+        if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '승무현황') {
           opts += `<option value="${id}">${id}</option>`;
         }
       });
@@ -1076,7 +1100,7 @@
     let startZoom = 1.0;
 
     function applyZoom(scale) {
-      currentZoom = Math.min(Math.max(scale, 0.4), 2.5); // 40% ~ 250% 배율 제한
+      currentZoom = Math.min(Math.max(scale, 0.4), 2.5);
       const container = document.getElementById('zoom-container');
       if (container) {
         container.style.transform = `scale(${currentZoom})`;
@@ -1107,7 +1131,7 @@
 
     window.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2 && initialPinchDistance) {
-        e.preventDefault(); // 브라우저 기본 줌 대신 캔버스 제어
+        e.preventDefault();
         const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
         const factor = currentDistance / initialPinchDistance;
         applyZoom(startZoom * factor);
