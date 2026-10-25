@@ -168,7 +168,7 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 칸 안의 네임택: 좌우 2분할 크기 + 은은한 흐림(반투명 & 채도 저하) */
+    /* 미배치 칸 안의 네임택: 좌우 2분할 크기 + 은은한 흐림 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -237,7 +237,7 @@
       border: 1px solid #ffffff;
     }
 
-    /* 고장/검수 열차 전용 펄스 애니메이션 */
+    /* 불량 열차 전용 펄스 애니메이션 */
     .train-issue-card {
       border: 2px solid #ef4444 !important;
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
@@ -334,7 +334,7 @@
           </div>
         </div>
 
-        <!-- 상태 요약 및 컨트롤 (검수/장애 카운터 추가) -->
+        <!-- 상태 요약 및 컨트롤 -->
         <div class="flex items-center space-x-2 text-xs">
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -348,7 +348,7 @@
           </div>
           <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
-            <span class="text-rose-700 font-semibold">검수/장애:</span>
+            <span class="text-rose-700 font-semibold">불량:</span>
             <strong id="stat-issue" class="text-rose-800 font-black">0</strong>
           </div>
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
@@ -379,18 +379,18 @@
         </div>
       </header>
 
-      <!-- 1. 상단 25편성 한 줄 배치 (클릭: 본선↔기지, 더블클릭: 고장/검수 지정) -->
+      <!-- 1. 상단 25편성 한 줄 배치 (본선 오름차순 -> 불량 오름차순 -> 기지 오름차순) -->
       <section class="bg-white border border-slate-300 rounded-lg p-1.5 shadow-xs shrink-0 mb-1">
         <div class="flex items-center justify-between text-[11px] mb-1 px-1">
           <div class="font-black text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-arrows-split-up-and-left text-blue-600"></i>
-            열차 편성 운용 (1 ~ 25편성 공통)
-            <span class="text-slate-400 font-normal ml-1">클릭: 운행↔기지 | <strong class="text-rose-600 font-bold">더블클릭: 검수/장애(⚠️) 지정/해제</strong></span>
+            열차 편성 운용 (본선 ➔ 불량 ➔ 기지 순 정렬)
+            <span class="text-slate-400 font-normal ml-1">클릭: 운행↔기지 | <strong class="text-rose-600 font-bold">더블클릭: 불량(⚠️) 지정/해제</strong></span>
           </div>
           <div class="flex items-center gap-3 font-bold text-[10px]">
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-emerald-500"></span> 본선운행</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-rose-600"></span> 불량(⚠️)</span>
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-slate-300"></span> 기지대기</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-rose-600"></span> 검수/장애(⚠️)</span>
           </div>
         </div>
 
@@ -763,7 +763,7 @@
     firebase.initializeApp(firebaseConfig);
     const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
 
-    /* 열차 25편성 기본 상태 (active: 본선, depot: 기지, issue: 검수/장애) */
+    /* 열차 25편성 기본 상태 (active: 본선, issue: 불량, depot: 기지) */
     const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
       id: `train-${i + 1}`,
       num: i + 1,
@@ -941,16 +941,35 @@
       }
     }
 
-    /* 1~25편성 헤더 렌더링 (더블클릭 감지 타이머 적용) */
+    /* 1~25편성 정렬: 본선(오름차순) -> 불량(오름차순) -> 기지(오름차순) */
     let trainClickTimer = null;
+
+    function getSortedTrains() {
+      return [...sharedTrains].sort((a, b) => {
+        const getPriority = (status) => {
+          if (status === 'active') return 1; // 본선 우선
+          if (status === 'issue') return 2;  // 불량 다음
+          return 3;                          // 기지 마지막
+        };
+
+        const priorityA = getPriority(a.status);
+        const priorityB = getPriority(b.status);
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return a.num - b.num; // 동일 상태 내에서는 편성 번호 오름차순
+      });
+    }
 
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
+      const sortedTrains = getSortedTrains();
 
-      sharedTrains.forEach(t => {
+      sortedTrains.forEach(t => {
         const ridingStaff = currentStaff.filter(s => s.location === t.id);
         const isActive = t.status === 'active';
         const isIssue = t.status === 'issue';
@@ -970,15 +989,14 @@
             ? 'bg-rose-600 text-white border-rose-700' 
             : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
         }`;
-        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 검수/장애(⚠️) 토글';
+        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 토글';
 
-        // 싱글 클릭 vs 더블 클릭 구분 이벤트
         header.onclick = (e) => {
           e.stopPropagation();
           if (trainClickTimer) {
             clearTimeout(trainClickTimer);
             trainClickTimer = null;
-            toggleTrainIssue(t.id); // 더블 클릭 -> 검수/장애 토글
+            toggleTrainIssue(t.id); // 더블 클릭 -> 불량 토글
           } else {
             trainClickTimer = setTimeout(() => {
               toggleTrainActiveDepot(t.id); // 1회 클릭 -> 본선 ↔ 기지 전환
@@ -987,7 +1005,7 @@
           }
         };
 
-        const statusLabel = isIssue ? '검수 ⚠️' : (isActive ? '본선' : '기지');
+        const statusLabel = isIssue ? '불량 ⚠️' : (isActive ? '본선' : '기지');
 
         header.innerHTML = `
           <span class="leading-none text-[13.5px] font-black tracking-tight">${t.num}편성</span>
@@ -1007,13 +1025,13 @@
       });
     }
 
-    /* 1회 클릭: 본선 ↔ 기지 전환 (검수 상태일 때는 오작동 방지 잠금) */
+    /* 1회 클릭: 본선 ↔ 기지 전환 (불량 상태일 때는 오작동 방지 잠금) */
     function toggleTrainActiveDepot(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
       if (tr.status === 'issue') {
-        showToast(`${tr.num}편성은 현재 [검수/장애⚠️] 상태입니다. (해제하려면 더블클릭)`);
+        showToast(`${tr.num}편성은 현재 [불량⚠️] 상태입니다. (해제하려면 더블클릭)`);
         return;
       }
 
@@ -1026,18 +1044,18 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    /* 더블 클릭: 검수/장애(⚠️) 지정 및 원복 */
+    /* 더블 클릭: 불량(⚠️) 지정 및 원복 */
     function toggleTrainIssue(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
       if (tr.status === 'issue') {
         tr.status = tr.prevStatus || 'depot';
-        showToast(`${tr.num}편성 검수/장애 해제 -> [${tr.status === 'active' ? '본선' : '기지'}] 복귀`);
+        showToast(`${tr.num}편성 불량 해제 -> [${tr.status === 'active' ? '본선' : '기지'}] 복귀`);
       } else {
         tr.prevStatus = tr.status;
         tr.status = 'issue';
-        showToast(`⚠️ ${tr.num}편성이 [검수/장애] 상태로 지정되었습니다!`);
+        showToast(`⚠️ ${tr.num}편성이 [불량] 상태로 지정되었습니다!`);
       }
 
       renderTrains25Grid();
@@ -1086,7 +1104,6 @@
         }
       });
 
-      // 등록 및 이동 순서대로 차곡차곡 append
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -1410,7 +1427,7 @@
       });
       opts += `</optgroup><optgroup label="열차 직접 탑승">`;
       sharedTrains.forEach(t => {
-        opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : (t.status === 'issue' ? '검수⚠️' : '기지')})</option>`;
+        opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : (t.status === 'issue' ? '불량⚠️' : '기지')})</option>`;
       });
       opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option></optgroup>`;
       sel.innerHTML = opts;
