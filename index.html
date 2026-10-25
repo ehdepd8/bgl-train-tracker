@@ -236,7 +236,7 @@
       45%, 75% { opacity: 0.95; }
     }
 
-    /* 1. 외부 단독: 딥 슬레이트 톤 */
+    /* 1. 외부 단독: 딥 슬레이트 톤 (빨간색 제외) */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
       background-color: #1e293b;
@@ -626,9 +626,9 @@
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1">
-              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
+              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항 (전체 공유)
             </span>
-            <span id="current-memo-team-badge" class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1 rounded">1팀</span>
+            <span class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1 rounded">공통 실시간</span>
           </div>
           <div class="p-1 flex-1 flex flex-col bg-white">
             <textarea id="notice-memo-input" 
@@ -868,13 +868,19 @@
     ];
 
     let currentTeamKey = 'team1';
-    let sharedTrains = DEFAULT_FLEET;
 
+    /* [핵심] 열차와 마찬가지로 전 기기/전 팀 공통으로 영구 보존되는 상태 객체 */
+    let sharedTrains = DEFAULT_FLEET;
+    let sharedAwayStations = {};
+    let sharedIssueStations = {};
+    let sharedNoticeMemo = '';
+
+    /* 팀별 독립 데이터 (근무자 인원 배치만 팀별 분리) */
     let teamsData = {
-      team1: { staff: INITIAL_STAFF_TEAM1, awayStations: {}, issueStations: {}, noticeMemo: '' },
-      team2: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' },
-      team3: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' },
-      team4: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' }
+      team1: { staff: INITIAL_STAFF_TEAM1 },
+      team2: { staff: [] },
+      team3: { staff: [] },
+      team4: { staff: [] }
     };
 
     let selectedStaffIdForMove = null;
@@ -899,9 +905,6 @@
       if (activeBtn) activeBtn.classList.add('active');
 
       const teamNum = teamKey.replace('team', '');
-      const memoBadge = document.getElementById('current-memo-team-badge');
-      if (memoBadge) memoBadge.textContent = `${teamNum}팀`;
-
       const modalTitle = document.getElementById('modal-team-title');
       if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
 
@@ -912,24 +915,30 @@
       showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
     }
 
+    /* 1. 열차 상태 공통 저장 */
     function syncTrainsToCloud() {
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 클라우드에 현재 팀의 데이터 완전 영구 저장 */
-    function syncCurrentTeamToCloud() {
-      const currentTeam = teamsData[currentTeamKey];
-      rootDbRef.child(currentTeamKey).set({
-        staff: currentTeam.staff || [],
-        awayStations: currentTeam.awayStations || {},
-        issueStations: currentTeam.issueStations || {},
-        noticeMemo: currentTeam.noticeMemo || ''
+    /* 2. 역사 외부/불량/특이사항 공통 저장 (절대 리셋되지 않음) */
+    function syncFacilityStatusToCloud() {
+      rootDbRef.child('shared_facilities').set({
+        awayStations: sharedAwayStations,
+        issueStations: sharedIssueStations,
+        noticeMemo: sharedNoticeMemo
       });
     }
 
+    /* 3. 근무자 배치 팀별 저장 */
+    function syncCurrentTeamStaffToCloud() {
+      rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
+    }
+
+    /* 실시간 동기화 초기화 */
     function initRealtimeSync() {
       checkUrlTeamParam();
 
+      // [1] 열차 25편성 공통 리스너
       rootDbRef.child('shared_trains').on('value', (snapshot) => {
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
@@ -941,22 +950,38 @@
         }
       });
 
+      // [2] 역사 외부, 역사 불량, 특이사항 공통 리스너 (영구 보존)
+      rootDbRef.child('shared_facilities').on('value', (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData) {
+          sharedAwayStations = cloudData.awayStations || {};
+          sharedIssueStations = cloudData.issueStations || {};
+          sharedNoticeMemo = cloudData.noticeMemo || '';
+
+          renderStaffAndStations();
+          renderStatistics();
+
+          const memoInput = document.getElementById('notice-memo-input');
+          if (memoInput && document.activeElement !== memoInput) {
+            memoInput.value = sharedNoticeMemo;
+          }
+        } else {
+          syncFacilityStatusToCloud();
+        }
+      });
+
+      // [3] 1팀 ~ 4팀 인원 배치 리스너
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-        rootDbRef.child(tKey).on('value', (snapshot) => {
-          const cloudTeam = snapshot.val();
-          if (cloudTeam) {
-            teamsData[tKey] = {
-              staff: cloudTeam.staff || [],
-              awayStations: cloudTeam.awayStations || {},
-              issueStations: cloudTeam.issueStations || {},
-              noticeMemo: cloudTeam.noticeMemo || ''
-            };
+        rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
+          const cloudStaff = snapshot.val();
+          if (cloudStaff) {
+            teamsData[tKey].staff = cloudStaff;
             if (currentTeamKey === tKey) {
               render();
             }
           } else {
             if (tKey === 'team1') {
-              syncCurrentTeamToCloud();
+              syncCurrentTeamStaffToCloud();
             }
           }
         });
@@ -967,33 +992,27 @@
       if (initialTab) initialTab.classList.add('active');
 
       const teamNum = currentTeamKey.replace('team', '');
-      document.getElementById('current-memo-team-badge').textContent = `${teamNum}팀`;
       document.getElementById('modal-team-title').textContent = `${teamNum}팀`;
     }
 
     function updateNoticeMemo(val) {
-      teamsData[currentTeamKey].noticeMemo = val;
-      syncCurrentTeamToCloud();
+      sharedNoticeMemo = val;
+      syncFacilityStatusToCloud();
       showToast('특이사항이 실시간 저장되었습니다.');
     }
 
     function resetData() {
       const teamNum = currentTeamKey.replace('team', '');
-      if (confirm(`현재 [${teamNum}팀] 근무자 배치, 불량역사 및 특이사항을 초기화하시겠습니까?\n(공통 25편성 열차 상태는 그대로 유지됩니다)`)) {
-        teamsData[currentTeamKey] = {
-          staff: currentTeamKey === 'team1' ? JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1)) : [],
-          awayStations: {},
-          issueStations: {},
-          noticeMemo: ''
-        };
+      if (confirm(`현재 [${teamNum}팀] 근무자 배치를 초기화하시겠습니까?\n(공통 열차/역사 시설 상태는 그대로 유지됩니다)`)) {
+        teamsData[currentTeamKey].staff = (currentTeamKey === 'team1') ? JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1)) : [];
         selectedStaffIdForMove = null;
         render();
-        syncCurrentTeamToCloud();
-        showToast(`${teamNum}팀 데이터가 초기화되었습니다.`);
+        syncCurrentTeamStaffToCloud();
+        showToast(`${teamNum}팀 근무자 배치가 초기화되었습니다.`);
       }
     }
 
-    /* 역사 클릭/더블클릭 판별 상태 머신 */
+    /* 역사 헤더 클릭/더블클릭 판별 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1024,34 +1043,35 @@
       }, 280);
     }
 
-    /* 1회 클릭 전용: 외부 ↔ 외부 취소 (영구 저장 연동) */
+    /* 1회 클릭: 외부 ↔ 외부 취소 (영구 저장) */
     function toggleStationAwayOnly(zoneId) {
-      const currentTeam = teamsData[currentTeamKey];
-      if (!currentTeam.awayStations) currentTeam.awayStations = {};
-      
-      const nextAwayState = !currentTeam.awayStations[zoneId];
-      currentTeam.awayStations[zoneId] = nextAwayState;
+      const nextAwayState = !sharedAwayStations[zoneId];
+      if (nextAwayState) {
+        sharedAwayStations[zoneId] = true;
+      } else {
+        delete sharedAwayStations[zoneId];
+      }
 
       renderStaffAndStations();
-      syncCurrentTeamToCloud(); // Firebase 실시간 저장
+      syncFacilityStatusToCloud(); // 공통 경로에 즉시 저장
       showToast(`${zoneId} ${nextAwayState ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    /* 더블 클릭 전용: 불량 ↔ 불량 취소 및 특이사항 자동 연동 (영구 저장 연동) */
+    /* 더블 클릭: 불량 ↔ 불량 취소 및 특이사항 연동 (영구 저장) */
     function toggleStationIssueOnly(zoneId) {
-      const currentTeam = teamsData[currentTeamKey];
-      if (!currentTeam.issueStations) currentTeam.issueStations = {};
-      
-      const isCurrentlyIssue = !!currentTeam.issueStations[zoneId];
-      const newIssueState = !isCurrentlyIssue;
-      currentTeam.issueStations[zoneId] = newIssueState;
+      const nextIssueState = !sharedIssueStations[zoneId];
+      if (nextIssueState) {
+        sharedIssueStations[zoneId] = true;
+      } else {
+        delete sharedIssueStations[zoneId];
+      }
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
 
       let autoMemoText = '';
-      if (newIssueState) {
+      if (nextIssueState) {
         autoMemoText = `[${timeStr} ${cleanStationName}역 불량 점검중]`;
         showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
       } else {
@@ -1059,14 +1079,18 @@
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       }
 
-      if (currentTeam.noticeMemo && currentTeam.noticeMemo.trim().length > 0) {
-        currentTeam.noticeMemo = currentTeam.noticeMemo.trim() + '\n' + autoMemoText;
+      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
       } else {
-        currentTeam.noticeMemo = autoMemoText;
+        sharedNoticeMemo = autoMemoText;
       }
 
-      render();
-      syncCurrentTeamToCloud(); // Firebase 실시간 저장
+      const memoInput = document.getElementById('notice-memo-input');
+      if (memoInput) memoInput.value = sharedNoticeMemo;
+
+      renderStaffAndStations();
+      renderStatistics();
+      syncFacilityStatusToCloud(); // 공통 경로에 즉시 저장
     }
 
     function render() {
@@ -1075,11 +1099,9 @@
       renderStatistics();
       populateLocationOptions();
 
-      // 특이사항 텍스트에리어 동기화
       const memoInput = document.getElementById('notice-memo-input');
-      const currentTeam = teamsData[currentTeamKey];
       if (memoInput && document.activeElement !== memoInput) {
-        memoInput.value = currentTeam.noticeMemo || '';
+        memoInput.value = sharedNoticeMemo || '';
       }
     }
 
@@ -1203,20 +1225,16 @@
       syncTrainsToCloud();
     }
 
-    /* 역사 렌더링: 외부출장/불량 상태 오버레이 (완전 점멸 방식) */
+    /* 역사 렌더링: 공통 상태 객체(sharedAwayStations, sharedIssueStations) 기반 반영 */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
-
-      const currentTeam = teamsData[currentTeamKey];
-      const awayMap = currentTeam.awayStations || {};
-      const issueMap = currentTeam.issueStations || {};
 
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
 
-        const isAway = !!awayMap[zoneId];
-        const isIssue = !!issueMap[zoneId];
+        const isAway = !!sharedAwayStations[zoneId];
+        const isIssue = !!sharedIssueStations[zoneId];
 
         // 1) 역사 카드 클래스
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
@@ -1251,7 +1269,7 @@
         }
       });
 
-      const currentStaff = currentTeam.staff || [];
+      const currentStaff = teamsData[currentTeamKey].staff || [];
 
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
@@ -1339,8 +1357,10 @@
         case 'team2':
           return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
         case 'team3':
+        case 'amber':
           return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
         case 'team4':
+        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1504,7 +1524,7 @@
       staffList.push(staff);
 
       render();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamStaffToCloud();
       showToast(`${staff.name} 근무자가 배치되었습니다.`);
     }
 
@@ -1525,7 +1545,7 @@
       }
 
       render();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamStaffToCloud();
       showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
     }
 
@@ -1544,7 +1564,7 @@
       staffList[idxB] = tempItem;
 
       render();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamStaffToCloud();
       showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
     }
 
@@ -1557,12 +1577,10 @@
       document.getElementById('stat-depot').textContent = depotTrains;
       document.getElementById('stat-issue').textContent = issueTrains;
 
-      const currentTeam = teamsData[currentTeamKey];
-      const issueStationsMap = currentTeam.issueStations || {};
-      const issueStationCount = Object.values(issueStationsMap).filter(Boolean).length;
+      const issueStationCount = Object.keys(sharedIssueStations).length;
       document.getElementById('stat-station-issue').textContent = `${issueStationCount}개역`;
 
-      const currentStaff = currentTeam.staff || [];
+      const currentStaff = teamsData[currentTeamKey].staff || [];
 
       const offStaff = currentStaff.filter(s => s.location === '휴무자');
       document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
@@ -1654,7 +1672,7 @@
         icon: isNewbie ? 'smile' : null
       });
       render();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamStaffToCloud();
       showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 새로 등록되었습니다.`);
       closeAddModal();
     }
@@ -1676,7 +1694,7 @@
       modal.querySelector('#del-ok').onclick = () => {
         teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
         render();
-        syncCurrentTeamToCloud();
+        syncCurrentTeamStaffToCloud();
         showToast(`${staff.name} 근무자가 삭제되었습니다.`);
         modal.remove();
       };
