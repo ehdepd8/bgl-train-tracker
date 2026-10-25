@@ -217,7 +217,8 @@
     }
 
     /* =========================================================
-       역명 위에 덧씌워지는 반투명 워터마크 오버레이 (역명이 뒤에 은은하게 비침)
+       역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이
+       (완전히 사라졌다 나타났다 하여 뒤의 역사가 100% 뚜렷하게 보임)
     ========================================================= */
     .station-status-overlay {
       position: absolute;
@@ -225,43 +226,46 @@
       display: none;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(1.5px);
       z-index: 10;
-      pointer-events: none; /* 클릭 이벤트는 부모 헤더로 100% 통과 */
+      pointer-events: none; /* 클릭 이벤트는 부모 헤더로 통과 */
       font-weight: 900;
       letter-spacing: 0.5px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      animation: blink-overlay 1.6s infinite ease-in-out;
     }
 
-    /* 1. 외부 단독: 세련된 딥 슬레이트 반투명 톤 (빨간색 제외) */
+    /* 완전히 사라졌다(0)가 선명하게 나타났다(0.95)를 반복 */
+    @keyframes blink-overlay {
+      0%, 100% {
+        opacity: 0; /* 완전히 사라져서 뒤의 역사명이 100% 보임 */
+      }
+      45%, 75% {
+        opacity: 0.95; /* 선명하게 나타나 경고 표시를 확실하게 전달 */
+      }
+    }
+
+    /* 1. 외부 단독: 딥 슬레이트 톤 (빨간색 제외) */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
-      background-color: rgba(30, 41, 59, 0.78); /* Slate-800 반투명 */
+      background-color: #1e293b; /* Slate-800 */
       color: #f8fafc;
       font-size: 13.5px;
     }
 
-    /* 2. 불량 단독: 레드 반투명 톤 + 옐로우 텍스트 */
+    /* 2. 불량 단독: 레드 톤 + 옐로우 텍스트 */
     .station-card.is-issue:not(.is-away) .station-status-overlay {
       display: flex;
-      background-color: rgba(220, 38, 38, 0.85); /* Red-600 반투명 */
+      background-color: #dc2626; /* Red-600 */
       color: #fef08a; /* Yellow-200 */
       font-size: 13.5px;
-      animation: pulse-issue-bg 1.2s infinite ease-in-out;
     }
 
-    /* 3. 외부 + 불량 동시: 슬레이트와 레드가 결합된 반투명 그라데이션 */
+    /* 3. 외부 + 불량 동시: 슬레이트-레드 그라데이션 */
     .station-card.is-away.is-issue .station-status-overlay {
       display: flex;
-      background: linear-gradient(90deg, rgba(30, 41, 59, 0.88) 45%, rgba(220, 38, 38, 0.88) 55%);
+      background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%);
       color: #ffffff;
       font-size: 12px;
-      animation: pulse-issue-bg 1.2s infinite ease-in-out;
-    }
-
-    @keyframes pulse-issue-bg {
-      0%, 100% { opacity: 0.95; }
-      50% { opacity: 0.8; }
     }
 
     /* 역사 외부 출장 시 사선 음영 효과 */
@@ -991,7 +995,7 @@
     }
 
     /* =========================================================================
-       역사 헤더 클릭 핸들러 (원클릭 vs 더블클릭 완벽 분리 엔진)
+       역사 헤더 클릭 핸들러 (원클릭 vs 더블클릭 분리)
        - 1회 클릭: 280ms 대기 후 [외부 ↔ 외부 취소] 단독 토글
        - 2회 클릭: 1회 대기 타이머 완전 강제 파기 후 [불량 ↔ 불량 취소] 단독 토글
     ========================================================================= */
@@ -1010,7 +1014,7 @@
           clearTimeout(stationClickTimerMap[zoneId]);
           delete stationClickTimerMap[zoneId];
         }
-        toggleStationIssueOnly(zoneId); // 오직 불량만 스위칭!
+        toggleStationIssueOnly(zoneId);
         return;
       }
 
@@ -1021,7 +1025,7 @@
 
       stationClickTimerMap[zoneId] = setTimeout(() => {
         delete stationClickTimerMap[zoneId];
-        toggleStationAwayOnly(zoneId); // 오직 외부만 스위칭!
+        toggleStationAwayOnly(zoneId);
       }, 280);
     }
 
@@ -1057,7 +1061,7 @@
         showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
       } else {
         autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
-        showToast(`${cleanStationName}역 불량 취소 (특이사항 자동기록)`);
+        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       }
 
       if (currentTeam.noticeMemo && currentTeam.noticeMemo.trim().length > 0) {
@@ -1203,7 +1207,7 @@
       syncTrainsToCloud();
     }
 
-    /* 역사 렌더링: 외부출장/불량 상태 오버레이 */
+    /* 역사 렌더링: 외부출장/불량 상태 오버레이 (완전 점멸 방식) */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -1222,29 +1226,29 @@
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
         if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
 
-        // 2) 헤더 위 워터마크 오버레이 세팅
+        // 2) 헤더 위 완전 점멸(Blink) 오버레이 세팅
         const overlay = card.querySelector('.station-status-overlay');
         if (overlay) {
           if (isAway && isIssue) {
             // 외부 + 불량 동시 표시
             overlay.innerHTML = `
-              <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/40">
+              <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/50">
                 <span class="text-slate-100 font-black">외 부</span>
                 <span class="text-white/40 font-light">|</span>
                 <span class="text-yellow-300 font-black">⚠️ 불 량</span>
               </span>
             `;
           } else if (isAway) {
-            // 외부 단독 (빨간색 제외, 딥 슬레이트 톤)
+            // 외부 단독 (딥 슬레이트 톤)
             overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/50 border border-slate-300/40 text-slate-100 font-black">
+              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black">
                 <i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부
               </span>
             `;
           } else if (isIssue) {
             // 불량 단독
             overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/50 border border-yellow-300/40 text-yellow-300 font-black">
+              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black">
                 <i class="fa-solid fa-triangle-exclamation text-xs"></i> 불 량
               </span>
             `;
@@ -1345,7 +1349,6 @@
         case 'amber':
           return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
         case 'team4':
-        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1362,7 +1365,7 @@
       const stationCards = document.querySelectorAll('.station-card');
       const stationHeaders = document.querySelectorAll('.station-header');
 
-      /* 역사 헤더 클릭 이벤트 (중복 없는 단일 핸들러 바인딩) */
+      /* 역사 헤더 클릭 이벤트 */
       stationHeaders.forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
