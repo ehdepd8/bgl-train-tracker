@@ -157,7 +157,6 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -201,7 +200,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -1057,7 +1055,6 @@
       if (localMemo !== null) sharedNoticeMemo = localMemo;
     } catch(e) {}
 
-    // 각 팀별 독립 데이터 (staff + rideLogs)
     let teamsData = {
       team1: { staff: [], rideLogs: [] },
       team2: { staff: [], rideLogs: [] },
@@ -1144,7 +1141,7 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 공통 시설 저장소 (탑승기록은 완전히 제외하여 다른 팀과 공유 차단) */
+    /* 공통 시설 저장소 (rideLogs는 완전히 제거하여 공유 차단) */
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
@@ -1176,8 +1173,7 @@
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
           sharedTrains = cloudTrains;
-          renderTrains25Grid();
-          renderStatistics();
+          render();
         } else {
           syncTrainsToCloud();
         }
@@ -1194,8 +1190,7 @@
           localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
-          renderStaffAndStations();
-          renderStatistics();
+          render();
 
           const memoInput = document.getElementById('notice-memo-input');
           if (memoInput && document.activeElement !== memoInput) {
@@ -1330,7 +1325,7 @@
         isAwayNow = true;
       }
 
-      renderStaffAndStations();
+      render();
       syncFacilityStatusToCloud();
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
@@ -1355,8 +1350,7 @@
         const memoInput = document.getElementById('notice-memo-input');
         if (memoInput) memoInput.value = sharedNoticeMemo;
 
-        renderStaffAndStations();
-        renderStatistics();
+        render();
         syncFacilityStatusToCloud();
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
@@ -1510,8 +1504,7 @@
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput) memoInput.value = sharedNoticeMemo;
 
-      renderStaffAndStations();
-      renderStatistics();
+      render();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
@@ -1647,8 +1640,7 @@
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput) memoInput.value = sharedNoticeMemo;
 
-      renderTrains25Grid();
-      renderStatistics();
+      render();
       syncTrainsToCloud();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
@@ -1765,8 +1757,7 @@
       tr.status = (tr.status === 'active') ? 'depot' : 'active';
       tr.prevStatus = tr.status;
 
-      renderTrains25Grid();
-      renderStatistics();
+      render();
       syncTrainsToCloud();
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
@@ -1792,8 +1783,7 @@
         const memoInput = document.getElementById('notice-memo-input');
         if (memoInput) memoInput.value = sharedNoticeMemo;
 
-        renderTrains25Grid();
-        renderStatistics();
+        render();
         syncTrainsToCloud();
         syncFacilityStatusToCloud();
         showToast(`${tr.name} 불량 해제 (특이사항 자동기록)`);
@@ -1964,7 +1954,7 @@
       closeEditModal();
     }
 
-    /* 2. 전체 역사 및 열차 드롭존 네임택 배치 (새 텍스트 문서 (2)_2.txt의 원본 정상 방식) */
+    /* 2. 전체 역사 및 열차 드롭존 네임택 배치 (원본 안정 방식 100% 복원) */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -2011,7 +2001,7 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 모든 카드(열차, 역사, 미배치)에 네임택 배치 [원래 잘 작동하던 방식]
+      // 모든 카드(열차, 역사, 미배치)에 네임택 배치 [원본 정상 작동 코드]
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2066,7 +2056,7 @@
     let lastTapTime = 0;
     let lastTapTargetId = null;
 
-    /* 새 텍스트 문서 (2)_2.txt의 원본 이벤트 핸들러 그대로 적용 */
+    /* 새 텍스트 문서 (2)_2.txt의 원본 안정 이벤트 리스너 복원 */
     function attachEvents() {
       const nametags = document.querySelectorAll('.nametag');
       const dropzones = document.querySelectorAll('.station-dropzone');
@@ -2381,7 +2371,7 @@
       const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
-      const trainStaff = currentStaff.filter(s => s.location && s.location.startsWith('train-'));
+      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
         trainBadge.textContent = `${trainStaff.length}명`;
