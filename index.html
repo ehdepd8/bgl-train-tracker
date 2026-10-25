@@ -199,7 +199,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -714,7 +713,7 @@
     </div>
   </div>
 
-  <!-- [신규] 역사 불량 세부 선택 모달 (PSD 상/하선 1~4번 등 원터치 지원) -->
+  <!-- 불량 세부 선택 모달 -->
   <div id="issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -738,7 +737,7 @@
           </div>
         </div>
 
-        <!-- PSD 세부 옵션 (상선/하선, 1번~4번) -->
+        <!-- PSD 세부 옵션 -->
         <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2">
           <div>
             <label class="block font-black text-rose-950 mb-1">선로 구분</label>
@@ -802,7 +801,6 @@
         <div>
           <label class="block font-bold text-slate-700 mb-1">직무 및 팀 구분</label>
           <div class="grid grid-cols-2 gap-1.5">
-            <!-- 1팀 -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team1" checked class="accent-emerald-600"> 1팀
@@ -810,7 +808,6 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
             </label>
 
-            <!-- 2팀 -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team2" class="accent-orange-600"> 2팀
@@ -818,7 +815,6 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
             </label>
 
-            <!-- 3팀 (라임 그린) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team3" class="accent-lime-600"> 3팀
@@ -826,7 +822,6 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span>
             </label>
 
-            <!-- 4팀 -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team4" class="accent-blue-600"> 4팀
@@ -834,7 +829,6 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span>
             </label>
 
-            <!-- 일근자 -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="purple" class="accent-purple-700"> 일근자
@@ -842,7 +836,6 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
             </label>
 
-            <!-- 고객안전원 (노란색) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
@@ -878,7 +871,6 @@
       document.getElementById('psd-sub-options').classList.add('hidden');
       document.getElementById('btn-confirm-issue-detail').classList.add('hidden');
 
-      // 버튼 스타일 초기화
       document.querySelectorAll('#issue-type-buttons button').forEach(b => {
         b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center";
       });
@@ -891,7 +883,6 @@
       document.getElementById('issue-modal').classList.add('hidden');
       document.getElementById('issue-modal').classList.remove('flex');
       if (isDefault && currentModalZoneId) {
-        // 상세 선택 없이 닫았을 때 기본 불량 적용
         applyIssueFinal(currentModalZoneId, '');
       }
       currentModalZoneId = null;
@@ -912,7 +903,6 @@
         document.getElementById('btn-confirm-issue-detail').classList.remove('hidden');
       } else {
         document.getElementById('psd-sub-options').classList.add('hidden');
-        // PSD가 아닌 경우 즉시 적용 후 모달 닫기
         applyIssueFinal(currentModalZoneId, type);
         closeIssueModal(false);
       }
@@ -944,7 +934,6 @@
       closeIssueModal(false);
     }
 
-    /* 최종 불량 상태 저장 및 특이사항 연동 함수 */
     function applyIssueFinal(zoneId, detailText) {
       if (!sharedIssueList.includes(zoneId)) {
         sharedIssueList.push(zoneId);
@@ -971,12 +960,10 @@
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText || '기본'})`);
     }
 
-    /* 역사 더블클릭 분기: 이미 불량이면 해제, 불량이 아니면 모달창 호출 */
     function toggleStationIssueOnly(zoneId) {
       const idx = sharedIssueList.indexOf(zoneId);
 
       if (idx > -1) {
-        // 이미 불량인 경우 -> 즉시 해제 및 복구 특이사항 자동 기록
         sharedIssueList.splice(idx, 1);
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -997,10 +984,152 @@
         syncFacilityStatusToCloud();
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
-        // 불량이 아닌 경우 -> 세부 유형 선택 모달 오픈!
         openIssueModal(zoneId);
       }
     }
+
+    function openAddModal() {
+      document.getElementById('add-modal').classList.remove('hidden');
+      document.getElementById('add-modal').classList.add('flex');
+    }
+    function closeAddModal() {
+      document.getElementById('add-modal').classList.add('hidden');
+      document.getElementById('add-modal').classList.remove('flex');
+      document.getElementById('input-name').value = '';
+      document.getElementById('input-phone').value = '';
+      document.getElementById('input-is-newbie').checked = false;
+      document.getElementById('input-location').value = '미배치';
+    }
+    function confirmAddStaff() {
+      const name = document.getElementById('input-name').value.trim();
+      const phone = document.getElementById('input-phone').value.trim() || '010-0000-0000';
+      const location = document.getElementById('input-location').value;
+      const color = document.querySelector('input[name="color-choice"]:checked').value;
+      const isNewbie = document.getElementById('input-is-newbie').checked;
+
+      if (!name) return;
+
+      const currentTeam = teamsData[currentTeamKey];
+      currentTeam.staff.push({
+        id: 'st-' + Date.now(),
+        name,
+        phone,
+        location,
+        color,
+        icon: isNewbie ? 'smile' : null
+      });
+
+      if (location.startsWith('train-')) {
+        handleRideLogging(name, null, location);
+      }
+
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
+      closeAddModal();
+    }
+
+    function confirmDeleteStaff(staff) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
+      modal.innerHTML = `
+        <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
+          <p class="text-xs font-bold text-slate-800">'${staff.name}' 근무자를 명단에서 삭제하시겠습니까?</p>
+          <div class="flex justify-center gap-2">
+            <button id="del-cancel" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded">취소</button>
+            <button id="del-ok" class="px-3 py-1 bg-rose-600 text-white font-bold text-xs rounded">삭제</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.querySelector('#del-cancel').onclick = () => modal.remove();
+      modal.querySelector('#del-ok').onclick = () => {
+        if (staff.location.startsWith('train-')) {
+          handleRideLogging(staff.name, staff.location, null);
+        }
+        teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
+        render();
+        syncCurrentTeamStaffToCloud();
+        showToast(`${staff.name} 근무자가 삭제되었습니다.`);
+        modal.remove();
+      };
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const msgSpan = document.getElementById('toast-message');
+      msgSpan.textContent = msg;
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toast.classList.add('show');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    setInterval(() => {
+      const now = new Date();
+      const clock = document.getElementById('live-clock');
+      if (clock) {
+        clock.textContent = now.toTimeString().split(' ')[0];
+      }
+    }, 1000);
+
+    let currentZoom = 1.0;
+    let initialPinchDistance = null;
+    let startZoom = 1.0;
+
+    function applyZoom(scale) {
+      currentZoom = Math.min(Math.max(scale, 0.4), 2.5);
+      const container = document.getElementById('zoom-container');
+      if (container) {
+        container.style.transform = `scale(${currentZoom})`;
+      }
+      const label = document.getElementById('zoom-percent-text');
+      if (label) {
+        label.textContent = `${Math.round(currentZoom * 100)}%`;
+      }
+    }
+
+    function resetZoomScale() {
+      applyZoom(1.0);
+      showToast('배율이 100%로 재설정되었습니다.');
+    }
+
+    function getTouchDistance(touch1, touch2) {
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        startZoom = currentZoom;
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && initialPinchDistance) {
+        e.preventDefault();
+        const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        const factor = currentDistance / initialPinchDistance;
+        applyZoom(startZoom * factor);
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        initialPinchDistance = null;
+      }
+    });
+
+    window.onload = function() {
+      render();
+      initRealtimeSync();
+    };
   </script>
 </body>
 </html>
