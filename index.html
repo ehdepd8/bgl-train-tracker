@@ -65,6 +65,7 @@
       cursor: grab;
       transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, opacity 0.2s ease, filter 0.2s ease;
       touch-action: none;
+      position: relative;
     }
     .nametag:active {
       cursor: grabbing;
@@ -156,16 +157,18 @@
       overflow-y: auto !important;
     }
 
+    /* 미배치 칸 안의 네임택 (스마일 아이콘이 잘리지 않도록 overflow 허용) */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
       flex-shrink: 0 !important;
-      opacity: 0.65;
-      filter: saturate(0.68);
+      opacity: 0.85;
+      filter: saturate(0.85);
       box-shadow: none !important;
+      overflow: visible !important;
     }
     .unassigned-double-dropzone .nametag:hover {
-      opacity: 0.95;
+      opacity: 1;
       filter: saturate(1);
     }
 
@@ -199,7 +202,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -326,7 +328,7 @@
         <span id="toast-message">클라우드와 실시간 동기화되었습니다.</span>
       </div>
 
-      <!-- 헤더 바 (수정: 근무자 배치 현황판) -->
+      <!-- 헤더 바 -->
       <header class="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between shadow-xs shrink-0 mb-1">
         <div class="flex items-center space-x-3">
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
@@ -604,7 +606,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [1열 3행]: 특이사항 (수정: 명칭 '특이사항' & 우측 상단 '기록삭제' 버튼 탑재) -->
+        <!-- [1열 3행]: 특이사항 -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -1692,6 +1694,7 @@
       }
     }
 
+    /* 네임택 빌더 (신입 사원 스마일 아이콘이 미배치함에서도 선명하게 표시되도록 보강) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -1707,14 +1710,18 @@
         `;
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
-        const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-0.5 text-xs select-none" title="신입 사원">😊</span>` : '';
+        
+        // 스마일 아이콘 z-20으로 상단 노출 보장
+        const smile = (staff.icon === 'smile') 
+          ? `<span class="absolute -top-2 right-0 text-sm select-none z-20 leading-none drop-shadow-xs" title="신입 사원">😊</span>` 
+          : '';
 
         el.innerHTML = `
           ${smile}
-          <div class="staff-name-text font-black text-[19px] leading-tight tracking-tight text-slate-900 w-full text-center">
+          <div class="staff-name-text font-black text-[18px] leading-tight tracking-tight text-slate-900 w-full text-center">
             ${staff.name}
           </div>
-          <div class="staff-phone-text text-[13.5px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
+          <div class="staff-phone-text text-[13px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
             ${staff.phone}
           </div>
         `;
@@ -2134,7 +2141,7 @@
         } else {
           riderList.innerHTML = trainStaff.map(s => {
             const tNum = s.location.replace('train-', '');
-            const smileBadge = s.icon === 'smile' ? '😊' : '';
+            const smileBadge = (s.icon === 'smile') ? '😊' : '';
             return `
               <div class="grid grid-cols-[48px_60px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-0.5 rounded shadow-2xs">
                 <span class="bg-sky-600 text-white font-black text-[9.5px] text-center py-0.5 rounded">${tNum}편성</span>
