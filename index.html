@@ -216,10 +216,7 @@
       cursor: pointer;
     }
 
-    /* =========================================================
-       역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이
-       (완전히 사라졌다 나타났다 하여 뒤의 역사가 100% 뚜렷하게 보임)
-    ========================================================= */
+    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -227,27 +224,22 @@
       align-items: center;
       justify-content: center;
       z-index: 10;
-      pointer-events: none; /* 클릭 이벤트는 부모 헤더로 통과 */
+      pointer-events: none;
       font-weight: 900;
       letter-spacing: 0.5px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
       animation: blink-overlay 1.6s infinite ease-in-out;
     }
 
-    /* 완전히 사라졌다(0)가 선명하게 나타났다(0.95)를 반복 */
     @keyframes blink-overlay {
-      0%, 100% {
-        opacity: 0; /* 완전히 사라져서 뒤의 역사명이 100% 보임 */
-      }
-      45%, 75% {
-        opacity: 0.95; /* 선명하게 나타나 경고 표시를 확실하게 전달 */
-      }
+      0%, 100% { opacity: 0; }
+      45%, 75% { opacity: 0.95; }
     }
 
-    /* 1. 외부 단독: 딥 슬레이트 톤 (빨간색 제외) */
+    /* 1. 외부 단독: 딥 슬레이트 톤 */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
-      background-color: #1e293b; /* Slate-800 */
+      background-color: #1e293b;
       color: #f8fafc;
       font-size: 13.5px;
     }
@@ -255,8 +247,8 @@
     /* 2. 불량 단독: 레드 톤 + 옐로우 텍스트 */
     .station-card.is-issue:not(.is-away) .station-status-overlay {
       display: flex;
-      background-color: #dc2626; /* Red-600 */
-      color: #fef08a; /* Yellow-200 */
+      background-color: #dc2626;
+      color: #fef08a;
       font-size: 13.5px;
     }
 
@@ -842,7 +834,7 @@
     firebase.initializeApp(firebaseConfig);
     const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
 
-    /* 열차 25편성 기본 상태 (공통 공유) */
+    /* 열차 25편성 기본 상태 */
     const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
       id: `train-${i + 1}`,
       num: i + 1,
@@ -924,8 +916,15 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
+    /* 클라우드에 현재 팀의 데이터 완전 영구 저장 */
     function syncCurrentTeamToCloud() {
-      rootDbRef.child(currentTeamKey).set(teamsData[currentTeamKey]);
+      const currentTeam = teamsData[currentTeamKey];
+      rootDbRef.child(currentTeamKey).set({
+        staff: currentTeam.staff || [],
+        awayStations: currentTeam.awayStations || {},
+        issueStations: currentTeam.issueStations || {},
+        noticeMemo: currentTeam.noticeMemo || ''
+      });
     }
 
     function initRealtimeSync() {
@@ -994,11 +993,7 @@
       }
     }
 
-    /* =========================================================================
-       역사 헤더 클릭 핸들러 (원클릭 vs 더블클릭 분리)
-       - 1회 클릭: 280ms 대기 후 [외부 ↔ 외부 취소] 단독 토글
-       - 2회 클릭: 1회 대기 타이머 완전 강제 파기 후 [불량 ↔ 불량 취소] 단독 토글
-    ========================================================================= */
+    /* 역사 클릭/더블클릭 판별 상태 머신 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1008,7 +1003,7 @@
       const timeDiff = now - lastTime;
       lastStationClickTimes[zoneId] = now;
 
-      // 300ms 이내에 연속 2회 클릭 발생 시 -> 더블클릭(불량 토글) 확정!
+      // 300ms 이내에 연속 2회 클릭 시 -> 더블클릭 확정 (불량 토글)
       if (timeDiff > 0 && timeDiff < 300) {
         if (stationClickTimerMap[zoneId]) {
           clearTimeout(stationClickTimerMap[zoneId]);
@@ -1018,7 +1013,7 @@
         return;
       }
 
-      // 첫 번째 클릭인 경우 -> 280ms 동안 더블클릭이 들어오는지 대기
+      // 첫 번째 클릭인 경우 -> 280ms 동안 더블클릭 대기
       if (stationClickTimerMap[zoneId]) {
         clearTimeout(stationClickTimerMap[zoneId]);
       }
@@ -1029,7 +1024,7 @@
       }, 280);
     }
 
-    /* 1회 클릭 전용: 외부 ↔ 외부 취소 (불량 상태는 손대지 않음) */
+    /* 1회 클릭 전용: 외부 ↔ 외부 취소 (영구 저장 연동) */
     function toggleStationAwayOnly(zoneId) {
       const currentTeam = teamsData[currentTeamKey];
       if (!currentTeam.awayStations) currentTeam.awayStations = {};
@@ -1038,11 +1033,11 @@
       currentTeam.awayStations[zoneId] = nextAwayState;
 
       renderStaffAndStations();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamToCloud(); // Firebase 실시간 저장
       showToast(`${zoneId} ${nextAwayState ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    /* 더블 클릭 전용: 불량 ↔ 불량 취소 및 특이사항 자동 연동 (외부 상태는 손대지 않음) */
+    /* 더블 클릭 전용: 불량 ↔ 불량 취소 및 특이사항 자동 연동 (영구 저장 연동) */
     function toggleStationIssueOnly(zoneId) {
       const currentTeam = teamsData[currentTeamKey];
       if (!currentTeam.issueStations) currentTeam.issueStations = {};
@@ -1071,7 +1066,7 @@
       }
 
       render();
-      syncCurrentTeamToCloud();
+      syncCurrentTeamToCloud(); // Firebase 실시간 저장
     }
 
     function render() {
@@ -1080,6 +1075,7 @@
       renderStatistics();
       populateLocationOptions();
 
+      // 특이사항 텍스트에리어 동기화
       const memoInput = document.getElementById('notice-memo-input');
       const currentTeam = teamsData[currentTeamKey];
       if (memoInput && document.activeElement !== memoInput) {
@@ -1230,7 +1226,6 @@
         const overlay = card.querySelector('.station-status-overlay');
         if (overlay) {
           if (isAway && isIssue) {
-            // 외부 + 불량 동시 표시
             overlay.innerHTML = `
               <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/50">
                 <span class="text-slate-100 font-black">외 부</span>
@@ -1239,14 +1234,12 @@
               </span>
             `;
           } else if (isAway) {
-            // 외부 단독 (딥 슬레이트 톤)
             overlay.innerHTML = `
               <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black">
                 <i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부
               </span>
             `;
           } else if (isIssue) {
-            // 불량 단독
             overlay.innerHTML = `
               <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black">
                 <i class="fa-solid fa-triangle-exclamation text-xs"></i> 불 량
@@ -1346,7 +1339,6 @@
         case 'team2':
           return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
         case 'team3':
-        case 'amber':
           return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
         case 'team4':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
