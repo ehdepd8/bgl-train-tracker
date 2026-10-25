@@ -157,18 +157,18 @@
       overflow-y: auto !important;
     }
 
+    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 톤 다운(흐리게) 복원 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
       flex-shrink: 0 !important;
-      opacity: 0.9;
-      filter: saturate(0.9);
+      opacity: 0.65 !important;
+      filter: saturate(0.65) !important;
       box-shadow: none !important;
-      overflow: visible !important;
     }
     .unassigned-double-dropzone .nametag:hover {
-      opacity: 1;
-      filter: saturate(1);
+      opacity: 0.95 !important;
+      filter: saturate(1) !important;
     }
 
     .unassigned-box-muted {
@@ -201,6 +201,7 @@
       cursor: pointer;
     }
 
+    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -904,7 +905,7 @@
     </div>
   </div>
 
-  <!-- [신규] 근무자 정보 수정 모달 -->
+  <!-- [근무자 정보 수정 모달] -->
   <div id="edit-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -1034,7 +1035,7 @@
       { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' },
       { id: 'st-15', name: '이우진', phone: '010-9303-0702', location: '김해공항 [9604]', color: 'team1' },
       { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
-      { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1' },
+      { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1', icon: 'smile' },
       { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'safe_guard' },
       { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '미배치', color: 'team1' },
       { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '미배치', color: 'purple' }
@@ -1044,13 +1045,12 @@
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
     
-    /* [핵심] 대괄호 키 에러를 원천 차단하는 배열 구조 */
-    /* 형태: [ { station: "가야대 [9621]", detail: "PSD 상선 1, 3번" } ] */
+    /* [핵심] 대괄호 에러를 완벽히 막는 배열 구조 [{station: "...", detail: "..."}] */
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
-    /* 로컬 스토리지 1차 즉시 복구 */
+    /* 로컬 스토리지 1차 즉시 복원 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
@@ -1070,29 +1070,6 @@
     };
 
     let selectedStaffIdForMove = null;
-
-    /* 색상 테마 반환 함수 */
-    function getColorTheme(color) {
-      switch (color) {
-        case 'purple':
-          return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
-        case 'safe_guard':
-        case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
-        case 'team1':
-        case 'cyan':
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
-        case 'team2':
-          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
-        case 'team3':
-          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
-        case 'team4':
-        case 'blue':
-          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
-        default:
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
-      }
-    }
 
     function checkUrlTeamParam() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1127,7 +1104,6 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 배열 기반 시설 상태를 Firebase + LocalStorage에 안전하게 저장 */
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
@@ -1264,7 +1240,7 @@
       }
     }
 
-    /* 역사 클릭 이벤트 (원클릭 외부, 더블클릭 불량) */
+    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1795,9 +1771,10 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
+        // 스마일 아이콘: 카드 안쪽 상단 우측(top: 2px, right: 4px)에 확실히 위치시켜 옆 카드에 가려지지 않음
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
-          ? `<span class="absolute -top-2.5 right-0 text-sm select-none z-30 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
+          ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
         el.innerHTML = `
@@ -1865,7 +1842,7 @@
       showToast(`${staff.name} 근무자가 삭제되었습니다.`);
     }
 
-    /* [근무자 수정 모달] 제어 로직 */
+    /* 근무자 수정 모달 제어 */
     let editingStaffId = null;
 
     function openEditModal(staff) {
@@ -1874,11 +1851,9 @@
       document.getElementById('edit-phone').value = staff.phone || '';
       document.getElementById('edit-is-newbie').checked = (staff.icon === 'smile');
 
-      // 라디오 버튼 세팅
       const radio = document.querySelector(`input[name="edit-color-choice"][value="${staff.color || 'team1'}"]`);
       if (radio) radio.checked = true;
 
-      // 위치 셀렉트박스 채우기
       populateEditLocationOptions(staff.location);
 
       document.getElementById('edit-modal').classList.remove('hidden');
