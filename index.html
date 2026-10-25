@@ -20,7 +20,6 @@
       user-select: none;
     }
 
-    /* 상하좌우 스크롤 및 핀치 줌 뷰포트 */
     html, body {
       width: 100%;
       height: 100%;
@@ -33,7 +32,6 @@
       touch-action: pan-x pan-y pinch-zoom;
     }
 
-    /* 핀치 줌 확대/축소 대상 래퍼 */
     #zoom-container {
       transform-origin: 0 0;
       transition: transform 0.05s ease-out;
@@ -41,7 +39,6 @@
       height: max-content;
     }
 
-    /* PC 관제 레이아웃 규격 */
     .app-viewport-container {
       width: 1720px;
       min-height: 920px;
@@ -51,14 +48,12 @@
       padding: 8px;
     }
 
-    /* 25열 균등 그리드 (1~25편성 한 줄 배치) */
     .grid-cols-25 {
       display: grid;
       grid-template-columns: repeat(25, minmax(0, 1fr));
       gap: 3px;
     }
 
-    /* 10열 4행 그리드 */
     .matrix-layout-grid {
       display: grid;
       grid-template-columns: 215px repeat(8, minmax(0, 1fr)) 285px;
@@ -66,7 +61,6 @@
       gap: 5px;
     }
 
-    /* 네임택 기본 규격 (50px 고정) */
     .nametag {
       cursor: grab;
       transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, opacity 0.2s ease, filter 0.2s ease;
@@ -80,7 +74,6 @@
       opacity: 0.35 !important;
     }
 
-    /* 모바일 더블 탭 선택 시 강조 스타일 */
     .nametag.mobile-selected {
       outline: 3px solid #f97316 !important;
       outline-offset: 1px;
@@ -96,7 +89,6 @@
       50% { outline-color: #ea580c; }
     }
 
-    /* 네임택끼리 드래그 오버 시 위치 교환 가이드라인 */
     .nametag.drag-insert-before {
       border-top: 3px solid #0284c7 !important;
     }
@@ -104,13 +96,11 @@
       border-bottom: 3px solid #0284c7 !important;
     }
 
-    /* 역사 드롭존 기본 높이 */
     .station-slot-height {
       min-height: 138px;
       height: 100%;
     }
 
-    /* 역사 드롭존 */
     .station-dropzone {
       height: 100%;
       display: flex;
@@ -143,7 +133,6 @@
       gap: 2px;
     }
 
-    /* 하단 휴무자 전용 가로 정렬 드롭존 */
     .off-duty-dropzone {
       display: flex !important;
       flex-direction: row !important;
@@ -155,7 +144,6 @@
       padding: 6px !important;
     }
 
-    /* 우측 미배치 전용 드롭존 */
     .unassigned-double-dropzone {
       display: flex !important;
       flex-direction: row !important;
@@ -168,7 +156,6 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 칸 안의 네임택: 좌우 2분할 크기 + 은은한 흐림 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -182,7 +169,6 @@
       filter: saturate(1);
     }
 
-    /* 미배치함 카드 */
     .unassigned-box-muted {
       background-color: #f1f5f9 !important;
       border: 2px dashed #cbd5e1 !important;
@@ -192,19 +178,16 @@
       border-color: #94a3b8 !important;
     }
 
-    /* 드롭 하이라이트 */
     .drag-hover {
       background-color: #e0f2fe !important;
       outline: 2px dashed #0284c7 !important;
       outline-offset: -2px;
     }
 
-    /* 역사 카드 기본 상태 */
     .station-card {
       position: relative;
     }
 
-    /* 역사 헤더: 역명과 역번호 센터 정렬 */
     .station-header {
       position: relative;
       display: flex;
@@ -236,7 +219,7 @@
       45%, 75% { opacity: 0.95; }
     }
 
-    /* 1. 외부 단독: 딥 슬레이트 톤 (빨간색 제외) */
+    /* 1. 외부 단독: 딥 슬레이트 톤 */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
       background-color: #1e293b;
@@ -260,7 +243,6 @@
       font-size: 12px;
     }
 
-    /* 역사 외부 출장 시 사선 음영 효과 */
     .station-card.is-away .station-dropzone {
       filter: grayscale(85%) contrast(80%) opacity(0.45);
       background: repeating-linear-gradient(
@@ -272,14 +254,12 @@
       ) !important;
     }
 
-    /* 열차 불량 펄스 애니메이션 */
     .train-issue-card {
       border: 2px solid #ef4444 !important;
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
       animation: pulse-issue 1.4s infinite ease-in-out;
     }
 
-    /* 역사 불량 펄스 테두리 */
     .station-card.is-issue {
       border: 2.5px solid #ef4444 !important;
       box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
@@ -291,7 +271,6 @@
       50% { border-color: #b91c1c; }
     }
 
-    /* 커스텀 스크롤 */
     .custom-scroll::-webkit-scrollbar {
       width: 5px;
       height: 5px;
@@ -301,7 +280,6 @@
       border-radius: 4px;
     }
 
-    /* 팀 선택 탭 버튼 */
     .team-tab-btn {
       transition: all 0.15s ease;
     }
@@ -312,7 +290,6 @@
       box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
     }
 
-    /* 토스트 알림 */
     #toast {
       position: fixed;
       top: 20px;
@@ -342,17 +319,14 @@
 </head>
 <body>
 
-  <!-- 두 손가락 핀치 줌 래퍼 -->
   <div id="zoom-container">
     <div class="app-viewport-container">
 
-      <!-- 토스트 알림 -->
       <div id="toast">
         <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
         <span id="toast-message">클라우드와 실시간 동기화되었습니다.</span>
       </div>
 
-      <!-- 헤더 바 -->
       <header class="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between shadow-xs shrink-0 mb-1">
         <div class="flex items-center space-x-3">
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
@@ -363,7 +337,6 @@
               팀별근무자배치
             </h1>
             
-            <!-- 1팀 ~ 4팀 전환 탭 -->
             <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
               <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">1팀</button>
               <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">2팀</button>
@@ -377,7 +350,6 @@
           </div>
         </div>
 
-        <!-- 상태 요약 및 컨트롤 -->
         <div class="flex items-center space-x-2 text-xs">
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -405,7 +377,6 @@
             <strong id="stat-total" class="text-sky-800 font-black">0명</strong>
           </div>
 
-          <!-- 배율 표시 및 100% 원복 버튼 -->
           <button onclick="resetZoomScale()" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded border border-slate-300 text-xs flex items-center gap-1" title="화면 배율 100% 원복">
             <i class="fa-solid fa-magnifying-glass"></i>
             <span id="zoom-percent-text">100%</span>
@@ -420,7 +391,6 @@
             <i class="fa-solid fa-rotate-left text-slate-400"></i> 초기화
           </button>
 
-          <!-- 실시간 시계 -->
           <div id="live-clock" class="font-mono font-bold text-slate-600 px-2 text-xs hidden lg:block">
             00:00:00
           </div>
@@ -448,7 +418,7 @@
       <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
-        <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
+        <!-- [1열 1~2행 병합]: 열차 승무 현황 -->
         <div class="row-span-2 station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="승무현황">
           <div class="bg-sky-500 text-white text-xs font-black py-1 px-2 flex items-center justify-between border-b border-sky-600 shrink-0">
             <span class="flex items-center gap-1">
@@ -461,7 +431,7 @@
           </div>
         </div>
 
-        <!-- [1행 2~9열]: 1관리역 구역 -->
+        <!-- 1행 2~9열 -->
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
           <div class="station-header bg-slate-200 hover:bg-slate-300 text-slate-900 border-b border-rose-200">
             <span class="font-black text-base">기지입환</span>
@@ -533,7 +503,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [10열 1~4행 전체 관통 병합]: 우측 은은하게 톤 다운된 미배치 (대기함) -->
+        <!-- 10열 1~4행 병합: 미배치 -->
         <div class="row-span-4 station-card unassigned-box-muted rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
           <div class="bg-slate-400 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-slate-300 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -548,7 +518,7 @@
           </div>
         </div>
 
-        <!-- [2행 2~9열]: 2관리역 구역 -->
+        <!-- 2행 2~9열 -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
           <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
             <span class="font-black text-base tracking-tight">김해시청</span>
@@ -612,7 +582,6 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 2-9 대저 [9607] -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
           <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
             <span class="font-black text-base tracking-tight">대저</span>
@@ -622,7 +591,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [3행 1열]: 좌측 하단 특이사항 메모 박스 -->
+        <!-- 3행 1열: 특이사항 -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1">
@@ -638,7 +607,7 @@
           </div>
         </div>
 
-        <!-- [3행 2~3열]: 사전점검 -->
+        <!-- 3행 2~3열: 사전점검 -->
         <div class="col-span-2 border-2 border-amber-400 rounded-md overflow-hidden shadow-xs flex flex-col bg-white">
           <div class="bg-amber-400 text-slate-900 text-base font-black py-0.5 px-2 text-center border-b border-amber-500 shrink-0">
             사 전 점 검
@@ -661,7 +630,7 @@
           </div>
         </div>
 
-        <!-- [3행 4~9열]: 3관리역 구역 -->
+        <!-- 3행 4~9열: 3관리역 -->
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="등구 [9606]">
           <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
             <span class="font-black text-base tracking-tight">등구</span>
@@ -716,7 +685,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [4행 1~9열 병합]: 휴무자 전용 구역 -->
+        <!-- 4행: 휴무자 -->
         <div class="col-span-9 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
@@ -834,7 +803,6 @@
     firebase.initializeApp(firebaseConfig);
     const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
 
-    /* 열차 25편성 기본 상태 */
     const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
       id: `train-${i + 1}`,
       num: i + 1,
@@ -843,7 +811,6 @@
       prevStatus: i + 1 <= 16 ? 'active' : 'depot'
     }));
 
-    /* 1팀 초기 기본 데이터 */
     const INITIAL_STAFF_TEAM1 = [
       { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
       { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
@@ -869,13 +836,22 @@
 
     let currentTeamKey = 'team1';
 
-    /* [핵심] 열차와 마찬가지로 전 기기/전 팀 공통으로 영구 보존되는 상태 객체 */
+    /* [영구 보존 상태]: 대괄호/특수문자 에러가 없는 순수 문자열 배열 형태 */
     let sharedTrains = DEFAULT_FLEET;
-    let sharedAwayStations = {};
-    let sharedIssueStations = {};
+    let sharedAwayList = [];
+    let sharedIssueList = [];
     let sharedNoticeMemo = '';
 
-    /* 팀별 독립 데이터 (근무자 인원 배치만 팀별 분리) */
+    /* 로컬 스토리지 1차 즉시 복원 (새로고침 깜빡임 방지) */
+    try {
+      const localAway = localStorage.getItem('bgl_away_list');
+      const localIssue = localStorage.getItem('bgl_issue_list');
+      const localMemo = localStorage.getItem('bgl_notice_memo');
+      if (localAway) sharedAwayList = JSON.parse(localAway);
+      if (localIssue) sharedIssueList = JSON.parse(localIssue);
+      if (localMemo !== null) sharedNoticeMemo = localMemo;
+    } catch(e) {}
+
     let teamsData = {
       team1: { staff: INITIAL_STAFF_TEAM1 },
       team2: { staff: [] },
@@ -915,30 +891,34 @@
       showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
     }
 
-    /* 1. 열차 상태 공통 저장 */
     function syncTrainsToCloud() {
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 2. 역사 외부/불량/특이사항 공통 저장 (절대 리셋되지 않음) */
+    /* 역사 상태 및 특이사항을 Firebase + LocalStorage에 안전하게 2중 영구 저장 */
     function syncFacilityStatusToCloud() {
+      // 1) 로컬 스토리지 즉시 저장
+      localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
+      localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+      localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
+
+      // 2) Firebase 안전 저장 (배열 및 문자열 보장)
       rootDbRef.child('shared_facilities').set({
-        awayStations: sharedAwayStations,
-        issueStations: sharedIssueStations,
-        noticeMemo: sharedNoticeMemo
+        awayList: sharedAwayList || [],
+        issueList: sharedIssueList || [],
+        noticeMemo: sharedNoticeMemo || ''
       });
     }
 
-    /* 3. 근무자 배치 팀별 저장 */
     function syncCurrentTeamStaffToCloud() {
       rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
     }
 
-    /* 실시간 동기화 초기화 */
+    /* 실시간 동기화 리스너 */
     function initRealtimeSync() {
       checkUrlTeamParam();
 
-      // [1] 열차 25편성 공통 리스너
+      // 1. 열차 상태
       rootDbRef.child('shared_trains').on('value', (snapshot) => {
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
@@ -950,13 +930,18 @@
         }
       });
 
-      // [2] 역사 외부, 역사 불량, 특이사항 공통 리스너 (영구 보존)
+      // 2. 역사 외부/불량/특이사항
       rootDbRef.child('shared_facilities').on('value', (snapshot) => {
         const cloudData = snapshot.val();
         if (cloudData) {
-          sharedAwayStations = cloudData.awayStations || {};
-          sharedIssueStations = cloudData.issueStations || {};
-          sharedNoticeMemo = cloudData.noticeMemo || '';
+          sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
+          sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
+          sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
+
+          // 최신값 로컬 갱신
+          localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
+          localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+          localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
           renderStaffAndStations();
           renderStatistics();
@@ -970,7 +955,7 @@
         }
       });
 
-      // [3] 1팀 ~ 4팀 인원 배치 리스너
+      // 3. 1~4팀 인원 배치
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
           const cloudStaff = snapshot.val();
@@ -1012,7 +997,7 @@
       }
     }
 
-    /* 역사 헤더 클릭/더블클릭 판별 */
+    /* 원클릭 vs 더블클릭 이벤트 독립 제어 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1022,7 +1007,7 @@
       const timeDiff = now - lastTime;
       lastStationClickTimes[zoneId] = now;
 
-      // 300ms 이내에 연속 2회 클릭 시 -> 더블클릭 확정 (불량 토글)
+      // 300ms 내 연속 2회 클릭 -> 더블클릭(불량 토글)
       if (timeDiff > 0 && timeDiff < 300) {
         if (stationClickTimerMap[zoneId]) {
           clearTimeout(stationClickTimerMap[zoneId]);
@@ -1032,7 +1017,7 @@
         return;
       }
 
-      // 첫 번째 클릭인 경우 -> 280ms 동안 더블클릭 대기
+      // 첫 번째 클릭 -> 280ms 대기 후 단일클릭(외부 토글)
       if (stationClickTimerMap[zoneId]) {
         clearTimeout(stationClickTimerMap[zoneId]);
       }
@@ -1043,27 +1028,35 @@
       }, 280);
     }
 
-    /* 1회 클릭: 외부 ↔ 외부 취소 (영구 저장) */
+    /* 1회 클릭: 외부 ↔ 외부 취소 */
     function toggleStationAwayOnly(zoneId) {
-      const nextAwayState = !sharedAwayStations[zoneId];
-      if (nextAwayState) {
-        sharedAwayStations[zoneId] = true;
+      const idx = sharedAwayList.indexOf(zoneId);
+      let isAwayNow = false;
+
+      if (idx > -1) {
+        sharedAwayList.splice(idx, 1);
+        isAwayNow = false;
       } else {
-        delete sharedAwayStations[zoneId];
+        sharedAwayList.push(zoneId);
+        isAwayNow = true;
       }
 
       renderStaffAndStations();
-      syncFacilityStatusToCloud(); // 공통 경로에 즉시 저장
-      showToast(`${zoneId} ${nextAwayState ? '외부 설정' : '외부 취소 (정상복귀)'}`);
+      syncFacilityStatusToCloud();
+      showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    /* 더블 클릭: 불량 ↔ 불량 취소 및 특이사항 연동 (영구 저장) */
+    /* 더블 클릭: 불량 ↔ 불량 취소 및 특이사항 연동 */
     function toggleStationIssueOnly(zoneId) {
-      const nextIssueState = !sharedIssueStations[zoneId];
-      if (nextIssueState) {
-        sharedIssueStations[zoneId] = true;
+      const idx = sharedIssueList.indexOf(zoneId);
+      let isIssueNow = false;
+
+      if (idx > -1) {
+        sharedIssueList.splice(idx, 1);
+        isIssueNow = false;
       } else {
-        delete sharedIssueStations[zoneId];
+        sharedIssueList.push(zoneId);
+        isIssueNow = true;
       }
 
       const now = new Date();
@@ -1071,7 +1064,7 @@
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
 
       let autoMemoText = '';
-      if (nextIssueState) {
+      if (isIssueNow) {
         autoMemoText = `[${timeStr} ${cleanStationName}역 불량 점검중]`;
         showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
       } else {
@@ -1090,7 +1083,7 @@
 
       renderStaffAndStations();
       renderStatistics();
-      syncFacilityStatusToCloud(); // 공통 경로에 즉시 저장
+      syncFacilityStatusToCloud();
     }
 
     function render() {
@@ -1105,7 +1098,6 @@
       }
     }
 
-    /* 1~25편성 정렬: 본선(오름차순) -> 불량(오름차순) -> 기지(오름차순) */
     let trainClickTimer = null;
 
     function getSortedTrains() {
@@ -1225,7 +1217,7 @@
       syncTrainsToCloud();
     }
 
-    /* 역사 렌더링: 공통 상태 객체(sharedAwayStations, sharedIssueStations) 기반 반영 */
+    /* 역사 렌더링 */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -1233,14 +1225,12 @@
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
 
-        const isAway = !!sharedAwayStations[zoneId];
-        const isIssue = !!sharedIssueStations[zoneId];
+        const isAway = sharedAwayList.includes(zoneId);
+        const isIssue = sharedIssueList.includes(zoneId);
 
-        // 1) 역사 카드 클래스
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
         if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
 
-        // 2) 헤더 위 완전 점멸(Blink) 오버레이 세팅
         const overlay = card.querySelector('.station-status-overlay');
         if (overlay) {
           if (isAway && isIssue) {
@@ -1377,7 +1367,6 @@
       const stationCards = document.querySelectorAll('.station-card');
       const stationHeaders = document.querySelectorAll('.station-header');
 
-      /* 역사 헤더 클릭 이벤트 */
       stationHeaders.forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
@@ -1390,7 +1379,6 @@
         };
       });
 
-      /* PC 마우스 드래그 앤 드롭 및 위/아래 순서 변경 */
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
@@ -1442,7 +1430,6 @@
           draggedId = null;
         });
 
-        /* 모바일 더블 탭 선택 및 순서 교환 */
         tag.addEventListener('touchend', (e) => {
           const currentTime = Date.now();
           const tapLength = currentTime - lastTapTime;
@@ -1476,7 +1463,6 @@
         });
       });
 
-      /* 모바일 빈 공간 터치 이동 */
       stationCards.forEach(card => {
         card.addEventListener('touchend', (e) => {
           if (!selectedStaffIdForMove) return;
@@ -1492,7 +1478,6 @@
         });
       });
 
-      /* PC 마우스 드롭존 이벤트 */
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -1577,8 +1562,7 @@
       document.getElementById('stat-depot').textContent = depotTrains;
       document.getElementById('stat-issue').textContent = issueTrains;
 
-      const issueStationCount = Object.keys(sharedIssueStations).length;
-      document.getElementById('stat-station-issue').textContent = `${issueStationCount}개역`;
+      document.getElementById('stat-station-issue').textContent = `${sharedIssueList.length}개역`;
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
@@ -1722,7 +1706,7 @@
       }
     }, 1000);
 
-    /* 두 손가락 핀치 줌 제스처 */
+    /* 핀치 줌 */
     let currentZoom = 1.0;
     let initialPinchDistance = null;
     let startZoom = 1.0;
@@ -1773,6 +1757,7 @@
     });
 
     window.onload = function() {
+      render(); // 로컬 캐시 즉시 렌더링
       initRealtimeSync();
     };
   </script>
