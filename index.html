@@ -1640,22 +1640,14 @@
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
     }
 
-    /* ========================================================
-       통합 렌더링 파이프라인 (네임택 및 무인 표시 완벽 보장)
-    ======================================================== */
+    /* 통합 렌더링 */
     function render() {
-      // 1. 상단 25편성 컨테이너 렌더링
       renderTrains25Grid();
-
-      // 2. 전체 역사 및 열차 드롭존 네임택 배치 & 무인 표시
       renderStaffAndStations();
-
-      // 3. 통계 및 팀별 탑승기록 렌더링
       renderStatistics();
       renderRideLogs();
       populateLocationOptions();
 
-      // 4. 특이사항 텍스트 반영
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput && document.activeElement !== memoInput) {
         memoInput.value = sharedNoticeMemo || '';
@@ -1788,21 +1780,24 @@
       }
     }
 
-    /* 네임택 빌더 (스마일 아이콘: 카드 안쪽 상단 우측 top: 2px, right: 3px에 고정) */
+    /* 네임택 엘리먼트 생성기 */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
       el.draggable = true;
 
-      const isOnTrain = staff.location.startsWith('train-');
+      const isOnTrain = staff.location && staff.location.startsWith('train-');
       const isSelected = (selectedStaffIdForMove === staff.id);
 
       if (isOnTrain) {
-        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        // 열차 편성 안의 미니 네임택 (이름 + 스마일)
+        const smile = (staff.icon === 'smile') ? `<span class="text-[10px] ml-0.5">😊</span>` : '';
+        el.className = `nametag w-full rounded py-0.5 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         el.innerHTML = `
-          <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
+          <span class="font-black text-[12px] leading-tight text-slate-900 tracking-tight flex items-center justify-center">${staff.name}${smile}</span>
         `;
       } else {
+        // 역사 및 대기함의 표준 네임택
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
         const isNewbie = (staff.icon === 'smile');
@@ -1863,7 +1858,7 @@
     }
 
     function deleteStaffDirect(staff) {
-      if (staff.location.startsWith('train-')) {
+      if (staff.location && staff.location.startsWith('train-')) {
         handleRideLogging(staff.name, staff.location, null);
       }
       teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
@@ -1950,7 +1945,7 @@
       closeEditModal();
     }
 
-    /* 2. 전체 드롭존 네임택 배치 & 무인 표시 완벽 보장 */
+    /* 2. 전체 드롭존 네임택 배치 & 무인 표시 보장 */
     function renderStaffAndStations() {
       // 1) 모든 드롭존 청소
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
@@ -2007,7 +2002,7 @@
         }
       });
 
-      // 4) 각 카드의 인원수별 정렬 및 빈 역사 '무인' 표시
+      // 4) 각 카드의 인원수별 정렬 및 빈 역사 '무인', 열차 빈자리 '-' 표시
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2362,12 +2357,13 @@
       const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
-      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
+      const trainStaff = currentStaff.filter(s => s.location && s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
+      // [핵심] 열차 탑승 현황 리스트 (근무자 탑승 시 즉시 렌더링)
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
