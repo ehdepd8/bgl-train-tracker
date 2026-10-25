@@ -41,10 +41,10 @@
       height: max-content;
     }
 
-    /* PC 관제 레이아웃 고정 규격: 하단 여백 없이 꽉 차도록 min-height 920px로 확장 */
+    /* PC 관제 레이아웃 규격 (우측 대기함 140px 포함하여 총 1570px로 확장) */
     .app-viewport-container {
-      width: 1420px;
-      min-height: 920px;
+      width: 1570px;
+      min-height: 860px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -58,11 +58,11 @@
       gap: 3px;
     }
 
-    /* 9열 그리드: 행별 180px 보장 */
+    /* 10열 그리드: 좌측 승무/특이사항(215px) + 중앙 역사 8열 + 우측 미배치 대기함(140px) */
     .matrix-layout-grid {
       display: grid;
-      grid-template-columns: 215px repeat(8, minmax(0, 1fr));
-      grid-template-rows: repeat(3, minmax(180px, 1fr));
+      grid-template-columns: 215px repeat(8, minmax(0, 1fr)) 140px;
+      grid-template-rows: repeat(3, minmax(168px, 1fr));
       gap: 4px;
     }
 
@@ -96,7 +96,7 @@
 
     /* 역사 드롭존 기본 높이 */
     .station-slot-height {
-      min-height: 146px;
+      min-height: 136px;
       height: 100%;
     }
 
@@ -133,16 +133,27 @@
       gap: 2px;
     }
 
-    /* 하단 가로 정렬 드롭존 (왼쪽부터 차례차례 배치) */
-    .horizontal-pool-dropzone {
+    /* 하단 휴무자 전용 가로 정렬 드롭존 (왼쪽부터 차례대로 정렬) */
+    .off-duty-dropzone {
       display: flex !important;
       flex-direction: row !important;
       flex-wrap: wrap !important;
       align-items: flex-start !important;
       align-content: flex-start !important;
       justify-content: flex-start !important;
-      gap: 6px !important;
+      gap: 8px !important;
       padding: 6px !important;
+    }
+
+    /* 우측 미배치 세로 타워 드롭존 */
+    .unassigned-tower-dropzone {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+      padding: 6px 4px !important;
+      overflow-y: auto !important;
     }
 
     /* 드롭 하이라이트 */
@@ -316,7 +327,7 @@
         </div>
       </header>
 
-      <!-- 1. 상단 25편성 한 줄 꽉 찬 배치 (글자 크기 13.5px로 확대 & 높이 66px) -->
+      <!-- 1. 상단 25편성 한 줄 꽉 찬 배치 (글자 13.5px & 높이 66px) -->
       <section class="bg-white border border-slate-300 rounded-lg p-1.5 shadow-xs shrink-0 mb-1">
         <div class="flex items-center justify-between text-[11px] mb-1 px-1">
           <div class="font-black text-slate-800 flex items-center gap-1.5">
@@ -333,7 +344,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 9열 그리드 -->
+      <!-- 2. 중앙 메인: 10열 그리드 (우측에 1~3행 병합된 '미배치 대기함' 배치) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full mb-1">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -349,7 +360,7 @@
           </div>
         </div>
 
-        <!-- [1행]: 1관리역 구역 -->
+        <!-- [1행 2~9열]: 1관리역 구역 -->
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
           <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-900 font-black text-base py-0.5 px-1.5 flex items-center justify-between border-b border-rose-200">
             <span>기지입환</span>
@@ -414,7 +425,22 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [2행]: 2관리역 구역 -->
+        <!-- [10열 1~3행 전체 병합]: 우측 미배치 (대기함) 전용 세로 기둥 (140px 너비) -->
+        <div class="row-span-3 station-card bg-white border-2 border-dashed border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
+          <div class="bg-sky-500 text-white text-xs font-black py-1.5 px-2 flex items-center justify-between border-b border-sky-600 shrink-0">
+            <span class="flex items-center gap-1">
+              <i class="fa-solid fa-boxes-stacked text-sky-100"></i> 미배치
+            </span>
+            <span id="badge-unassigned-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
+          </div>
+          <div class="text-[10px] text-slate-400 text-center py-1 bg-sky-50/50 border-b border-sky-100 font-semibold select-none">
+            대기 네임택 보관
+          </div>
+          <div class="station-dropzone unassigned-tower-dropzone custom-scroll flex-1 bg-sky-50/20">
+          </div>
+        </div>
+
+        <!-- [2행 2~9열]: 2관리역 구역 -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
           <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
             <span class="tracking-tight">김해시청</span>
@@ -480,7 +506,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [3행]: 특이사항 + 사전점검 + 3관리역 -->
+        <!-- [3행 1열]: 좌측 하단 특이사항 메모 박스 -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1">
@@ -496,6 +522,7 @@
           </div>
         </div>
 
+        <!-- [3행 2~3열]: 사전점검 -->
         <div class="col-span-2 border-2 border-amber-400 rounded-md overflow-hidden shadow-xs flex flex-col bg-white">
           <div class="bg-amber-400 text-slate-900 text-base font-black py-0.5 px-2 text-center border-b border-amber-500 shrink-0">
             사 전 점 검
@@ -516,6 +543,7 @@
           </div>
         </div>
 
+        <!-- [3행 4~9열]: 3관리역 구역 -->
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="등구 [9606]">
           <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
             <span class="tracking-tight">등구</span>
@@ -566,10 +594,9 @@
 
       </main>
 
-      <!-- 3. 하단 구역: [좌측: 휴무자] + [우측: 미배치 (대기함) - 네임택 모아놓는 공간] -->
-      <footer class="shrink-0 flex gap-2 w-full mt-1">
-        <!-- 3-A. 휴 무 자 -->
-        <div class="flex-[5] bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
+      <!-- 3. 하단 구역: [휴무자 전용 100% 와이드 단일 구역 (왼쪽부터 차례대로)] -->
+      <footer class="shrink-0 w-full mt-1">
+        <div class="w-full bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="휴무자">
           <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
             <div class="flex items-center gap-1.5 font-black text-slate-800">
               <i class="fa-solid fa-bed text-amber-500"></i>
@@ -577,21 +604,7 @@
             </div>
             <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
           </div>
-          <div class="station-dropzone horizontal-pool-dropzone custom-scroll min-h-[68px] max-h-[82px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200">
-          </div>
-        </div>
-
-        <!-- 3-B. 미배치 (대기함) - 네임택들을 미리 모아두는 공간 -->
-        <div class="flex-[5] bg-white border-2 border-dashed border-sky-400 rounded-md p-1.5 flex flex-col shadow-xs station-card" data-zone-id="미배치">
-          <div class="flex items-center justify-between border-b border-sky-200 pb-0.5 mb-1 text-xs">
-            <div class="flex items-center gap-1.5 font-black text-sky-900">
-              <i class="fa-solid fa-boxes-stacked text-sky-600"></i>
-              <span>미배치 (대기함)</span>
-              <span class="text-[10px] text-slate-400 font-normal ml-1">네임택을 배치하기 전 모아두는 공간</span>
-            </div>
-            <span id="badge-unassigned-count" class="font-black text-xs px-2 py-0.2 rounded bg-sky-100 text-sky-800 border border-sky-300">0명</span>
-          </div>
-          <div class="station-dropzone horizontal-pool-dropzone custom-scroll min-h-[68px] max-h-[82px] overflow-y-auto bg-sky-50/40 p-1.5 rounded border border-sky-200">
+          <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[68px] max-h-[82px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200">
           </div>
         </div>
       </footer>
@@ -876,7 +889,6 @@
       }
     }
 
-    /* 1~25편성 헤더: 13.5px 대형 폰트 및 66px 여유 있는 세로 높이 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
@@ -972,7 +984,6 @@
           dropzone.classList.add('count-many');
         }
 
-        // 근무자가 없는 역사에만 '무 인' 표기
         if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
@@ -1006,7 +1017,7 @@
           <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
         `;
       } else {
-        el.className = `nametag w-[136px] h-[50px] rounded-md px-1.5 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-0.5 text-xs select-none" title="신입 사원">😊</span>` : '';
 
         el.innerHTML = `
