@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>팀별근무자배치</title>
+  <title>근무자 배치 현황판</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
@@ -326,7 +326,7 @@
         <span id="toast-message">클라우드와 실시간 동기화되었습니다.</span>
       </div>
 
-      <!-- 헤더 바 -->
+      <!-- 헤더 바 (수정: 근무자 배치 현황판) -->
       <header class="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between shadow-xs shrink-0 mb-1">
         <div class="flex items-center space-x-3">
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
@@ -334,7 +334,7 @@
           </div>
           <div class="flex items-center gap-2">
             <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900">
-              팀별근무자배치
+              근무자 배치 현황판
             </h1>
             
             <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
@@ -604,13 +604,15 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [1열 3행]: 특이사항 -->
+        <!-- [1열 3행]: 특이사항 (수정: 명칭 '특이사항' & 우측 상단 '기록삭제' 버튼 탑재) -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항 (전체 공유)
+              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
             </span>
-            <span class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1.5 py-0.2 rounded">실시간</span>
+            <button onclick="clearNoticeMemo()" class="text-[9.5px] bg-amber-600 hover:bg-amber-700 px-1.5 py-0.2 rounded font-bold text-white transition shadow-2xs" title="특이사항 메모 내용 비우기">
+              기록삭제
+            </button>
           </div>
           <div class="p-1.5 flex-1 flex flex-col bg-white">
             <textarea id="notice-memo-input" 
@@ -737,7 +739,6 @@
           </div>
         </div>
 
-        <!-- PSD 세부 옵션: 상/하선 + 전체/1~4번 복수 선택 -->
         <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
           <div>
             <label class="block font-black text-rose-950 mb-1">선로 구분</label>
@@ -789,7 +790,6 @@
           </div>
         </div>
 
-        <!-- 출입문 불량 세부 옵션: 1번~8번 다중 선택 및 전체 선택 -->
         <div id="train-door-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
           <div class="flex items-center justify-between mb-1">
             <label class="font-black text-rose-950">출입문 번호 (복수 선택 가능)</label>
@@ -954,8 +954,8 @@
     let currentTeamKey = 'team1';
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
-    let sharedIssueList = []; // 역사 불량 목록
-    let sharedStationIssueDetails = {}; // 역사별 불량 상세 내역 { "가야대 [9621]": "PSD 상선 1, 3번" }
+    let sharedIssueList = []; 
+    let sharedStationIssueDetails = {};
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
@@ -989,17 +989,16 @@
           return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
         case 'safe_guard':
         case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50'; // 고객안전원 (노란색)
+          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
         case 'team1':
         case 'cyan':
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50'; // 1팀
+          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
         case 'team2':
-          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50'; // 2팀
+          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
         case 'team3':
-          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50'; // 3팀 (라임그린)
+          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
-        case 'blue':
-          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50'; // 4팀
+          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
       }
@@ -1131,6 +1130,17 @@
       showToast('특이사항이 실시간 저장되었습니다.');
     }
 
+    /* 특이사항 메모 내용 비우기 */
+    function clearNoticeMemo() {
+      if (confirm("특이사항 내용을 모두 삭제하시겠습니까?")) {
+        sharedNoticeMemo = '';
+        const memoInput = document.getElementById('notice-memo-input');
+        if (memoInput) memoInput.value = '';
+        syncFacilityStatusToCloud();
+        showToast("특이사항 기록이 삭제되었습니다.");
+      }
+    }
+
     function resetAllAndMoveToUnassigned() {
       if (!confirm("전체 초기화를 실행하시겠습니까?\n\n- 모든 근무자 네임택이 [미배치 (대기함)]으로 이동합니다.\n- 열차/역사 불량 및 외부 상태가 정상 복구됩니다.\n- 특이사항 및 탑승기록이 리셋됩니다.")) {
         return;
@@ -1245,14 +1255,11 @@
       }
     }
 
-    /* ========================================================
-       역사 불량 세부 선택 모달 (PSD 장애, 통신불량, 기타)
-       PSD: 상/하선 + 도어 다중선택/전체
-    ======================================================== */
+    /* 역사 불량 세부 선택 모달 제어 */
     let currentModalZoneId = null;
     let selectedIssueType = null;
     let selectedPsdLine = '상선';
-    let selectedPsdDoors = []; // ['1번', '3번'] 등
+    let selectedPsdDoors = [];
     let isPsdAll = false;
 
     function openIssueModal(zoneId) {
@@ -1399,10 +1406,7 @@
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
-    /* ========================================================
-       열차 불량 세부 선택 모달 (통신 불량, 출입문 불량, 기타)
-       출입문 불량: 1번~8번 다중 선택 및 전체 선택
-    ======================================================== */
+    /* 열차 불량 세부 선택 모달 제어 */
     let currentModalTrainId = null;
     let selectedTrainIssueType = null;
     let selectedTrainDoors = [];
@@ -1657,14 +1661,12 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    /* 열차 더블클릭 핸들러: 이미 불량이면 해제 및 복구 기록, 아니면 모달 호출 */
     function handleTrainDoubleClick(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
       if (tr.status === 'issue') {
         tr.status = tr.prevStatus || 'depot';
-        const oldDetail = tr.issueDetail || '';
         tr.issueDetail = '';
 
         const now = new Date();
