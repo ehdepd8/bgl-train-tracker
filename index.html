@@ -237,12 +237,25 @@
       border: 1px solid #ffffff;
     }
 
-    /* 불량 열차 전용 펄스 애니메이션 */
+    /* 열차 불량 펄스 애니메이션 */
     .train-issue-card {
       border: 2px solid #ef4444 !important;
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
       animation: pulse-issue 1.4s infinite ease-in-out;
     }
+
+    /* 역사 불량 펄스 애니메이션 */
+    .station-issue-card {
+      border: 2px solid #ef4444 !important;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
+      animation: pulse-issue 1.4s infinite ease-in-out;
+    }
+    .station-issue-card .station-header {
+      background-color: #dc2626 !important;
+      color: #ffffff !important;
+      border-color: #b91c1c !important;
+    }
+
     @keyframes pulse-issue {
       0%, 100% { border-color: #ef4444; }
       50% { border-color: #b91c1c; }
@@ -334,7 +347,7 @@
           </div>
         </div>
 
-        <!-- 상태 요약 및 컨트롤 -->
+        <!-- 상태 요약 및 컨트롤 (열차불량 & 역사불량 분리 집계) -->
         <div class="flex items-center space-x-2 text-xs">
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -348,8 +361,13 @@
           </div>
           <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
-            <span class="text-rose-700 font-semibold">불량:</span>
+            <span class="text-rose-700 font-semibold">열차불량:</span>
             <strong id="stat-issue" class="text-rose-800 font-black">0</strong>
+          </div>
+          <div class="flex items-center gap-1.5 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-xs"></i>
+            <span class="text-amber-800 font-semibold">역사불량:</span>
+            <strong id="stat-station-issue" class="text-amber-900 font-black">0</strong>
           </div>
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <i class="fa-solid fa-user-check text-sky-600"></i>
@@ -379,7 +397,7 @@
         </div>
       </header>
 
-      <!-- 1. 상단 25편성 한 줄 배치 (본선 오름차순 -> 불량 오름차순 -> 기지 오름차순) -->
+      <!-- 1. 상단 25편성 한 줄 배치 -->
       <section class="bg-white border border-slate-300 rounded-lg p-1.5 shadow-xs shrink-0 mb-1">
         <div class="flex items-center justify-between text-[11px] mb-1 px-1">
           <div class="font-black text-slate-800 flex items-center gap-1.5">
@@ -397,7 +415,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 (역사 헤더 클릭: 외부출장 / 더블클릭: 불량 및 특이사항 자동연동) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -415,64 +433,64 @@
 
         <!-- [1행 2~9열]: 1관리역 구역 -->
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-900 font-black text-base py-0.5 px-1.5 flex items-center justify-between border-b border-rose-200">
-            <span>기지입환</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-900 font-black text-base py-0.5 px-1.5 flex items-center justify-between border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="station-title-text">기지입환</span>
             <i class="fa-solid fa-warehouse text-xs text-slate-500"></i>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="가야대 [9621]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">가야대</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">가야대</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9621]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="장신대 [9620]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">장신대</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">장신대</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9620]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="연지공원 [9619]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">연지공원</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">연지공원</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9619]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="박물관 [9618]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">박물관</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">박물관</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9618]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="수로왕릉 [9617]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">수로왕릉</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">수로왕릉</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9617]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="봉황 [9616]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">봉황</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">봉황</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9616]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="부원 [9615]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200">
-            <span class="tracking-tight">부원</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-rose-100/70 hover:bg-rose-100 text-rose-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-rose-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">부원</span>
             <span class="font-mono text-xs font-semibold text-rose-700">[9615]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
@@ -495,56 +513,56 @@
 
         <!-- [2행 2~9열]: 2관리역 구역 -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">김해시청</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">김해시청</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9614]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="인제대 [9613]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">인제대</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">인제대</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9613]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해대학 [9612]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">김해대학</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">김해대학</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9612]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="지내 [9611]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">지내</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">지내</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9611]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="불암 [9610]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">불암</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">불암</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9610]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대사 [9609]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">대사</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">대사</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9609]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="평강 [9608]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">평강</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">평강</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9608]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
@@ -552,8 +570,8 @@
 
         <!-- 2-9 대저 [9607] -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200">
-            <span class="tracking-tight">대저</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-emerald-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">대저</span>
             <span class="font-mono text-xs font-semibold text-emerald-700">[9607]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
@@ -582,13 +600,13 @@
           </div>
           <div class="grid grid-cols-2 divide-x divide-amber-200 flex-1">
             <div class="station-card flex flex-col" data-zone-id="사전점검-가야대">
-              <div onclick="toggleStationAway(this)" class="station-header cursor-pointer text-sm font-black text-amber-950 bg-amber-100/90 py-1 text-center border-b border-amber-200">
+              <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer text-sm font-black text-amber-950 bg-amber-100/90 py-1 text-center border-b border-amber-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
                 가야대
               </div>
               <div class="station-dropzone station-slot-height bg-white"></div>
             </div>
             <div class="station-card flex flex-col" data-zone-id="사전점검-사상">
-              <div onclick="toggleStationAway(this)" class="station-header cursor-pointer text-sm font-black text-amber-950 bg-amber-100/90 py-1 text-center border-b border-amber-200">
+              <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer text-sm font-black text-amber-950 bg-amber-100/90 py-1 text-center border-b border-amber-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
                 사상
               </div>
               <div class="station-dropzone station-slot-height bg-white"></div>
@@ -598,48 +616,48 @@
 
         <!-- [3행 4~9열]: 3관리역 구역 -->
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="등구 [9606]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">등구</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">등구</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9606]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="덕두 [9605]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">덕두</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">덕두</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9605]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해공항 [9604]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">김해공항</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">김해공항</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9604]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="서부산 [9603]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">서부산</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">서부산</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9603]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="괘법 [9602]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">괘법</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">괘법</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9602]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="사상 [9601]">
-          <div onclick="toggleStationAway(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200">
-            <span class="tracking-tight">사상</span>
+          <div onclick="handleStationHeaderClick(this)" class="station-header cursor-pointer bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 font-black text-base py-0.5 px-1.5 flex items-center justify-center gap-1 border-b border-indigo-200" title="클릭: 외부출장 | 더블클릭: 불량(특이사항 연동)">
+            <span class="tracking-tight station-title-text">사상</span>
             <span class="font-mono text-xs font-semibold text-indigo-700">[9601]</span>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
@@ -763,7 +781,7 @@
     firebase.initializeApp(firebaseConfig);
     const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
 
-    /* 열차 25편성 기본 상태 (active: 본선, issue: 불량, depot: 기지) */
+    /* 열차 25편성 기본 상태 (공통 공유) */
     const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
       id: `train-${i + 1}`,
       num: i + 1,
@@ -800,10 +818,10 @@
     let sharedTrains = DEFAULT_FLEET;
 
     let teamsData = {
-      team1: { staff: INITIAL_STAFF_TEAM1, awayStations: {}, noticeMemo: '' },
-      team2: { staff: [], awayStations: {}, noticeMemo: '' },
-      team3: { staff: [], awayStations: {}, noticeMemo: '' },
-      team4: { staff: [], awayStations: {}, noticeMemo: '' }
+      team1: { staff: INITIAL_STAFF_TEAM1, awayStations: {}, issueStations: {}, noticeMemo: '' },
+      team2: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' },
+      team3: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' },
+      team4: { staff: [], awayStations: {}, issueStations: {}, noticeMemo: '' }
     };
 
     let selectedStaffIdForMove = null;
@@ -870,6 +888,7 @@
             teamsData[tKey] = {
               staff: cloudTeam.staff || [],
               awayStations: cloudTeam.awayStations || {},
+              issueStations: cloudTeam.issueStations || {},
               noticeMemo: cloudTeam.noticeMemo || ''
             };
             if (currentTeamKey === tKey) {
@@ -900,10 +919,11 @@
 
     function resetData() {
       const teamNum = currentTeamKey.replace('team', '');
-      if (confirm(`현재 [${teamNum}팀] 근무자 배치 및 특이사항을 초기화하시겠습니까?\n(공통 25편성 열차 상태는 그대로 유지됩니다)`)) {
+      if (confirm(`현재 [${teamNum}팀] 근무자 배치, 불량역사 및 특이사항을 초기화하시겠습니까?\n(공통 25편성 열차 상태는 그대로 유지됩니다)`)) {
         teamsData[currentTeamKey] = {
           staff: currentTeamKey === 'team1' ? JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1)) : [],
           awayStations: {},
+          issueStations: {},
           noticeMemo: ''
         };
         selectedStaffIdForMove = null;
@@ -913,12 +933,29 @@
       }
     }
 
-    function toggleStationAway(headerEl) {
+    /* 역사 헤더 클릭 핸들러 (싱글클릭: 외부출장 / 더블클릭: 불량 + 특이사항 자동연동) */
+    let stationClickTimers = {};
+
+    function handleStationHeaderClick(headerEl) {
       const card = headerEl.closest('.station-card');
       if (!card) return;
       const zoneId = card.getAttribute('data-zone-id');
       if (!zoneId) return;
 
+      if (stationClickTimers[zoneId]) {
+        clearTimeout(stationClickTimers[zoneId]);
+        delete stationClickTimers[zoneId];
+        toggleStationIssue(zoneId, headerEl); // 더블클릭 -> 불량 토글 및 특이사항 연동
+      } else {
+        stationClickTimers[zoneId] = setTimeout(() => {
+          toggleStationAway(zoneId); // 1회 클릭 -> 외부출장 토글
+          delete stationClickTimers[zoneId];
+        }, 250);
+      }
+    }
+
+    /* 1회 클릭: 외부출장 토글 */
+    function toggleStationAway(zoneId) {
       const currentTeam = teamsData[currentTeamKey];
       if (!currentTeam.awayStations) currentTeam.awayStations = {};
       currentTeam.awayStations[zoneId] = !currentTeam.awayStations[zoneId];
@@ -926,6 +963,42 @@
       render();
       syncCurrentTeamToCloud();
       showToast(`${zoneId} 외부 출장 상태가 변경되었습니다.`);
+    }
+
+    /* 더블클릭: 역사 불량(⚠️) 토글 및 좌측 하단 특이사항 메모장 자동 연동 */
+    function toggleStationIssue(zoneId, headerEl) {
+      const currentTeam = teamsData[currentTeamKey];
+      if (!currentTeam.issueStations) currentTeam.issueStations = {};
+      
+      const isCurrentlyIssue = !!currentTeam.issueStations[zoneId];
+      const newIssueState = !isCurrentlyIssue;
+      currentTeam.issueStations[zoneId] = newIssueState;
+
+      // 타임스탬프 (HH:MM)
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      // 역사 명칭 추출 (예: '가야대 [9621]' -> '가야대')
+      const cleanStationName = zoneId.split(' ')[0] || zoneId;
+
+      // 특이사항 자동 추가
+      let autoMemoText = '';
+      if (newIssueState) {
+        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 점검중]`;
+        showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
+      } else {
+        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
+        showToast(`${cleanStationName}역 정상 복구 (특이사항 자동기록)`);
+      }
+
+      if (currentTeam.noticeMemo && currentTeam.noticeMemo.trim().length > 0) {
+        currentTeam.noticeMemo = currentTeam.noticeMemo.trim() + '\n' + autoMemoText;
+      } else {
+        currentTeam.noticeMemo = autoMemoText;
+      }
+
+      render();
+      syncCurrentTeamToCloud();
     }
 
     function render() {
@@ -947,9 +1020,9 @@
     function getSortedTrains() {
       return [...sharedTrains].sort((a, b) => {
         const getPriority = (status) => {
-          if (status === 'active') return 1; // 본선 우선
-          if (status === 'issue') return 2;  // 불량 다음
-          return 3;                          // 기지 마지막
+          if (status === 'active') return 1;
+          if (status === 'issue') return 2;
+          return 3;
         };
 
         const priorityA = getPriority(a.status);
@@ -958,7 +1031,7 @@
         if (priorityA !== priorityB) {
           return priorityA - priorityB;
         }
-        return a.num - b.num; // 동일 상태 내에서는 편성 번호 오름차순
+        return a.num - b.num;
       });
     }
 
@@ -996,10 +1069,10 @@
           if (trainClickTimer) {
             clearTimeout(trainClickTimer);
             trainClickTimer = null;
-            toggleTrainIssue(t.id); // 더블 클릭 -> 불량 토글
+            toggleTrainIssue(t.id);
           } else {
             trainClickTimer = setTimeout(() => {
-              toggleTrainActiveDepot(t.id); // 1회 클릭 -> 본선 ↔ 기지 전환
+              toggleTrainActiveDepot(t.id);
               trainClickTimer = null;
             }, 250);
           }
@@ -1025,7 +1098,6 @@
       });
     }
 
-    /* 1회 클릭: 본선 ↔ 기지 전환 (불량 상태일 때는 오작동 방지 잠금) */
     function toggleTrainActiveDepot(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
@@ -1044,7 +1116,6 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    /* 더블 클릭: 불량(⚠️) 지정 및 원복 */
     function toggleTrainIssue(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
@@ -1068,13 +1139,34 @@
 
       const currentTeam = teamsData[currentTeamKey];
       const awayMap = currentTeam.awayStations || {};
+      const issueMap = currentTeam.issueStations || {};
 
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
-        if (zoneId && awayMap[zoneId]) {
+        if (!zoneId) return;
+
+        // 1) 외부 출장 클래스 적용
+        if (awayMap[zoneId]) {
           card.classList.add('is-away');
         } else {
           card.classList.remove('is-away');
+        }
+
+        // 2) 역사 불량 클래스 및 라벨 적용
+        const headerTitleEl = card.querySelector('.station-title-text');
+        if (issueMap[zoneId]) {
+          card.classList.add('station-issue-card');
+          if (headerTitleEl && !headerTitleEl.innerHTML.includes('⚠️')) {
+            const cleanTitle = headerTitleEl.getAttribute('data-original-title') || headerTitleEl.textContent;
+            headerTitleEl.setAttribute('data-original-title', cleanTitle);
+            headerTitleEl.innerHTML = `${cleanTitle} <span class="text-xs text-yellow-300 font-extrabold animate-bounce">⚠️불량</span>`;
+          }
+        } else {
+          card.classList.remove('station-issue-card');
+          if (headerTitleEl && headerTitleEl.hasAttribute('data-original-title')) {
+            headerTitleEl.textContent = headerTitleEl.getAttribute('data-original-title');
+            headerTitleEl.removeAttribute('data-original-title');
+          }
         }
       });
 
@@ -1185,7 +1277,6 @@
       const dropzones = document.querySelectorAll('.station-dropzone');
       const stationCards = document.querySelectorAll('.station-card');
 
-      /* PC 마우스 드래그 앤 드롭 및 위/아래 순서 변경 */
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
@@ -1237,7 +1328,6 @@
           draggedId = null;
         });
 
-        /* 모바일 더블 탭 선택 및 순서 교환 */
         tag.addEventListener('touchend', (e) => {
           const currentTime = Date.now();
           const tapLength = currentTime - lastTapTime;
@@ -1271,7 +1361,6 @@
         });
       });
 
-      /* 모바일 빈 공간 터치 이동 */
       stationCards.forEach(card => {
         card.addEventListener('touchend', (e) => {
           if (!selectedStaffIdForMove) return;
@@ -1287,7 +1376,6 @@
         });
       });
 
-      /* PC 마우스 드롭존 이벤트 */
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -1372,7 +1460,12 @@
       document.getElementById('stat-depot').textContent = depotTrains;
       document.getElementById('stat-issue').textContent = issueTrains;
 
-      const currentStaff = teamsData[currentTeamKey].staff || [];
+      const currentTeam = teamsData[currentTeamKey];
+      const issueStationsMap = currentTeam.issueStations || {};
+      const issueStationCount = Object.values(issueStationsMap).filter(Boolean).length;
+      document.getElementById('stat-station-issue').textContent = `${issueStationCount}개역`;
+
+      const currentStaff = currentTeam.staff || [];
 
       const offStaff = currentStaff.filter(s => s.location === '휴무자');
       document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
