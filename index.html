@@ -41,7 +41,7 @@
       height: max-content;
     }
 
-    /* PC 관제 레이아웃 규격 (우측 2열 네임택 대기함 285px 확보하여 1720px 규격) */
+    /* PC 관제 레이아웃 규격 (우측 2열 네임택 대기함 285px 확보) */
     .app-viewport-container {
       width: 1720px;
       min-height: 920px;
@@ -58,8 +58,7 @@
       gap: 3px;
     }
 
-    /* 10열 그리드: 좌측 승무/특이사항(215px) + 중앙 역사 8열 + 우측 미배치 2줄 수납함(285px)
-       4행 그리드: 1행, 2행, 3행(역사 각 170px) + 4행(휴무자 95px) */
+    /* 10열 4행 그리드 */
     .matrix-layout-grid {
       display: grid;
       grid-template-columns: 215px repeat(8, minmax(0, 1fr)) 285px;
@@ -134,7 +133,7 @@
       gap: 2px;
     }
 
-    /* 하단 휴무자 전용 가로 정렬 드롭존 (왼쪽부터 차례대로 정렬) */
+    /* 하단 휴무자 전용 가로 정렬 드롭존 */
     .off-duty-dropzone {
       display: flex !important;
       flex-direction: row !important;
@@ -146,7 +145,7 @@
       padding: 6px !important;
     }
 
-    /* 우측 미배치 2개씩 나란히 수납되는 넉넉한 드롭존 */
+    /* 우측 미배치 2개씩 나란히 수납되는 전용 드롭존 */
     .unassigned-double-dropzone {
       display: flex !important;
       flex-direction: row !important;
@@ -154,9 +153,16 @@
       align-items: flex-start !important;
       align-content: flex-start !important;
       justify-content: flex-start !important;
-      gap: 8px !important;
-      padding: 8px !important;
+      gap: 6px !important;
+      padding: 6px !important;
       overflow-y: auto !important;
+    }
+
+    /* 미배치 칸 안의 네임택은 항상 정확히 2분할(좌우 2열) 크기로 고정 */
+    .unassigned-double-dropzone .nametag {
+      width: calc(50% - 4px) !important;
+      max-width: none !important;
+      flex-shrink: 0 !important;
     }
 
     /* 드롭 하이라이트 */
@@ -347,9 +353,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드
-           - 1~9열: 좌측 승무/특이사항 + 8개 역사 열 (4행에는 사상역 라인까지만 휴무자 배치)
-           - 10열: 바닥(4행)까지 관통하여 1행에 네임택 2개씩 들어가는 와이드 미배치 대기함 (285px) -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1~2행 병합]: 열차 승무 현황 (215px 너비) -->
@@ -430,7 +434,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [10열 1~4행 전체 관통 병합]: 우측 와이드 미배치 대기함 (285px 너비 / 네임택 2개 가로 수납 / 바닥까지 연장) -->
+        <!-- [10열 1~4행 전체 관통 병합]: 우측 2열 나란히 수납되는 미배치 (대기함) -->
         <div class="row-span-4 station-card bg-white border-2 border-dashed border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
           <div class="bg-sky-500 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -892,7 +896,6 @@
       }
     }
 
-    /* 1~25편성 헤더 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       container.innerHTML = '';
@@ -988,7 +991,6 @@
           dropzone.classList.add('count-many');
         }
 
-        // 근무자가 없는 역사에만 '무 인' 표기
         if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
