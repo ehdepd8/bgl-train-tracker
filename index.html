@@ -199,6 +199,7 @@
       cursor: pointer;
     }
 
+    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -208,7 +209,7 @@
       z-index: 10;
       pointer-events: none;
       font-weight: 900;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
       animation: blink-overlay 1.6s infinite ease-in-out;
     }
@@ -222,21 +223,21 @@
       display: flex;
       background-color: #1e293b;
       color: #f8fafc;
-      font-size: 13.5px;
+      font-size: 13px;
     }
 
     .station-card.is-issue:not(.is-away) .station-status-overlay {
       display: flex;
       background-color: #dc2626;
       color: #fef08a;
-      font-size: 13.5px;
+      font-size: 12px;
     }
 
     .station-card.is-away.is-issue .station-status-overlay {
       display: flex;
       background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%);
       color: #ffffff;
-      font-size: 12px;
+      font-size: 11.5px;
     }
 
     .station-card.is-away .station-dropzone {
@@ -412,7 +413,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 (1열: 265px 확장) -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1행]: 열차 탑승 현황 -->
@@ -713,7 +714,59 @@
     </div>
   </div>
 
-  <!-- 인원 등록 모달 (1팀 -> 2팀 -> 3팀 -> 4팀 -> 일근자 -> 고객안전원) -->
+  <!-- [신규] 역사 불량 세부 선택 모달 (PSD 상/하선 1~4번 등 원터치 지원) -->
+  <div id="issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+          <span id="issue-modal-station-name" class="text-rose-700">역명</span> 불량 유형 선택
+        </h3>
+        <button onclick="closeIssueModal(true)" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
+          <div class="grid grid-cols-2 gap-1.5" id="issue-type-buttons">
+            <button type="button" onclick="selectIssueType('PSD')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">PSD 장애</button>
+            <button type="button" onclick="selectIssueType('통신불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">통신 불량</button>
+            <button type="button" onclick="selectIssueType('신호/궤도')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">신호 / 궤도</button>
+            <button type="button" onclick="selectIssueType('승강설비')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">승강 설비 (E/S, E/L)</button>
+            <button type="button" onclick="selectIssueType('누수')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">역사 누수</button>
+            <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">단순 불량 점검</button>
+          </div>
+        </div>
+
+        <!-- PSD 세부 옵션 (상선/하선, 1번~4번) -->
+        <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2">
+          <div>
+            <label class="block font-black text-rose-950 mb-1">선로 구분</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button type="button" id="btn-line-up" onclick="selectPsdLine('상선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">상선 (사상방면)</button>
+              <button type="button" id="btn-line-down" onclick="selectPsdLine('하선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">하선 (가야대방면)</button>
+            </div>
+          </div>
+          <div>
+            <label class="block font-black text-rose-950 mb-1">도어 번호 선택 (1~4번)</label>
+            <div class="grid grid-cols-4 gap-1">
+              <button type="button" id="btn-door-1" onclick="selectPsdDoor('1번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">1번</button>
+              <button type="button" id="btn-door-2" onclick="selectPsdDoor('2번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">2번</button>
+              <button type="button" id="btn-door-3" onclick="selectPsdDoor('3번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">3번</button>
+              <button type="button" id="btn-door-4" onclick="selectPsdDoor('4번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">4번</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
+        <button onclick="closeIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">기본 불량으로 등록</button>
+        <button id="btn-confirm-issue-detail" onclick="confirmIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">상세 내용 확정</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 인원 등록 모달 -->
   <div id="add-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -789,7 +842,7 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
             </label>
 
-            <!-- 고객안전원 (기존 3팀 노란색 테마) -->
+            <!-- 고객안전원 (노란색) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
@@ -808,337 +861,105 @@
   </div>
 
   <script>
-    /* ========================================================
-       0. Firebase 실시간 데이터베이스 설정
-    ======================================================== */
-    const firebaseConfig = {
-      apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
-      authDomain: "bgl-train-tracker-e32b6.firebaseapp.com",
-      databaseURL: "https://bgl-train-tracker-e32b6-default-rtdb.firebaseio.com",
-      projectId: "bgl-train-tracker-e32b6",
-      storageBucket: "bgl-train-tracker-e32b6.firebasestorage.app",
-      messagingSenderId: "551417141815",
-      appId: "1:551417141815:web:7ab03c5840cc28bc5f3db2"
-    };
+    /* 불량 세부 선택 모달 제어 로직 */
+    let currentModalZoneId = null;
+    let selectedIssueType = null;
+    let selectedPsdLine = null;
+    let selectedPsdDoor = null;
 
-    firebase.initializeApp(firebaseConfig);
-    const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
+    function openIssueModal(zoneId) {
+      currentModalZoneId = zoneId;
+      selectedIssueType = null;
+      selectedPsdLine = null;
+      selectedPsdDoor = null;
 
-    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
-      id: `train-${i + 1}`,
-      num: i + 1,
-      name: `${i + 1}편성`,
-      status: i + 1 <= 16 ? 'active' : 'depot',
-      prevStatus: i + 1 <= 16 ? 'active' : 'depot'
-    }));
+      const cleanStationName = zoneId.split(' ')[0] || zoneId;
+      document.getElementById('issue-modal-station-name').textContent = cleanStationName;
+      document.getElementById('psd-sub-options').classList.add('hidden');
+      document.getElementById('btn-confirm-issue-detail').classList.add('hidden');
 
-    const INITIAL_STAFF_TEAM1 = [
-      { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
-      { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
-      { id: 'st-3', name: '양건영', phone: '010-2940-1766', location: '연지공원 [9619]', color: 'team1' },
-      { id: 'st-4', name: '장인석', phone: '010-4909-2225', location: '박물관 [9618]', color: 'purple' },
-      { id: 'st-5', name: '조대희', phone: '010-4021-8946', location: '수로왕릉 [9617]', color: 'team1' },
-      { id: 'st-6', name: '문동혁', phone: '010-7704-7853', location: '봉황 [9616]', color: 'team1', icon: 'smile' },
-      { id: 'st-7', name: '김경훈', phone: '010-7767-7962', location: '부원 [9615]', color: 'team1' },
-      { id: 'st-8', name: '이상준', phone: '010-3015-2960', location: '인제대 [9613]', color: 'team1' },
-      { id: 'st-9', name: '윤영진', phone: '010-9305-0587', location: '지내 [9611]', color: 'team1' },
-      { id: 'st-10', name: '윤형중', phone: '010-4179-7465', location: '대사 [9609]', color: 'team1' },
-      { id: 'st-11', name: '유재만', phone: '010-7457-0413', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-12', name: '김태욱', phone: '010-3839-4662', location: '대저 [9607]', color: 'purple' },
-      { id: 'st-13', name: '정재성', phone: '010-4607-3400', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' },
-      { id: 'st-15', name: '이우진', phone: '010-9303-0702', location: '김해공항 [9604]', color: 'team1' },
-      { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
-      { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1' },
-      { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'safe_guard' },
-      { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '미배치', color: 'team1' },
-      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '미배치', color: 'purple' }
-    ];
-
-    let currentTeamKey = 'team1';
-
-    let sharedTrains = DEFAULT_FLEET;
-    let sharedAwayList = [];
-    let sharedIssueList = [];
-    let sharedNoticeMemo = '';
-    let sharedRideLogs = [];
-
-    try {
-      const localAway = localStorage.getItem('bgl_away_list');
-      const localIssue = localStorage.getItem('bgl_issue_list');
-      const localMemo = localStorage.getItem('bgl_notice_memo');
-      const localLogs = localStorage.getItem('bgl_ride_logs');
-      if (localAway) sharedAwayList = JSON.parse(localAway);
-      if (localIssue) sharedIssueList = JSON.parse(localIssue);
-      if (localMemo !== null) sharedNoticeMemo = localMemo;
-      if (localLogs) sharedRideLogs = JSON.parse(localLogs);
-    } catch(e) {}
-
-    let teamsData = {
-      team1: { staff: INITIAL_STAFF_TEAM1 },
-      team2: { staff: [] },
-      team3: { staff: [] },
-      team4: { staff: [] }
-    };
-
-    let selectedStaffIdForMove = null;
-
-    /* 색상 테마 반환 함수 */
-    function getColorTheme(color) {
-      switch (color) {
-        case 'purple':
-          return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50'; // 일근자
-        case 'safe_guard':
-        case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50'; // 고객안전원 (노란색)
-        case 'team1':
-        case 'cyan':
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50'; // 1팀
-        case 'team2':
-          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50'; // 2팀
-        case 'team3':
-          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50'; // 3팀 (라임 그린)
-        case 'team4':
-        case 'blue':
-          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50'; // 4팀
-        default:
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
-      }
-    }
-
-    function checkUrlTeamParam() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const teamParam = urlParams.get('team');
-      if (teamParam && ['1', '2', '3', '4'].includes(teamParam)) {
-        currentTeamKey = `team${teamParam}`;
-      } else if (teamParam && ['team1', 'team2', 'team3', 'team4'].includes(teamParam)) {
-        currentTeamKey = teamParam;
-      }
-    }
-
-    function switchTeam(teamKey) {
-      if (currentTeamKey === teamKey) return;
-      currentTeamKey = teamKey;
-      selectedStaffIdForMove = null;
-
-      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById(`tab-${teamKey}`);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      const teamNum = teamKey.replace('team', '');
-      const modalTitle = document.getElementById('modal-team-title');
-      if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
-
-      const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
-      if (teamRadio) teamRadio.checked = true;
-
-      render();
-      showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
-    }
-
-    function syncTrainsToCloud() {
-      rootDbRef.child('shared_trains').set(sharedTrains);
-    }
-
-    function syncFacilityStatusToCloud() {
-      localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
-      localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
-      localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
-      localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
-
-      rootDbRef.child('shared_facilities').set({
-        awayList: sharedAwayList || [],
-        issueList: sharedIssueList || [],
-        noticeMemo: sharedNoticeMemo || '',
-        rideLogs: sharedRideLogs || []
+      // 버튼 스타일 초기화
+      document.querySelectorAll('#issue-type-buttons button').forEach(b => {
+        b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center";
       });
+
+      document.getElementById('issue-modal').classList.remove('hidden');
+      document.getElementById('issue-modal').classList.add('flex');
     }
 
-    function syncCurrentTeamStaffToCloud() {
-      rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
+    function closeIssueModal(isDefault = false) {
+      document.getElementById('issue-modal').classList.add('hidden');
+      document.getElementById('issue-modal').classList.remove('flex');
+      if (isDefault && currentModalZoneId) {
+        // 상세 선택 없이 닫았을 때 기본 불량 적용
+        applyIssueFinal(currentModalZoneId, '');
+      }
+      currentModalZoneId = null;
     }
 
-    function initRealtimeSync() {
-      checkUrlTeamParam();
-
-      rootDbRef.child('shared_trains').on('value', (snapshot) => {
-        const cloudTrains = snapshot.val();
-        if (cloudTrains) {
-          sharedTrains = cloudTrains;
-          renderTrains25Grid();
-          renderStatistics();
+    function selectIssueType(type) {
+      selectedIssueType = type;
+      document.querySelectorAll('#issue-type-buttons button').forEach(b => {
+        if (b.textContent.includes(type)) {
+          b.className = "p-2 border-2 border-rose-600 bg-rose-100 font-black text-rose-950 rounded text-center";
         } else {
-          syncTrainsToCloud();
+          b.className = "p-2 border rounded font-semibold text-slate-500 bg-slate-50 text-center";
         }
       });
 
-      rootDbRef.child('shared_facilities').on('value', (snapshot) => {
-        const cloudData = snapshot.val();
-        if (cloudData) {
-          sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
-          sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
-          sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
-          sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
-
-          localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
-          localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
-          localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
-          localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
-
-          renderStaffAndStations();
-          renderStatistics();
-          renderRideLogs();
-
-          const memoInput = document.getElementById('notice-memo-input');
-          if (memoInput && document.activeElement !== memoInput) {
-            memoInput.value = sharedNoticeMemo;
-          }
-        } else {
-          syncFacilityStatusToCloud();
-        }
-      });
-
-      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-        rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
-          const cloudStaff = snapshot.val();
-          if (cloudStaff) {
-            teamsData[tKey].staff = cloudStaff;
-            if (currentTeamKey === tKey) {
-              render();
-            }
-          } else {
-            if (tKey === 'team1') {
-              syncCurrentTeamStaffToCloud();
-            }
-          }
-        });
-      });
-
-      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
-      const initialTab = document.getElementById(`tab-${currentTeamKey}`);
-      if (initialTab) initialTab.classList.add('active');
-
-      const teamNum = currentTeamKey.replace('team', '');
-      document.getElementById('modal-team-title').textContent = `${teamNum}팀`;
-    }
-
-    function updateNoticeMemo(val) {
-      sharedNoticeMemo = val;
-      syncFacilityStatusToCloud();
-      showToast('특이사항이 실시간 저장되었습니다.');
-    }
-
-    function resetAllAndMoveToUnassigned() {
-      if (!confirm("전체 초기화를 실행하시겠습니까?\n\n- 모든 근무자 네임택이 [미배치 (대기함)]으로 이동합니다.\n- 열차/역사 불량 및 외부 상태가 정상 복구됩니다.\n- 특이사항 및 탑승기록이 리셋됩니다.")) {
-        return;
-      }
-
-      sharedTrains = JSON.parse(JSON.stringify(DEFAULT_FLEET));
-      syncTrainsToCloud();
-
-      sharedAwayList = [];
-      sharedIssueList = [];
-      sharedNoticeMemo = '';
-      sharedRideLogs = [];
-      syncFacilityStatusToCloud();
-
-      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-        if (teamsData[tKey] && Array.isArray(teamsData[tKey].staff)) {
-          teamsData[tKey].staff.forEach(s => {
-            s.location = '미배치';
-          });
-          rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
-        }
-      });
-
-      selectedStaffIdForMove = null;
-      render();
-      showToast("전체 초기화 완료: 모든 네임택이 미배치함으로 이동되었습니다.");
-    }
-
-    function clearRideLogs() {
-      if (confirm("열차 탑승기록 내역을 모두 삭제하시겠습니까?")) {
-        sharedRideLogs = [];
-        syncFacilityStatusToCloud();
-        renderRideLogs();
-        showToast("열차 탑승기록이 삭제되었습니다.");
-      }
-    }
-
-    let stationClickTimerMap = {};
-    let lastStationClickTimes = {};
-
-    function onStationHeaderClicked(zoneId) {
-      const now = Date.now();
-      const lastTime = lastStationClickTimes[zoneId] || 0;
-      const timeDiff = now - lastTime;
-      lastStationClickTimes[zoneId] = now;
-
-      if (timeDiff > 0 && timeDiff < 300) {
-        if (stationClickTimerMap[zoneId]) {
-          clearTimeout(stationClickTimerMap[zoneId]);
-          delete stationClickTimerMap[zoneId];
-        }
-        toggleStationIssueOnly(zoneId);
-        return;
-      }
-
-      if (stationClickTimerMap[zoneId]) {
-        clearTimeout(stationClickTimerMap[zoneId]);
-      }
-
-      stationClickTimerMap[zoneId] = setTimeout(() => {
-        delete stationClickTimerMap[zoneId];
-        toggleStationAwayOnly(zoneId);
-      }, 280);
-    }
-
-    function toggleStationAwayOnly(zoneId) {
-      const idx = sharedAwayList.indexOf(zoneId);
-      let isAwayNow = false;
-
-      if (idx > -1) {
-        sharedAwayList.splice(idx, 1);
-        isAwayNow = false;
+      if (type === 'PSD') {
+        document.getElementById('psd-sub-options').classList.remove('hidden');
+        document.getElementById('btn-confirm-issue-detail').classList.remove('hidden');
       } else {
-        sharedAwayList.push(zoneId);
-        isAwayNow = true;
+        document.getElementById('psd-sub-options').classList.add('hidden');
+        // PSD가 아닌 경우 즉시 적용 후 모달 닫기
+        applyIssueFinal(currentModalZoneId, type);
+        closeIssueModal(false);
       }
-
-      renderStaffAndStations();
-      syncFacilityStatusToCloud();
-      showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    function toggleStationIssueOnly(zoneId) {
-      const idx = sharedIssueList.indexOf(zoneId);
-      let isIssueNow = false;
+    function selectPsdLine(line) {
+      selectedPsdLine = line;
+      document.getElementById('btn-line-up').className = (line === '상선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800";
+      document.getElementById('btn-line-down').className = (line === '하선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800";
+    }
 
-      if (idx > -1) {
-        sharedIssueList.splice(idx, 1);
-        isIssueNow = false;
-      } else {
+    function selectPsdDoor(door) {
+      selectedPsdDoor = door;
+      ['1번', '2번', '3번', '4번'].forEach((d, i) => {
+        const btn = document.getElementById(`btn-door-${i+1}`);
+        btn.className = (door === d) ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black" : "py-1.5 border rounded font-black bg-white hover:bg-rose-200";
+      });
+    }
+
+    function confirmIssueWithDetail() {
+      if (!selectedIssueType) return;
+      let detailDesc = selectedIssueType;
+      if (selectedIssueType === 'PSD') {
+        const line = selectedPsdLine || '상선';
+        const door = selectedPsdDoor || '1번';
+        detailDesc = `PSD ${line} ${door}`;
+      }
+      applyIssueFinal(currentModalZoneId, detailDesc);
+      closeIssueModal(false);
+    }
+
+    /* 최종 불량 상태 저장 및 특이사항 연동 함수 */
+    function applyIssueFinal(zoneId, detailText) {
+      if (!sharedIssueList.includes(zoneId)) {
         sharedIssueList.push(zoneId);
-        isIssueNow = true;
       }
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
 
-      let autoMemoText = '';
-      if (isIssueNow) {
-        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 점검중]`;
-        showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
-      } else {
-        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
-        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
-      }
+      const recordText = detailText ? `[${timeStr} ${cleanStationName}역 불량: ${detailText}]` : `[${timeStr} ${cleanStationName}역 불량 점검중]`;
 
       if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
+        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + recordText;
       } else {
-        sharedNoticeMemo = autoMemoText;
+        sharedNoticeMemo = recordText;
       }
 
       const memoInput = document.getElementById('notice-memo-input');
@@ -1147,758 +968,39 @@
       renderStaffAndStations();
       renderStatistics();
       syncFacilityStatusToCloud();
+      showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText || '기본'})`);
     }
 
-    function render() {
-      renderTrains25Grid();
-      renderStaffAndStations();
-      renderStatistics();
-      renderRideLogs();
-      populateLocationOptions();
-
-      const memoInput = document.getElementById('notice-memo-input');
-      if (memoInput && document.activeElement !== memoInput) {
-        memoInput.value = sharedNoticeMemo || '';
-      }
-    }
-
-    let trainClickTimer = null;
-
-    function getSortedTrains() {
-      return [...sharedTrains].sort((a, b) => {
-        const getPriority = (status) => {
-          if (status === 'active') return 1;
-          if (status === 'issue') return 2;
-          return 3;
-        };
-
-        const priorityA = getPriority(a.status);
-        const priorityB = getPriority(b.status);
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        return a.num - b.num;
-      });
-    }
-
-    function renderTrains25Grid() {
-      const container = document.getElementById('trains-grid');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const currentStaff = teamsData[currentTeamKey].staff || [];
-      const sortedTrains = getSortedTrains();
-
-      sortedTrains.forEach(t => {
-        const ridingStaff = currentStaff.filter(s => s.location === t.id);
-        const isActive = t.status === 'active';
-        const isIssue = t.status === 'issue';
-
-        const trainBox = document.createElement('div');
-        trainBox.className = `station-card border rounded flex flex-col justify-between text-center overflow-hidden transition-colors ${
-          isIssue 
-            ? 'train-issue-card bg-rose-50' 
-            : (isActive ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-100 border-slate-300')
-        }`;
-        trainBox.style.height = '66px';
-        trainBox.setAttribute('data-zone-id', t.id);
-
-        const header = document.createElement('div');
-        header.className = `cursor-pointer py-1 border-b select-none flex flex-col items-center justify-center ${
-          isIssue 
-            ? 'bg-rose-600 text-white border-rose-700' 
-            : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
-        }`;
-        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 토글';
-
-        header.onclick = (e) => {
-          e.stopPropagation();
-          if (trainClickTimer) {
-            clearTimeout(trainClickTimer);
-            trainClickTimer = null;
-            toggleTrainIssue(t.id);
-          } else {
-            trainClickTimer = setTimeout(() => {
-              toggleTrainActiveDepot(t.id);
-              trainClickTimer = null;
-            }, 250);
-          }
-        };
-
-        const statusLabel = isIssue ? '불량 ⚠️' : (isActive ? '본선' : '기지');
-
-        header.innerHTML = `
-          <span class="leading-none text-[13.5px] font-black tracking-tight">${t.num}편성</span>
-          <span class="text-[9.5px] font-extrabold mt-0.5 opacity-90">${statusLabel}</span>
-        `;
-
-        const dropzone = document.createElement('div');
-        dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden';
-        
-        if (ridingStaff.length === 0) {
-          dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
-        }
-
-        trainBox.appendChild(header);
-        trainBox.appendChild(dropzone);
-        container.appendChild(trainBox);
-      });
-    }
-
-    function toggleTrainActiveDepot(trainId) {
-      const tr = sharedTrains.find(t => t.id === trainId);
-      if (!tr) return;
-
-      if (tr.status === 'issue') {
-        showToast(`${tr.num}편성은 현재 [불량⚠️] 상태입니다. (해제하려면 더블클릭)`);
-        return;
-      }
-
-      tr.status = (tr.status === 'active') ? 'depot' : 'active';
-      tr.prevStatus = tr.status;
-
-      renderTrains25Grid();
-      renderStatistics();
-      syncTrainsToCloud();
-      showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
-    }
-
-    function toggleTrainIssue(trainId) {
-      const tr = sharedTrains.find(t => t.id === trainId);
-      if (!tr) return;
-
-      if (tr.status === 'issue') {
-        tr.status = tr.prevStatus || 'depot';
-        showToast(`${tr.num}편성 불량 해제 -> [${tr.status === 'active' ? '본선' : '기지'}] 복귀`);
-      } else {
-        tr.prevStatus = tr.status;
-        tr.status = 'issue';
-        showToast(`⚠️ ${tr.num}편성이 [불량] 상태로 지정되었습니다!`);
-      }
-
-      renderTrains25Grid();
-      renderStatistics();
-      syncTrainsToCloud();
-    }
-
-    function buildNametagElement(staff) {
-      const el = document.createElement('div');
-      el.id = staff.id;
-      el.draggable = true;
-
-      const isOnTrain = staff.location.startsWith('train-');
-      const isSelected = (selectedStaffIdForMove === staff.id);
-
-      if (isOnTrain) {
-        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
-        el.innerHTML = `
-          <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
-        `;
-      } else {
-        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
-        const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-0.5 text-xs select-none" title="신입 사원">😊</span>` : '';
-
-        el.innerHTML = `
-          ${smile}
-          <div class="staff-name-text font-black text-[19px] leading-tight tracking-tight text-slate-900 w-full text-center">
-            ${staff.name}
-          </div>
-          <div class="staff-phone-text text-[13.5px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
-            ${staff.phone}
-          </div>
-        `;
-      }
-
-      el.oncontextmenu = (e) => {
-        e.preventDefault();
-        confirmDeleteStaff(staff);
-      };
-
-      return el;
-    }
-
-    function renderStaffAndStations() {
-      document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
-
-      document.querySelectorAll('.station-card').forEach(card => {
-        const zoneId = card.getAttribute('data-zone-id');
-        if (!zoneId) return;
-
-        const isAway = sharedAwayList.includes(zoneId);
-        const isIssue = sharedIssueList.includes(zoneId);
-
-        if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
-        if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
-
-        const overlay = card.querySelector('.station-status-overlay');
-        if (overlay) {
-          if (isAway && isIssue) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/50">
-                <span class="text-slate-100 font-black">외 부</span>
-                <span class="text-white/40 font-light">|</span>
-                <span class="text-yellow-300 font-black">⚠️ 불 량</span>
-              </span>
-            `;
-          } else if (isAway) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black">
-                <i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부
-              </span>
-            `;
-          } else if (isIssue) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black">
-                <i class="fa-solid fa-triangle-exclamation text-xs"></i> 불 량
-              </span>
-            `;
-          } else {
-            overlay.innerHTML = '';
-          }
-        }
-      });
-
-      const currentStaff = teamsData[currentTeamKey].staff || [];
-
-      document.querySelectorAll('.station-card').forEach(card => {
-        const zoneId = card.getAttribute('data-zone-id');
-        if (!zoneId) return;
-
-        const staffList = currentStaff.filter(s => s.location === zoneId);
-        const dropzone = card.querySelector('.station-dropzone');
-        if (!dropzone) return;
-
-        dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
-        if (staffList.length === 1) {
-          dropzone.classList.add('count-1');
-        } else if (staffList.length === 2) {
-          dropzone.classList.add('count-2');
-        } else if (staffList.length === 3) {
-          dropzone.classList.add('count-3');
-        } else if (staffList.length > 3) {
-          dropzone.classList.add('count-many');
-        }
-
-        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
-          dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
-        }
-      });
-
-      currentStaff.forEach(staff => {
-        const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
-        if (targetDropzone) {
-          const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
-          if (placeholder) placeholder.remove();
-
-          const tag = buildNametagElement(staff);
-          targetDropzone.appendChild(tag);
-        }
-      });
-
-      attachEvents();
-    }
-
-    let draggedId = null;
-    let lastTapTime = 0;
-    let lastTapTargetId = null;
-
-    function attachEvents() {
-      const nametags = document.querySelectorAll('.nametag');
-      const dropzones = document.querySelectorAll('.station-dropzone');
-      const stationCards = document.querySelectorAll('.station-card');
-      const stationHeaders = document.querySelectorAll('.station-header');
-
-      stationHeaders.forEach(header => {
-        header.onclick = (e) => {
-          e.stopPropagation();
-          const card = header.closest('.station-card');
-          if (!card) return;
-          const zoneId = card.getAttribute('data-zone-id');
-          if (!zoneId) return;
-
-          onStationHeaderClicked(zoneId);
-        };
-      });
-
-      nametags.forEach(tag => {
-        tag.addEventListener('dragstart', (e) => {
-          draggedId = tag.id;
-          tag.classList.add('dragging');
-          e.dataTransfer.setData('text/plain', tag.id);
-        });
-
-        tag.addEventListener('dragend', () => {
-          tag.classList.remove('dragging');
-          document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
-          document.querySelectorAll('.nametag').forEach(nt => nt.classList.remove('drag-insert-before', 'drag-insert-after'));
-        });
-
-        tag.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!draggedId || draggedId === tag.id) return;
-
-          const rect = tag.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
-          if (e.clientY < midY) {
-            tag.classList.add('drag-insert-before');
-            tag.classList.remove('drag-insert-after');
-          } else {
-            tag.classList.add('drag-insert-after');
-            tag.classList.remove('drag-insert-before');
-          }
-        });
-
-        tag.addEventListener('dragleave', () => {
-          tag.classList.remove('drag-insert-before', 'drag-insert-after');
-        });
-
-        tag.addEventListener('drop', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          tag.classList.remove('drag-insert-before', 'drag-insert-after');
-
-          if (!draggedId || draggedId === tag.id) return;
-
-          const targetCard = tag.closest('.station-card');
-          if (!targetCard) return;
-
-          const targetZone = targetCard.getAttribute('data-zone-id');
-          const rect = tag.getBoundingClientRect();
-          const isBefore = (e.clientY < rect.top + rect.height / 2);
-
-          reorderStaff(draggedId, tag.id, targetZone, isBefore);
-          draggedId = null;
-        });
-
-        tag.addEventListener('touchend', (e) => {
-          const currentTime = Date.now();
-          const tapLength = currentTime - lastTapTime;
-
-          if (selectedStaffIdForMove && selectedStaffIdForMove !== tag.id) {
-            e.preventDefault();
-            e.stopPropagation();
-            const sourceId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            swapStaffPositions(sourceId, tag.id);
-            return;
-          }
-
-          if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (selectedStaffIdForMove === tag.id) {
-              selectedStaffIdForMove = null;
-              showToast('선택이 해제되었습니다.');
-            } else {
-              selectedStaffIdForMove = tag.id;
-              const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
-              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸 또는 맞바꿀 네임택을 터치하세요.`);
-            }
-            render();
-          }
-
-          lastTapTime = currentTime;
-          lastTapTargetId = tag.id;
-        });
-      });
-
-      stationCards.forEach(card => {
-        card.addEventListener('touchend', (e) => {
-          if (!selectedStaffIdForMove) return;
-          if (e.target.closest('.nametag') || e.target.closest('.station-header')) return;
-
-          const newZone = card.getAttribute('data-zone-id');
-          if (newZone) {
-            e.preventDefault();
-            const staffId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            moveStaffToEnd(staffId, newZone);
-          }
-        });
-      });
-
-      dropzones.forEach(dz => {
-        dz.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dz.classList.add('drag-hover');
-        });
-        dz.addEventListener('dragleave', () => {
-          dz.classList.remove('drag-hover');
-        });
-        dz.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dz.classList.remove('drag-hover');
-          const card = dz.closest('.station-card');
-          if (card && draggedId) {
-            const newZone = card.getAttribute('data-zone-id');
-            moveStaffToEnd(draggedId, newZone);
-            draggedId = null;
-          }
-        });
-      });
-    }
-
-    function moveStaffToEnd(staffId, newLocation) {
-      const staffList = teamsData[currentTeamKey].staff;
-      const targetIndex = staffList.findIndex(s => s.id === staffId);
-      if (targetIndex === -1) return;
-
-      const staff = staffList[targetIndex];
-      const prevLocation = staff.location;
-
-      if (prevLocation !== newLocation) {
-        handleRideLogging(staff.name, prevLocation, newLocation);
-      }
-
-      const [sItem] = staffList.splice(targetIndex, 1);
-      sItem.location = newLocation;
-      staffList.push(sItem);
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${staff.name} 근무자가 배치되었습니다.`);
-    }
-
-    function reorderStaff(sourceId, targetId, targetZone, isBefore) {
-      const staffList = teamsData[currentTeamKey].staff;
-      const srcIdx = staffList.findIndex(s => s.id === sourceId);
-      if (srcIdx === -1) return;
-
-      const sourceStaff = staffList[srcIdx];
-      const prevLocation = sourceStaff.location;
-
-      if (prevLocation !== targetZone) {
-        handleRideLogging(sourceStaff.name, prevLocation, targetZone);
-      }
-
-      const [sItem] = staffList.splice(srcIdx, 1);
-      sItem.location = targetZone;
-
-      let tgtIdx = staffList.findIndex(s => s.id === targetId);
-      if (tgtIdx === -1) {
-        staffList.push(sItem);
-      } else {
-        const insertIdx = isBefore ? tgtIdx : tgtIdx + 1;
-        staffList.splice(insertIdx, 0, sItem);
-      }
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
-    }
-
-    function swapStaffPositions(idA, idB) {
-      const staffList = teamsData[currentTeamKey].staff;
-      const idxA = staffList.findIndex(s => s.id === idA);
-      const idxB = staffList.findIndex(s => s.id === idB);
-      if (idxA === -1 || idxB === -1) return;
-
-      const locA = staffList[idxA].location;
-      const locB = staffList[idxB].location;
-
-      if (locA !== locB) {
-        handleRideLogging(staffList[idxA].name, locA, locB);
-        handleRideLogging(staffList[idxB].name, locB, locA);
-      }
-
-      staffList[idxA].location = locB;
-      staffList[idxB].location = locA;
-
-      const tempItem = staffList[idxA];
-      staffList[idxA] = staffList[idxB];
-      staffList[idxB] = tempItem;
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
-    }
-
-    function handleRideLogging(staffName, prevLoc, newLoc) {
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-      if (prevLoc && prevLoc.startsWith('train-')) {
-        const trainNum = prevLoc.replace('train-', '');
-        const activeLog = sharedRideLogs.find(l => l.staffName === staffName && l.trainNum === trainNum && !l.endTime);
-        if (activeLog) {
-          activeLog.endTime = timeStr;
+    /* 역사 더블클릭 분기: 이미 불량이면 해제, 불량이 아니면 모달창 호출 */
+    function toggleStationIssueOnly(zoneId) {
+      const idx = sharedIssueList.indexOf(zoneId);
+
+      if (idx > -1) {
+        // 이미 불량인 경우 -> 즉시 해제 및 복구 특이사항 자동 기록
+        sharedIssueList.splice(idx, 1);
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const cleanStationName = zoneId.split(' ')[0] || zoneId;
+        const autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
+
+        if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+          sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
         } else {
-          sharedRideLogs.unshift({
-            id: 'log-' + Date.now(),
-            staffName,
-            trainNum,
-            startTime: '-',
-            endTime: timeStr
-          });
+          sharedNoticeMemo = autoMemoText;
         }
-      }
 
-      if (newLoc && newLoc.startsWith('train-')) {
-        const trainNum = newLoc.replace('train-', '');
-        sharedRideLogs.unshift({
-          id: 'log-' + Date.now(),
-          staffName,
-          trainNum,
-          startTime: timeStr,
-          endTime: null
-        });
-      }
+        const memoInput = document.getElementById('notice-memo-input');
+        if (memoInput) memoInput.value = sharedNoticeMemo;
 
-      if (sharedRideLogs.length > 30) {
-        sharedRideLogs = sharedRideLogs.slice(0, 30);
-      }
-
-      syncFacilityStatusToCloud();
-      renderRideLogs();
-    }
-
-    function renderRideLogs() {
-      const container = document.getElementById('train-ride-logs');
-      if (!container) return;
-
-      if (sharedRideLogs.length === 0) {
-        container.innerHTML = `<span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>`;
-        return;
-      }
-
-      container.innerHTML = sharedRideLogs.map(l => {
-        const isRiding = !l.endTime;
-        return `
-          <div class="grid grid-cols-[46px_56px_1fr] items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
-            isRiding 
-              ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
-              : 'bg-slate-50 border-slate-200 text-slate-700'
-          }">
-            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.2 rounded">${l.trainNum}편성</span>
-            <span class="truncate font-black text-slate-900">${l.staffName}</span>
-            <div class="font-mono text-[10px] text-right truncate">
-              <span class="text-indigo-700">${l.startTime}</span> ~ 
-              <span class="${isRiding ? 'text-emerald-600 font-extrabold animate-pulse' : 'text-slate-500'}">
-                ${isRiding ? '탑승중' : l.endTime}
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderStatistics() {
-      const activeTrains = sharedTrains.filter(t => t.status === 'active').length;
-      const depotTrains = sharedTrains.filter(t => t.status === 'depot').length;
-      const issueTrains = sharedTrains.filter(t => t.status === 'issue').length;
-
-      document.getElementById('stat-active').textContent = activeTrains;
-      document.getElementById('stat-depot').textContent = depotTrains;
-      document.getElementById('stat-issue').textContent = issueTrains;
-
-      document.getElementById('stat-station-issue').textContent = `${sharedIssueList.length}개역`;
-
-      const currentStaff = teamsData[currentTeamKey].staff || [];
-
-      const offStaff = currentStaff.filter(s => s.location === '휴무자');
-      document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
-
-      const unassignedStaff = currentStaff.filter(s => s.location === '미배치');
-      const badgeUnassigned = document.getElementById('badge-unassigned-count');
-      if (badgeUnassigned) {
-        badgeUnassigned.textContent = `${unassignedStaff.length}명`;
-      }
-
-      const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
-      document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
-
-      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
-      const trainBadge = document.getElementById('badge-train-count');
-      if (trainBadge) {
-        trainBadge.textContent = `${trainStaff.length}명`;
-      }
-
-      const riderList = document.getElementById('train-riders-list');
-      if (riderList) {
-        if (trainStaff.length === 0) {
-          riderList.innerHTML = `<span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>`;
-        } else {
-          riderList.innerHTML = trainStaff.map(s => {
-            const tNum = s.location.replace('train-', '');
-            const smileBadge = s.icon === 'smile' ? '😊' : '';
-            return `
-              <div class="grid grid-cols-[48px_60px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-0.5 rounded shadow-2xs">
-                <span class="bg-sky-600 text-white font-black text-[9.5px] text-center py-0.5 rounded">${tNum}편성</span>
-                <span class="font-black text-xs text-slate-900 truncate">
-                  ${s.name} ${smileBadge}
-                </span>
-                <span class="font-mono font-bold text-[11px] text-sky-800 tracking-tighter text-right">${s.phone}</span>
-              </div>
-            `;
-          }).join('');
-        }
+        renderStaffAndStations();
+        renderStatistics();
+        syncFacilityStatusToCloud();
+        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
+      } else {
+        // 불량이 아닌 경우 -> 세부 유형 선택 모달 오픈!
+        openIssueModal(zoneId);
       }
     }
-
-    function populateLocationOptions() {
-      const sel = document.getElementById('input-location');
-      if (!sel) return;
-      let opts = `<optgroup label="기본 대기"><option value="미배치" selected>미배치 (대기함)</option></optgroup>`;
-      opts += `<optgroup label="역사">`;
-      document.querySelectorAll('.station-card').forEach(c => {
-        const id = c.getAttribute('data-zone-id');
-        if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황') {
-          opts += `<option value="${id}">${id}</option>`;
-        }
-      });
-      opts += `</optgroup><optgroup label="열차 직접 탑승">`;
-      sharedTrains.forEach(t => {
-        opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : (t.status === 'issue' ? '불량⚠️' : '기지')})</option>`;
-      });
-      opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option></optgroup>`;
-      sel.innerHTML = opts;
-    }
-
-    function openAddModal() {
-      document.getElementById('add-modal').classList.remove('hidden');
-      document.getElementById('add-modal').classList.add('flex');
-    }
-    function closeAddModal() {
-      document.getElementById('add-modal').classList.add('hidden');
-      document.getElementById('add-modal').classList.remove('flex');
-      document.getElementById('input-name').value = '';
-      document.getElementById('input-phone').value = '';
-      document.getElementById('input-is-newbie').checked = false;
-      document.getElementById('input-location').value = '미배치';
-    }
-    function confirmAddStaff() {
-      const name = document.getElementById('input-name').value.trim();
-      const phone = document.getElementById('input-phone').value.trim() || '010-0000-0000';
-      const location = document.getElementById('input-location').value;
-      const color = document.querySelector('input[name="color-choice"]:checked').value;
-      const isNewbie = document.getElementById('input-is-newbie').checked;
-
-      if (!name) return;
-
-      const currentTeam = teamsData[currentTeamKey];
-      currentTeam.staff.push({
-        id: 'st-' + Date.now(),
-        name,
-        phone,
-        location,
-        color,
-        icon: isNewbie ? 'smile' : null
-      });
-
-      if (location.startsWith('train-')) {
-        handleRideLogging(name, null, location);
-      }
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
-      closeAddModal();
-    }
-
-    function confirmDeleteStaff(staff) {
-      const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
-      modal.innerHTML = `
-        <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
-          <p class="text-xs font-bold text-slate-800">'${staff.name}' 근무자를 명단에서 삭제하시겠습니까?</p>
-          <div class="flex justify-center gap-2">
-            <button id="del-cancel" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded">취소</button>
-            <button id="del-ok" class="px-3 py-1 bg-rose-600 text-white font-bold text-xs rounded">삭제</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.querySelector('#del-cancel').onclick = () => modal.remove();
-      modal.querySelector('#del-ok').onclick = () => {
-        if (staff.location.startsWith('train-')) {
-          handleRideLogging(staff.name, staff.location, null);
-        }
-        teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
-        render();
-        syncCurrentTeamStaffToCloud();
-        showToast(`${staff.name} 근무자가 삭제되었습니다.`);
-        modal.remove();
-      };
-    }
-
-    let toastTimeout = null;
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const msgSpan = document.getElementById('toast-message');
-      msgSpan.textContent = msg;
-
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toast.classList.add('show');
-
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2000);
-    }
-
-    setInterval(() => {
-      const now = new Date();
-      const clock = document.getElementById('live-clock');
-      if (clock) {
-        clock.textContent = now.toTimeString().split(' ')[0];
-      }
-    }, 1000);
-
-    let currentZoom = 1.0;
-    let initialPinchDistance = null;
-    let startZoom = 1.0;
-
-    function applyZoom(scale) {
-      currentZoom = Math.min(Math.max(scale, 0.4), 2.5);
-      const container = document.getElementById('zoom-container');
-      if (container) {
-        container.style.transform = `scale(${currentZoom})`;
-      }
-      const label = document.getElementById('zoom-percent-text');
-      if (label) {
-        label.textContent = `${Math.round(currentZoom * 100)}%`;
-      }
-    }
-
-    function resetZoomScale() {
-      applyZoom(1.0);
-      showToast('배율이 100%로 재설정되었습니다.');
-    }
-
-    function getTouchDistance(touch1, touch2) {
-      const dx = touch1.clientX - touch2.clientX;
-      const dy = touch1.clientY - touch2.clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    window.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
-        startZoom = currentZoom;
-      }
-    }, { passive: false });
-
-    window.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2 && initialPinchDistance) {
-        e.preventDefault();
-        const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
-        const factor = currentDistance / initialPinchDistance;
-        applyZoom(startZoom * factor);
-      }
-    }, { passive: false });
-
-    window.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        initialPinchDistance = null;
-      }
-    });
-
-    window.onload = function() {
-      render();
-      initRealtimeSync();
-    };
   </script>
 </body>
 </html>
