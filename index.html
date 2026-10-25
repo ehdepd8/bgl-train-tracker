@@ -157,7 +157,6 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -201,7 +200,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -521,7 +519,7 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 열차 탑승기록 (해당 팀 전용으로 표시) -->
+        <!-- [1열 2행]: 열차 탑승기록 -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -1048,7 +1046,6 @@
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
 
-    /* 로컬 스토리지 1차 즉시 복구 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
@@ -1058,7 +1055,6 @@
       if (localMemo !== null) sharedNoticeMemo = localMemo;
     } catch(e) {}
 
-    /* [핵심] 열차 탑승기록(rideLogs)을 각 팀별 독립 데이터로 구성 */
     let teamsData = {
       team1: { staff: [], rideLogs: [] },
       team2: { staff: [], rideLogs: [] },
@@ -1087,7 +1083,6 @@
 
     let selectedStaffIdForMove = null;
 
-    /* 색상 테마 반환 함수 */
     function getColorTheme(color) {
       switch (color) {
         case 'purple':
@@ -1103,6 +1098,7 @@
         case 'team3':
           return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
+        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1150,7 +1146,6 @@
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
       localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
-      // 탑승기록은 공통 저장소에서 제외됨
       rootDbRef.child('shared_facilities').set({
         awayList: sharedAwayList || [],
         stationIssues: sharedStationIssues || [],
@@ -1158,7 +1153,6 @@
       });
     }
 
-    /* 현재 팀의 인원 및 탑승기록을 팀 전용 노드에 영구 저장 */
     function syncCurrentTeamDataToCloud() {
       const currentTeamData = teamsData[currentTeamKey] || { staff: [], rideLogs: [] };
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentTeamData.staff || []));
@@ -1177,8 +1171,7 @@
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
           sharedTrains = cloudTrains;
-          renderTrains25Grid();
-          renderStatistics();
+          render();
         } else {
           syncTrainsToCloud();
         }
@@ -1195,8 +1188,7 @@
           localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
-          renderStaffAndStations();
-          renderStatistics();
+          render();
 
           const memoInput = document.getElementById('notice-memo-input');
           if (memoInput && document.activeElement !== memoInput) {
@@ -1207,7 +1199,6 @@
         }
       });
 
-      // 각 팀 전용 리스너 (근무자 명단 + 팀별 탑승기록 수신)
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).on('value', (snapshot) => {
           const cloudTeam = snapshot.val();
@@ -1260,7 +1251,6 @@
       }
     }
 
-    /* 현재 팀 근무자만 미배치 칸으로 초기화 */
     function resetCurrentTeamOnly() {
       const teamNum = currentTeamKey.replace('team', '');
       if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치 및 탑승기록은 유지됩니다.\n- 공통 열차/역사 시설 상태는 그대로 유지됩니다.`)) {
@@ -1279,7 +1269,6 @@
       showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
     }
 
-    /* 현재 팀의 탑승기록만 삭제 */
     function clearCurrentTeamRideLogs() {
       const teamNum = currentTeamKey.replace('team', '');
       if (confirm(`현재 [${teamNum}팀] 열차 탑승기록 내역을 모두 삭제하시겠습니까?`)) {
@@ -1290,7 +1279,6 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1331,7 +1319,7 @@
         isAwayNow = true;
       }
 
-      renderStaffAndStations();
+      render();
       syncFacilityStatusToCloud();
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
@@ -1356,8 +1344,7 @@
         const memoInput = document.getElementById('notice-memo-input');
         if (memoInput) memoInput.value = sharedNoticeMemo;
 
-        renderStaffAndStations();
-        renderStatistics();
+        render();
         syncFacilityStatusToCloud();
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
@@ -1365,7 +1352,6 @@
       }
     }
 
-    /* 역사 불량 세부 선택 모달 */
     let currentModalZoneId = null;
     let selectedIssueType = null;
     let selectedPsdLine = '상선';
@@ -1512,13 +1498,11 @@
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput) memoInput.value = sharedNoticeMemo;
 
-      renderStaffAndStations();
-      renderStatistics();
+      render();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
-    /* 열차 불량 세부 선택 모달 */
     let currentModalTrainId = null;
     let selectedTrainIssueType = null;
     let selectedTrainDoors = [];
@@ -1650,21 +1634,28 @@
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput) memoInput.value = sharedNoticeMemo;
 
-      renderTrains25Grid();
-      renderStatistics();
+      render();
       syncTrainsToCloud();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
     }
 
-    /* 통합 렌더링 */
+    /* ========================================================
+       통합 렌더링 파이프라인 (네임택 및 무인 표시 완벽 보장)
+    ======================================================== */
     function render() {
+      // 1. 상단 25편성 컨테이너 렌더링
       renderTrains25Grid();
+
+      // 2. 전체 역사 및 열차 드롭존 네임택 배치 & 무인 표시
       renderStaffAndStations();
+
+      // 3. 통계 및 팀별 탑승기록 렌더링
       renderStatistics();
       renderRideLogs();
       populateLocationOptions();
 
+      // 4. 특이사항 텍스트 반영
       const memoInput = document.getElementById('notice-memo-input');
       if (memoInput && document.activeElement !== memoInput) {
         memoInput.value = sharedNoticeMemo || '';
@@ -1691,16 +1682,15 @@
       });
     }
 
+    /* 1. 상단 25편성 렌더링 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       if (!container) return;
       container.innerHTML = '';
 
-      const currentStaff = teamsData[currentTeamKey].staff || [];
       const sortedTrains = getSortedTrains();
 
       sortedTrains.forEach(t => {
-        const ridingStaff = currentStaff.filter(s => s.location === t.id);
         const isActive = t.status === 'active';
         const isIssue = t.status === 'issue';
 
@@ -1744,10 +1734,6 @@
 
         const dropzone = document.createElement('div');
         dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden';
-        
-        if (ridingStaff.length === 0) {
-          dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
-        }
 
         trainBox.appendChild(header);
         trainBox.appendChild(dropzone);
@@ -1767,8 +1753,7 @@
       tr.status = (tr.status === 'active') ? 'depot' : 'active';
       tr.prevStatus = tr.status;
 
-      renderTrains25Grid();
-      renderStatistics();
+      render();
       syncTrainsToCloud();
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
@@ -1794,8 +1779,7 @@
         const memoInput = document.getElementById('notice-memo-input');
         if (memoInput) memoInput.value = sharedNoticeMemo;
 
-        renderTrains25Grid();
-        renderStatistics();
+        render();
         syncTrainsToCloud();
         syncFacilityStatusToCloud();
         showToast(`${tr.name} 불량 해제 (특이사항 자동기록)`);
@@ -1804,7 +1788,7 @@
       }
     }
 
-    /* 네임택 빌더 (스마일 아이콘: 카드 안쪽 상단 우측 top: 2px, right: 3px에 배치) */
+    /* 네임택 빌더 (스마일 아이콘: 카드 안쪽 상단 우측 top: 2px, right: 3px에 고정) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -1966,10 +1950,12 @@
       closeEditModal();
     }
 
-    /* 역사 렌더링 및 무인 표시 완벽 보장 */
+    /* 2. 전체 드롭존 네임택 배치 & 무인 표시 완벽 보장 */
     function renderStaffAndStations() {
+      // 1) 모든 드롭존 청소
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
+      // 2) 역사 카드 오버레이 설정
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2012,6 +1998,7 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
+      // 3) 네임택을 해당 위치의 드롭존(열차, 역사, 휴무자, 미배치 등)에 안착
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2020,6 +2007,7 @@
         }
       });
 
+      // 4) 각 카드의 인원수별 정렬 및 빈 역사 '무인' 표시
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2029,6 +2017,15 @@
 
         const staffList = currentStaff.filter(s => s.location === zoneId);
 
+        // 상단 열차 카드 빈자리 표시
+        if (zoneId.startsWith('train-')) {
+          if (staffList.length === 0) {
+            dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
+          }
+          return;
+        }
+
+        // 일반 역사 카드 인원수별 CSS
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
         if (staffList.length === 1) {
           dropzone.classList.add('count-1');
@@ -2040,7 +2037,8 @@
           dropzone.classList.add('count-many');
         }
 
-        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
+        // 역사가 비어있을 때 무인 표시
+        if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
@@ -2265,7 +2263,6 @@
       showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
     }
 
-    /* [수정] 해당 팀 전용 열차 탑승/하차 기록 로직 */
     function handleRideLogging(staffName, prevLoc, newLoc) {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -2298,7 +2295,6 @@
         });
       }
 
-      // 해당 팀당 최대 30개 기록 유지
       if (currentRideLogs.length > 30) {
         teamsData[currentTeamKey].rideLogs = currentRideLogs.slice(0, 30);
       } else {
@@ -2309,7 +2305,6 @@
       renderRideLogs();
     }
 
-    /* [수정] 현재 팀의 독립된 탑승기록만 렌더링 */
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
