@@ -412,7 +412,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 (1열: 265px 확장) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1행]: 열차 탑승 현황 -->
@@ -713,7 +713,7 @@
     </div>
   </div>
 
-  <!-- 인원 등록 모달 (순서: 1팀 -> 2팀 -> 3팀 -> 4팀 -> 일근자 -> 고객안전원) -->
+  <!-- 인원 등록 모달 (1팀 -> 2팀 -> 3팀 -> 4팀 -> 일근자 -> 고객안전원) -->
   <div id="add-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -765,7 +765,7 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
             </label>
 
-            <!-- 3팀 (라임 그린 신규 색상) -->
+            <!-- 3팀 (라임 그린) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="team3" class="accent-lime-600"> 3팀
@@ -789,7 +789,7 @@
               <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
             </label>
 
-            <!-- 고객안전원 (기존 3팀 노란색 테마 계승) -->
+            <!-- 고객안전원 (기존 3팀 노란색 테마) -->
             <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
               <span class="flex items-center gap-1.5">
                 <input type="radio" name="color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
@@ -808,6 +808,81 @@
   </div>
 
   <script>
+    /* ========================================================
+       0. Firebase 실시간 데이터베이스 설정
+    ======================================================== */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
+      authDomain: "bgl-train-tracker-e32b6.firebaseapp.com",
+      databaseURL: "https://bgl-train-tracker-e32b6-default-rtdb.firebaseio.com",
+      projectId: "bgl-train-tracker-e32b6",
+      storageBucket: "bgl-train-tracker-e32b6.firebasestorage.app",
+      messagingSenderId: "551417141815",
+      appId: "1:551417141815:web:7ab03c5840cc28bc5f3db2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
+
+    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
+      id: `train-${i + 1}`,
+      num: i + 1,
+      name: `${i + 1}편성`,
+      status: i + 1 <= 16 ? 'active' : 'depot',
+      prevStatus: i + 1 <= 16 ? 'active' : 'depot'
+    }));
+
+    const INITIAL_STAFF_TEAM1 = [
+      { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
+      { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
+      { id: 'st-3', name: '양건영', phone: '010-2940-1766', location: '연지공원 [9619]', color: 'team1' },
+      { id: 'st-4', name: '장인석', phone: '010-4909-2225', location: '박물관 [9618]', color: 'purple' },
+      { id: 'st-5', name: '조대희', phone: '010-4021-8946', location: '수로왕릉 [9617]', color: 'team1' },
+      { id: 'st-6', name: '문동혁', phone: '010-7704-7853', location: '봉황 [9616]', color: 'team1', icon: 'smile' },
+      { id: 'st-7', name: '김경훈', phone: '010-7767-7962', location: '부원 [9615]', color: 'team1' },
+      { id: 'st-8', name: '이상준', phone: '010-3015-2960', location: '인제대 [9613]', color: 'team1' },
+      { id: 'st-9', name: '윤영진', phone: '010-9305-0587', location: '지내 [9611]', color: 'team1' },
+      { id: 'st-10', name: '윤형중', phone: '010-4179-7465', location: '대사 [9609]', color: 'team1' },
+      { id: 'st-11', name: '유재만', phone: '010-7457-0413', location: '대저 [9607]', color: 'team1' },
+      { id: 'st-12', name: '김태욱', phone: '010-3839-4662', location: '대저 [9607]', color: 'purple' },
+      { id: 'st-13', name: '정재성', phone: '010-4607-3400', location: '대저 [9607]', color: 'team1' },
+      { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' },
+      { id: 'st-15', name: '이우진', phone: '010-9303-0702', location: '김해공항 [9604]', color: 'team1' },
+      { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
+      { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1' },
+      { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'safe_guard' },
+      { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '미배치', color: 'team1' },
+      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '미배치', color: 'purple' }
+    ];
+
+    let currentTeamKey = 'team1';
+
+    let sharedTrains = DEFAULT_FLEET;
+    let sharedAwayList = [];
+    let sharedIssueList = [];
+    let sharedNoticeMemo = '';
+    let sharedRideLogs = [];
+
+    try {
+      const localAway = localStorage.getItem('bgl_away_list');
+      const localIssue = localStorage.getItem('bgl_issue_list');
+      const localMemo = localStorage.getItem('bgl_notice_memo');
+      const localLogs = localStorage.getItem('bgl_ride_logs');
+      if (localAway) sharedAwayList = JSON.parse(localAway);
+      if (localIssue) sharedIssueList = JSON.parse(localIssue);
+      if (localMemo !== null) sharedNoticeMemo = localMemo;
+      if (localLogs) sharedRideLogs = JSON.parse(localLogs);
+    } catch(e) {}
+
+    let teamsData = {
+      team1: { staff: INITIAL_STAFF_TEAM1 },
+      team2: { staff: [] },
+      team3: { staff: [] },
+      team4: { staff: [] }
+    };
+
+    let selectedStaffIdForMove = null;
+
     /* 색상 테마 반환 함수 */
     function getColorTheme(color) {
       switch (color) {
@@ -815,7 +890,7 @@
           return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50'; // 일근자
         case 'safe_guard':
         case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50'; // 고객안전원 (기존 노랑)
+          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50'; // 고객안전원 (노란색)
         case 'team1':
         case 'cyan':
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50'; // 1팀
@@ -829,6 +904,499 @@
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
       }
+    }
+
+    function checkUrlTeamParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const teamParam = urlParams.get('team');
+      if (teamParam && ['1', '2', '3', '4'].includes(teamParam)) {
+        currentTeamKey = `team${teamParam}`;
+      } else if (teamParam && ['team1', 'team2', 'team3', 'team4'].includes(teamParam)) {
+        currentTeamKey = teamParam;
+      }
+    }
+
+    function switchTeam(teamKey) {
+      if (currentTeamKey === teamKey) return;
+      currentTeamKey = teamKey;
+      selectedStaffIdForMove = null;
+
+      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-${teamKey}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const teamNum = teamKey.replace('team', '');
+      const modalTitle = document.getElementById('modal-team-title');
+      if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
+
+      const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
+      if (teamRadio) teamRadio.checked = true;
+
+      render();
+      showToast(`${teamNum}팀 근무 현황으로 전환되었습니다.`);
+    }
+
+    function syncTrainsToCloud() {
+      rootDbRef.child('shared_trains').set(sharedTrains);
+    }
+
+    function syncFacilityStatusToCloud() {
+      localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
+      localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+      localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
+      localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
+
+      rootDbRef.child('shared_facilities').set({
+        awayList: sharedAwayList || [],
+        issueList: sharedIssueList || [],
+        noticeMemo: sharedNoticeMemo || '',
+        rideLogs: sharedRideLogs || []
+      });
+    }
+
+    function syncCurrentTeamStaffToCloud() {
+      rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
+    }
+
+    function initRealtimeSync() {
+      checkUrlTeamParam();
+
+      rootDbRef.child('shared_trains').on('value', (snapshot) => {
+        const cloudTrains = snapshot.val();
+        if (cloudTrains) {
+          sharedTrains = cloudTrains;
+          renderTrains25Grid();
+          renderStatistics();
+        } else {
+          syncTrainsToCloud();
+        }
+      });
+
+      rootDbRef.child('shared_facilities').on('value', (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData) {
+          sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
+          sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
+          sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
+          sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
+
+          localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
+          localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+          localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
+          localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
+
+          renderStaffAndStations();
+          renderStatistics();
+          renderRideLogs();
+
+          const memoInput = document.getElementById('notice-memo-input');
+          if (memoInput && document.activeElement !== memoInput) {
+            memoInput.value = sharedNoticeMemo;
+          }
+        } else {
+          syncFacilityStatusToCloud();
+        }
+      });
+
+      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
+        rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
+          const cloudStaff = snapshot.val();
+          if (cloudStaff) {
+            teamsData[tKey].staff = cloudStaff;
+            if (currentTeamKey === tKey) {
+              render();
+            }
+          } else {
+            if (tKey === 'team1') {
+              syncCurrentTeamStaffToCloud();
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
+      const initialTab = document.getElementById(`tab-${currentTeamKey}`);
+      if (initialTab) initialTab.classList.add('active');
+
+      const teamNum = currentTeamKey.replace('team', '');
+      document.getElementById('modal-team-title').textContent = `${teamNum}팀`;
+    }
+
+    function updateNoticeMemo(val) {
+      sharedNoticeMemo = val;
+      syncFacilityStatusToCloud();
+      showToast('특이사항이 실시간 저장되었습니다.');
+    }
+
+    function resetAllAndMoveToUnassigned() {
+      if (!confirm("전체 초기화를 실행하시겠습니까?\n\n- 모든 근무자 네임택이 [미배치 (대기함)]으로 이동합니다.\n- 열차/역사 불량 및 외부 상태가 정상 복구됩니다.\n- 특이사항 및 탑승기록이 리셋됩니다.")) {
+        return;
+      }
+
+      sharedTrains = JSON.parse(JSON.stringify(DEFAULT_FLEET));
+      syncTrainsToCloud();
+
+      sharedAwayList = [];
+      sharedIssueList = [];
+      sharedNoticeMemo = '';
+      sharedRideLogs = [];
+      syncFacilityStatusToCloud();
+
+      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
+        if (teamsData[tKey] && Array.isArray(teamsData[tKey].staff)) {
+          teamsData[tKey].staff.forEach(s => {
+            s.location = '미배치';
+          });
+          rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
+        }
+      });
+
+      selectedStaffIdForMove = null;
+      render();
+      showToast("전체 초기화 완료: 모든 네임택이 미배치함으로 이동되었습니다.");
+    }
+
+    function clearRideLogs() {
+      if (confirm("열차 탑승기록 내역을 모두 삭제하시겠습니까?")) {
+        sharedRideLogs = [];
+        syncFacilityStatusToCloud();
+        renderRideLogs();
+        showToast("열차 탑승기록이 삭제되었습니다.");
+      }
+    }
+
+    let stationClickTimerMap = {};
+    let lastStationClickTimes = {};
+
+    function onStationHeaderClicked(zoneId) {
+      const now = Date.now();
+      const lastTime = lastStationClickTimes[zoneId] || 0;
+      const timeDiff = now - lastTime;
+      lastStationClickTimes[zoneId] = now;
+
+      if (timeDiff > 0 && timeDiff < 300) {
+        if (stationClickTimerMap[zoneId]) {
+          clearTimeout(stationClickTimerMap[zoneId]);
+          delete stationClickTimerMap[zoneId];
+        }
+        toggleStationIssueOnly(zoneId);
+        return;
+      }
+
+      if (stationClickTimerMap[zoneId]) {
+        clearTimeout(stationClickTimerMap[zoneId]);
+      }
+
+      stationClickTimerMap[zoneId] = setTimeout(() => {
+        delete stationClickTimerMap[zoneId];
+        toggleStationAwayOnly(zoneId);
+      }, 280);
+    }
+
+    function toggleStationAwayOnly(zoneId) {
+      const idx = sharedAwayList.indexOf(zoneId);
+      let isAwayNow = false;
+
+      if (idx > -1) {
+        sharedAwayList.splice(idx, 1);
+        isAwayNow = false;
+      } else {
+        sharedAwayList.push(zoneId);
+        isAwayNow = true;
+      }
+
+      renderStaffAndStations();
+      syncFacilityStatusToCloud();
+      showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
+    }
+
+    function toggleStationIssueOnly(zoneId) {
+      const idx = sharedIssueList.indexOf(zoneId);
+      let isIssueNow = false;
+
+      if (idx > -1) {
+        sharedIssueList.splice(idx, 1);
+        isIssueNow = false;
+      } else {
+        sharedIssueList.push(zoneId);
+        isIssueNow = true;
+      }
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const cleanStationName = zoneId.split(' ')[0] || zoneId;
+
+      let autoMemoText = '';
+      if (isIssueNow) {
+        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 점검중]`;
+        showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
+      } else {
+        autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
+        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
+      }
+
+      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
+      } else {
+        sharedNoticeMemo = autoMemoText;
+      }
+
+      const memoInput = document.getElementById('notice-memo-input');
+      if (memoInput) memoInput.value = sharedNoticeMemo;
+
+      renderStaffAndStations();
+      renderStatistics();
+      syncFacilityStatusToCloud();
+    }
+
+    function render() {
+      renderTrains25Grid();
+      renderStaffAndStations();
+      renderStatistics();
+      renderRideLogs();
+      populateLocationOptions();
+
+      const memoInput = document.getElementById('notice-memo-input');
+      if (memoInput && document.activeElement !== memoInput) {
+        memoInput.value = sharedNoticeMemo || '';
+      }
+    }
+
+    let trainClickTimer = null;
+
+    function getSortedTrains() {
+      return [...sharedTrains].sort((a, b) => {
+        const getPriority = (status) => {
+          if (status === 'active') return 1;
+          if (status === 'issue') return 2;
+          return 3;
+        };
+
+        const priorityA = getPriority(a.status);
+        const priorityB = getPriority(b.status);
+
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+        return a.num - b.num;
+      });
+    }
+
+    function renderTrains25Grid() {
+      const container = document.getElementById('trains-grid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const currentStaff = teamsData[currentTeamKey].staff || [];
+      const sortedTrains = getSortedTrains();
+
+      sortedTrains.forEach(t => {
+        const ridingStaff = currentStaff.filter(s => s.location === t.id);
+        const isActive = t.status === 'active';
+        const isIssue = t.status === 'issue';
+
+        const trainBox = document.createElement('div');
+        trainBox.className = `station-card border rounded flex flex-col justify-between text-center overflow-hidden transition-colors ${
+          isIssue 
+            ? 'train-issue-card bg-rose-50' 
+            : (isActive ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-100 border-slate-300')
+        }`;
+        trainBox.style.height = '66px';
+        trainBox.setAttribute('data-zone-id', t.id);
+
+        const header = document.createElement('div');
+        header.className = `cursor-pointer py-1 border-b select-none flex flex-col items-center justify-center ${
+          isIssue 
+            ? 'bg-rose-600 text-white border-rose-700' 
+            : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
+        }`;
+        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 토글';
+
+        header.onclick = (e) => {
+          e.stopPropagation();
+          if (trainClickTimer) {
+            clearTimeout(trainClickTimer);
+            trainClickTimer = null;
+            toggleTrainIssue(t.id);
+          } else {
+            trainClickTimer = setTimeout(() => {
+              toggleTrainActiveDepot(t.id);
+              trainClickTimer = null;
+            }, 250);
+          }
+        };
+
+        const statusLabel = isIssue ? '불량 ⚠️' : (isActive ? '본선' : '기지');
+
+        header.innerHTML = `
+          <span class="leading-none text-[13.5px] font-black tracking-tight">${t.num}편성</span>
+          <span class="text-[9.5px] font-extrabold mt-0.5 opacity-90">${statusLabel}</span>
+        `;
+
+        const dropzone = document.createElement('div');
+        dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden';
+        
+        if (ridingStaff.length === 0) {
+          dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
+        }
+
+        trainBox.appendChild(header);
+        trainBox.appendChild(dropzone);
+        container.appendChild(trainBox);
+      });
+    }
+
+    function toggleTrainActiveDepot(trainId) {
+      const tr = sharedTrains.find(t => t.id === trainId);
+      if (!tr) return;
+
+      if (tr.status === 'issue') {
+        showToast(`${tr.num}편성은 현재 [불량⚠️] 상태입니다. (해제하려면 더블클릭)`);
+        return;
+      }
+
+      tr.status = (tr.status === 'active') ? 'depot' : 'active';
+      tr.prevStatus = tr.status;
+
+      renderTrains25Grid();
+      renderStatistics();
+      syncTrainsToCloud();
+      showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
+    }
+
+    function toggleTrainIssue(trainId) {
+      const tr = sharedTrains.find(t => t.id === trainId);
+      if (!tr) return;
+
+      if (tr.status === 'issue') {
+        tr.status = tr.prevStatus || 'depot';
+        showToast(`${tr.num}편성 불량 해제 -> [${tr.status === 'active' ? '본선' : '기지'}] 복귀`);
+      } else {
+        tr.prevStatus = tr.status;
+        tr.status = 'issue';
+        showToast(`⚠️ ${tr.num}편성이 [불량] 상태로 지정되었습니다!`);
+      }
+
+      renderTrains25Grid();
+      renderStatistics();
+      syncTrainsToCloud();
+    }
+
+    function buildNametagElement(staff) {
+      const el = document.createElement('div');
+      el.id = staff.id;
+      el.draggable = true;
+
+      const isOnTrain = staff.location.startsWith('train-');
+      const isSelected = (selectedStaffIdForMove === staff.id);
+
+      if (isOnTrain) {
+        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        el.innerHTML = `
+          <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
+        `;
+      } else {
+        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        const smile = staff.icon === 'smile' ? `<span class="absolute -top-2.5 right-0.5 text-xs select-none" title="신입 사원">😊</span>` : '';
+
+        el.innerHTML = `
+          ${smile}
+          <div class="staff-name-text font-black text-[19px] leading-tight tracking-tight text-slate-900 w-full text-center">
+            ${staff.name}
+          </div>
+          <div class="staff-phone-text text-[13.5px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
+            ${staff.phone}
+          </div>
+        `;
+      }
+
+      el.oncontextmenu = (e) => {
+        e.preventDefault();
+        confirmDeleteStaff(staff);
+      };
+
+      return el;
+    }
+
+    function renderStaffAndStations() {
+      document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
+
+      document.querySelectorAll('.station-card').forEach(card => {
+        const zoneId = card.getAttribute('data-zone-id');
+        if (!zoneId) return;
+
+        const isAway = sharedAwayList.includes(zoneId);
+        const isIssue = sharedIssueList.includes(zoneId);
+
+        if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
+        if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
+
+        const overlay = card.querySelector('.station-status-overlay');
+        if (overlay) {
+          if (isAway && isIssue) {
+            overlay.innerHTML = `
+              <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/50">
+                <span class="text-slate-100 font-black">외 부</span>
+                <span class="text-white/40 font-light">|</span>
+                <span class="text-yellow-300 font-black">⚠️ 불 량</span>
+              </span>
+            `;
+          } else if (isAway) {
+            overlay.innerHTML = `
+              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black">
+                <i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부
+              </span>
+            `;
+          } else if (isIssue) {
+            overlay.innerHTML = `
+              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black">
+                <i class="fa-solid fa-triangle-exclamation text-xs"></i> 불 량
+              </span>
+            `;
+          } else {
+            overlay.innerHTML = '';
+          }
+        }
+      });
+
+      const currentStaff = teamsData[currentTeamKey].staff || [];
+
+      document.querySelectorAll('.station-card').forEach(card => {
+        const zoneId = card.getAttribute('data-zone-id');
+        if (!zoneId) return;
+
+        const staffList = currentStaff.filter(s => s.location === zoneId);
+        const dropzone = card.querySelector('.station-dropzone');
+        if (!dropzone) return;
+
+        dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
+        if (staffList.length === 1) {
+          dropzone.classList.add('count-1');
+        } else if (staffList.length === 2) {
+          dropzone.classList.add('count-2');
+        } else if (staffList.length === 3) {
+          dropzone.classList.add('count-3');
+        } else if (staffList.length > 3) {
+          dropzone.classList.add('count-many');
+        }
+
+        if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
+          dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
+        }
+      });
+
+      currentStaff.forEach(staff => {
+        const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
+        if (targetDropzone) {
+          const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
+          if (placeholder) placeholder.remove();
+
+          const tag = buildNametagElement(staff);
+          targetDropzone.appendChild(tag);
+        }
+      });
+
+      attachEvents();
     }
 
     let draggedId = null;
