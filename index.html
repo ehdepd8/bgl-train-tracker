@@ -230,14 +230,16 @@
       display: flex;
       background-color: #dc2626;
       color: #fef08a;
-      font-size: 12px;
+      font-size: 11px;
+      padding: 0 4px;
     }
 
     .station-card.is-away.is-issue .station-status-overlay {
       display: flex;
       background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%);
       color: #ffffff;
-      font-size: 11.5px;
+      font-size: 10.5px;
+      padding: 0 2px;
     }
 
     .station-card.is-away .station-dropzone {
@@ -401,7 +403,7 @@
           <div class="font-black text-slate-800 flex items-center gap-1.5">
             <i class="fa-solid fa-arrows-split-up-and-left text-blue-600"></i>
             열차 편성 운용 (본선 ➔ 불량 ➔ 기지 순 정렬)
-            <span class="text-slate-400 font-normal ml-1">클릭: 운행↔기지 | <strong class="text-rose-600 font-bold">더블클릭: 불량(⚠️) 지정/해제</strong></span>
+            <span class="text-slate-400 font-normal ml-1">클릭: 운행↔기지 | <strong class="text-rose-600 font-bold">더블클릭: 불량(⚠️) 세부지정/해제</strong></span>
           </div>
           <div class="flex items-center gap-3 font-bold text-[10px]">
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-emerald-500"></span> 본선운행</span>
@@ -413,7 +415,7 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 (1열: 265px 확장) -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1행]: 열차 탑승 현황 -->
@@ -714,7 +716,7 @@
     </div>
   </div>
 
-  <!-- 불량 세부 선택 모달 -->
+  <!-- [역사 불량 세부 선택 모달] -->
   <div id="issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
@@ -728,40 +730,87 @@
       <div class="space-y-3 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
-          <div class="grid grid-cols-2 gap-1.5" id="issue-type-buttons">
-            <button type="button" onclick="selectIssueType('PSD')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">PSD 장애</button>
-            <button type="button" onclick="selectIssueType('통신불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">통신 불량</button>
-            <button type="button" onclick="selectIssueType('신호/궤도')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">신호 / 궤도</button>
-            <button type="button" onclick="selectIssueType('승강설비')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">승강 설비 (E/S, E/L)</button>
-            <button type="button" onclick="selectIssueType('누수')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">역사 누수</button>
-            <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center">단순 불량 점검</button>
+          <div class="grid grid-cols-3 gap-1.5" id="issue-type-buttons">
+            <button type="button" onclick="selectIssueType('PSD')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">PSD 장애</button>
+            <button type="button" onclick="selectIssueType('통신불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">통신 불량</button>
+            <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">기타</button>
           </div>
         </div>
 
-        <!-- PSD 세부 옵션 -->
-        <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2">
+        <!-- PSD 세부 옵션: 상/하선 + 전체/1~4번 복수 선택 -->
+        <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
           <div>
             <label class="block font-black text-rose-950 mb-1">선로 구분</label>
             <div class="grid grid-cols-2 gap-1.5">
-              <button type="button" id="btn-line-up" onclick="selectPsdLine('상선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">상선 (사상방면)</button>
-              <button type="button" id="btn-line-down" onclick="selectPsdLine('하선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">하선 (가야대방면)</button>
+              <button type="button" id="btn-line-up" onclick="selectPsdLine('상선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">상선</button>
+              <button type="button" id="btn-line-down" onclick="selectPsdLine('하선')" class="py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100">하선</button>
             </div>
           </div>
           <div>
-            <label class="block font-black text-rose-950 mb-1">도어 번호 선택 (1~4번)</label>
-            <div class="grid grid-cols-4 gap-1">
-              <button type="button" id="btn-door-1" onclick="selectPsdDoor('1번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">1번</button>
-              <button type="button" id="btn-door-2" onclick="selectPsdDoor('2번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">2번</button>
-              <button type="button" id="btn-door-3" onclick="selectPsdDoor('3번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">3번</button>
-              <button type="button" id="btn-door-4" onclick="selectPsdDoor('4번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-200">4번</button>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-black text-rose-950">도어 선택 (복수 선택 가능)</label>
+              <button type="button" id="btn-door-all" onclick="togglePsdDoorAll()" class="px-2 py-0.5 border rounded font-bold text-[11px] bg-white text-slate-700 hover:bg-rose-200">전체 PSD</button>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button type="button" id="btn-door-1" onclick="togglePsdDoor('1번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">1번</button>
+              <button type="button" id="btn-door-2" onclick="togglePsdDoor('2번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">2번</button>
+              <button type="button" id="btn-door-3" onclick="togglePsdDoor('3번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">3번</button>
+              <button type="button" id="btn-door-4" onclick="togglePsdDoor('4번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">4번</button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
-        <button onclick="closeIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">기본 불량으로 등록</button>
-        <button id="btn-confirm-issue-detail" onclick="confirmIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">상세 내용 확정</button>
+        <button onclick="closeIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
+        <button id="btn-confirm-issue-detail" onclick="confirmIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">확정 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [열차 불량 세부 선택 모달] -->
+  <div id="train-issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+          <span id="train-issue-modal-title" class="text-rose-700">0편성</span> 열차 불량 선택
+        </h3>
+        <button onclick="closeTrainIssueModal(true)" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
+          <div class="grid grid-cols-3 gap-1.5" id="train-issue-type-buttons">
+            <button type="button" onclick="selectTrainIssueType('통신 불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">통신 불량</button>
+            <button type="button" onclick="selectTrainIssueType('출입문 불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">출입문 불량</button>
+            <button type="button" onclick="selectTrainIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">기타</button>
+          </div>
+        </div>
+
+        <!-- 출입문 불량 세부 옵션: 1번~8번 다중 선택 및 전체 선택 -->
+        <div id="train-door-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-black text-rose-950">출입문 번호 (복수 선택 가능)</label>
+            <button type="button" id="btn-train-door-all" onclick="toggleTrainDoorAll()" class="px-2 py-0.5 border rounded font-bold text-[11px] bg-white text-slate-700 hover:bg-rose-200">전체 출입문</button>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button type="button" id="btn-tdoor-1" onclick="toggleTrainDoor('1번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">1번</button>
+            <button type="button" id="btn-tdoor-2" onclick="toggleTrainDoor('2번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">2번</button>
+            <button type="button" id="btn-tdoor-3" onclick="toggleTrainDoor('3번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">3번</button>
+            <button type="button" id="btn-tdoor-4" onclick="toggleTrainDoor('4번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">4번</button>
+            <button type="button" id="btn-tdoor-5" onclick="toggleTrainDoor('5번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">5번</button>
+            <button type="button" id="btn-tdoor-6" onclick="toggleTrainDoor('6번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">6번</button>
+            <button type="button" id="btn-tdoor-7" onclick="toggleTrainDoor('7번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">7번</button>
+            <button type="button" id="btn-tdoor-8" onclick="toggleTrainDoor('8번')" class="py-1.5 border rounded font-black bg-white hover:bg-rose-100">8번</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
+        <button onclick="closeTrainIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
+        <button id="btn-confirm-train-issue-detail" onclick="confirmTrainIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">확정 등록</button>
       </div>
     </div>
   </div>
@@ -854,7 +903,6 @@
     </div>
   </div>
 
-  <!-- 통합 단일 스크립트 블록 (에러 원천 방지) -->
   <script>
     /* 0. Firebase 설정 */
     const firebaseConfig = {
@@ -876,7 +924,8 @@
       num: i + 1,
       name: `${i + 1}편성`,
       status: i + 1 <= 16 ? 'active' : 'depot',
-      prevStatus: i + 1 <= 16 ? 'active' : 'depot'
+      prevStatus: i + 1 <= 16 ? 'active' : 'depot',
+      issueDetail: ''
     }));
 
     const INITIAL_STAFF_TEAM1 = [
@@ -905,7 +954,8 @@
     let currentTeamKey = 'team1';
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
-    let sharedIssueList = [];
+    let sharedIssueList = []; // 역사 불량 목록
+    let sharedStationIssueDetails = {}; // 역사별 불량 상세 내역 { "가야대 [9621]": "PSD 상선 1, 3번" }
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
@@ -913,10 +963,12 @@
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localIssue = localStorage.getItem('bgl_issue_list');
+      const localStationDetails = localStorage.getItem('bgl_station_issue_details');
       const localMemo = localStorage.getItem('bgl_notice_memo');
       const localLogs = localStorage.getItem('bgl_ride_logs');
       if (localAway) sharedAwayList = JSON.parse(localAway);
       if (localIssue) sharedIssueList = JSON.parse(localIssue);
+      if (localStationDetails) sharedStationIssueDetails = JSON.parse(localStationDetails);
       if (localMemo !== null) sharedNoticeMemo = localMemo;
       if (localLogs) sharedRideLogs = JSON.parse(localLogs);
     } catch(e) {}
@@ -937,17 +989,17 @@
           return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
         case 'safe_guard':
         case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
+          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50'; // 고객안전원 (노란색)
         case 'team1':
         case 'cyan':
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
+          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50'; // 1팀
         case 'team2':
-          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
+          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50'; // 2팀
         case 'team3':
-          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
+          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50'; // 3팀 (라임그린)
         case 'team4':
         case 'blue':
-          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
+          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50'; // 4팀
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
       }
@@ -989,12 +1041,14 @@
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+      localStorage.setItem('bgl_station_issue_details', JSON.stringify(sharedStationIssueDetails));
       localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
       localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
       rootDbRef.child('shared_facilities').set({
         awayList: sharedAwayList || [],
         issueList: sharedIssueList || [],
+        stationIssueDetails: sharedStationIssueDetails || {},
         noticeMemo: sharedNoticeMemo || '',
         rideLogs: sharedRideLogs || []
       });
@@ -1023,11 +1077,13 @@
         if (cloudData) {
           sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
           sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
+          sharedStationIssueDetails = cloudData.stationIssueDetails || {};
           sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
           sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
 
           localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
           localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
+          localStorage.setItem('bgl_station_issue_details', JSON.stringify(sharedStationIssueDetails));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
           localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
@@ -1085,6 +1141,7 @@
 
       sharedAwayList = [];
       sharedIssueList = [];
+      sharedStationIssueDetails = {};
       sharedNoticeMemo = '';
       sharedRideLogs = [];
       syncFacilityStatusToCloud();
@@ -1112,7 +1169,7 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
+    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량 모달) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1163,6 +1220,8 @@
 
       if (idx > -1) {
         sharedIssueList.splice(idx, 1);
+        delete sharedStationIssueDetails[zoneId];
+
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         const cleanStationName = zoneId.split(' ')[0] || zoneId;
@@ -1186,17 +1245,22 @@
       }
     }
 
-    /* 불량 세부 선택 모달 제어 */
+    /* ========================================================
+       역사 불량 세부 선택 모달 (PSD 장애, 통신불량, 기타)
+       PSD: 상/하선 + 도어 다중선택/전체
+    ======================================================== */
     let currentModalZoneId = null;
     let selectedIssueType = null;
-    let selectedPsdLine = null;
-    let selectedPsdDoor = null;
+    let selectedPsdLine = '상선';
+    let selectedPsdDoors = []; // ['1번', '3번'] 등
+    let isPsdAll = false;
 
     function openIssueModal(zoneId) {
       currentModalZoneId = zoneId;
       selectedIssueType = null;
-      selectedPsdLine = null;
-      selectedPsdDoor = null;
+      selectedPsdLine = '상선';
+      selectedPsdDoors = [];
+      isPsdAll = false;
 
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
       document.getElementById('issue-modal-station-name').textContent = cleanStationName;
@@ -1204,19 +1268,17 @@
       document.getElementById('btn-confirm-issue-detail').classList.add('hidden');
 
       document.querySelectorAll('#issue-type-buttons button').forEach(b => {
-        b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 active:scale-95 transition text-center";
+        b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center";
       });
 
+      refreshPsdSubUI();
       document.getElementById('issue-modal').classList.remove('hidden');
       document.getElementById('issue-modal').classList.add('flex');
     }
 
-    function closeIssueModal(isDefault = false) {
+    function closeIssueModal(isCancel = false) {
       document.getElementById('issue-modal').classList.add('hidden');
       document.getElementById('issue-modal').classList.remove('flex');
-      if (isDefault && currentModalZoneId) {
-        applyIssueFinal(currentModalZoneId, '');
-      }
       currentModalZoneId = null;
     }
 
@@ -1233,6 +1295,7 @@
       if (type === 'PSD') {
         document.getElementById('psd-sub-options').classList.remove('hidden');
         document.getElementById('btn-confirm-issue-detail').classList.remove('hidden');
+        refreshPsdSubUI();
       } else {
         document.getElementById('psd-sub-options').classList.add('hidden');
         applyIssueFinal(currentModalZoneId, type);
@@ -1242,15 +1305,51 @@
 
     function selectPsdLine(line) {
       selectedPsdLine = line;
-      document.getElementById('btn-line-up').className = (line === '상선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800";
-      document.getElementById('btn-line-down').className = (line === '하선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800";
+      refreshPsdSubUI();
     }
 
-    function selectPsdDoor(door) {
-      selectedPsdDoor = door;
+    function togglePsdDoorAll() {
+      isPsdAll = !isPsdAll;
+      if (isPsdAll) {
+        selectedPsdDoors = ['1번', '2번', '3번', '4번'];
+      } else {
+        selectedPsdDoors = [];
+      }
+      refreshPsdSubUI();
+    }
+
+    function togglePsdDoor(door) {
+      isPsdAll = false;
+      const idx = selectedPsdDoors.indexOf(door);
+      if (idx > -1) {
+        selectedPsdDoors.splice(idx, 1);
+      } else {
+        selectedPsdDoors.push(door);
+        selectedPsdDoors.sort();
+      }
+      if (selectedPsdDoors.length === 4) isPsdAll = true;
+      refreshPsdSubUI();
+    }
+
+    function refreshPsdSubUI() {
+      const btnUp = document.getElementById('btn-line-up');
+      const btnDown = document.getElementById('btn-line-down');
+      if (btnUp && btnDown) {
+        btnUp.className = (selectedPsdLine === '상선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100";
+        btnDown.className = (selectedPsdLine === '하선') ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-800 hover:bg-rose-100";
+      }
+
+      const btnAll = document.getElementById('btn-door-all');
+      if (btnAll) {
+        btnAll.className = isPsdAll ? "px-2 py-0.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-bold text-[11px]" : "px-2 py-0.5 border rounded font-bold text-[11px] bg-white text-slate-700 hover:bg-rose-200";
+      }
+
       ['1번', '2번', '3번', '4번'].forEach((d, i) => {
         const btn = document.getElementById(`btn-door-${i+1}`);
-        btn.className = (door === d) ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black" : "py-1.5 border rounded font-black bg-white hover:bg-rose-200";
+        if (btn) {
+          const isSelected = selectedPsdDoors.includes(d);
+          btn.className = isSelected ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
+        }
       });
     }
 
@@ -1259,8 +1358,15 @@
       let detailDesc = selectedIssueType;
       if (selectedIssueType === 'PSD') {
         const line = selectedPsdLine || '상선';
-        const door = selectedPsdDoor || '1번';
-        detailDesc = `PSD ${line} ${door}`;
+        let doorsText = '';
+        if (isPsdAll || selectedPsdDoors.length === 4) {
+          doorsText = '전체';
+        } else if (selectedPsdDoors.length > 0) {
+          doorsText = selectedPsdDoors.join(', ');
+        } else {
+          doorsText = '전체';
+        }
+        detailDesc = `PSD ${line} ${doorsText}`;
       }
       applyIssueFinal(currentModalZoneId, detailDesc);
       closeIssueModal(false);
@@ -1270,12 +1376,13 @@
       if (!sharedIssueList.includes(zoneId)) {
         sharedIssueList.push(zoneId);
       }
+      sharedStationIssueDetails[zoneId] = detailText || '불량';
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
 
-      const recordText = detailText ? `[${timeStr} ${cleanStationName}역 불량: ${detailText}]` : `[${timeStr} ${cleanStationName}역 불량 점검중]`;
+      const recordText = `[${timeStr} ${cleanStationName}역 불량: ${detailText || '점검중'}]`;
 
       if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
         sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + recordText;
@@ -1289,10 +1396,152 @@
       renderStaffAndStations();
       renderStatistics();
       syncFacilityStatusToCloud();
-      showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText || '기본'})`);
+      showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
-    /* 통합 렌더 함수 */
+    /* ========================================================
+       열차 불량 세부 선택 모달 (통신 불량, 출입문 불량, 기타)
+       출입문 불량: 1번~8번 다중 선택 및 전체 선택
+    ======================================================== */
+    let currentModalTrainId = null;
+    let selectedTrainIssueType = null;
+    let selectedTrainDoors = [];
+    let isTrainDoorAll = false;
+
+    function openTrainIssueModal(trainId) {
+      currentModalTrainId = trainId;
+      selectedTrainIssueType = null;
+      selectedTrainDoors = [];
+      isTrainDoorAll = false;
+
+      const tr = sharedTrains.find(t => t.id === trainId);
+      const trainName = tr ? tr.name : trainId;
+
+      document.getElementById('train-issue-modal-title').textContent = trainName;
+      document.getElementById('train-door-sub-options').classList.add('hidden');
+      document.getElementById('btn-confirm-train-issue-detail').classList.add('hidden');
+
+      document.querySelectorAll('#train-issue-type-buttons button').forEach(b => {
+        b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center";
+      });
+
+      refreshTrainDoorSubUI();
+      document.getElementById('train-issue-modal').classList.remove('hidden');
+      document.getElementById('train-issue-modal').classList.add('flex');
+    }
+
+    function closeTrainIssueModal(isCancel = false) {
+      document.getElementById('train-issue-modal').classList.add('hidden');
+      document.getElementById('train-issue-modal').classList.remove('flex');
+      currentModalTrainId = null;
+    }
+
+    function selectTrainIssueType(type) {
+      selectedTrainIssueType = type;
+      document.querySelectorAll('#train-issue-type-buttons button').forEach(b => {
+        if (b.textContent.includes(type)) {
+          b.className = "p-2 border-2 border-rose-600 bg-rose-100 font-black text-rose-950 rounded text-center";
+        } else {
+          b.className = "p-2 border rounded font-semibold text-slate-500 bg-slate-50 text-center";
+        }
+      });
+
+      if (type === '출입문 불량') {
+        document.getElementById('train-door-sub-options').classList.remove('hidden');
+        document.getElementById('btn-confirm-train-issue-detail').classList.remove('hidden');
+        refreshTrainDoorSubUI();
+      } else {
+        document.getElementById('train-door-sub-options').classList.add('hidden');
+        applyTrainIssueFinal(currentModalTrainId, type);
+        closeTrainIssueModal(false);
+      }
+    }
+
+    function toggleTrainDoorAll() {
+      isTrainDoorAll = !isTrainDoorAll;
+      if (isTrainDoorAll) {
+        selectedTrainDoors = ['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번'];
+      } else {
+        selectedTrainDoors = [];
+      }
+      refreshTrainDoorSubUI();
+    }
+
+    function toggleTrainDoor(door) {
+      isTrainDoorAll = false;
+      const idx = selectedTrainDoors.indexOf(door);
+      if (idx > -1) {
+        selectedTrainDoors.splice(idx, 1);
+      } else {
+        selectedTrainDoors.push(door);
+        selectedTrainDoors.sort((a,b) => parseInt(a)-parseInt(b));
+      }
+      if (selectedTrainDoors.length === 8) isTrainDoorAll = true;
+      refreshTrainDoorSubUI();
+    }
+
+    function refreshTrainDoorSubUI() {
+      const btnAll = document.getElementById('btn-train-door-all');
+      if (btnAll) {
+        btnAll.className = isTrainDoorAll ? "px-2 py-0.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-bold text-[11px]" : "px-2 py-0.5 border rounded font-bold text-[11px] bg-white text-slate-700 hover:bg-rose-200";
+      }
+
+      ['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번'].forEach((d, i) => {
+        const btn = document.getElementById(`btn-tdoor-${i+1}`);
+        if (btn) {
+          const isSelected = selectedTrainDoors.includes(d);
+          btn.className = isSelected ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
+        }
+      });
+    }
+
+    function confirmTrainIssueWithDetail() {
+      if (!selectedTrainIssueType) return;
+      let detailDesc = selectedTrainIssueType;
+      if (selectedTrainIssueType === '출입문 불량') {
+        let doorsText = '';
+        if (isTrainDoorAll || selectedTrainDoors.length === 8) {
+          doorsText = '전체';
+        } else if (selectedTrainDoors.length > 0) {
+          doorsText = selectedTrainDoors.join(', ');
+        } else {
+          doorsText = '전체';
+        }
+        detailDesc = `출입문 ${doorsText}`;
+      }
+      applyTrainIssueFinal(currentModalTrainId, detailDesc);
+      closeTrainIssueModal(false);
+    }
+
+    function applyTrainIssueFinal(trainId, detailText) {
+      const tr = sharedTrains.find(t => t.id === trainId);
+      if (!tr) return;
+
+      tr.prevStatus = tr.status;
+      tr.status = 'issue';
+      tr.issueDetail = detailText || '불량';
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const recordText = `[${timeStr} ${tr.name} 불량: ${detailText}]`;
+
+      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + recordText;
+      } else {
+        sharedNoticeMemo = recordText;
+      }
+
+      const memoInput = document.getElementById('notice-memo-input');
+      if (memoInput) memoInput.value = sharedNoticeMemo;
+
+      renderTrains25Grid();
+      renderStatistics();
+      syncTrainsToCloud();
+      syncFacilityStatusToCloud();
+      showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
+    }
+
+    /* 통합 렌더링 */
     function render() {
       renderTrains25Grid();
       renderStaffAndStations();
@@ -1354,14 +1603,14 @@
             ? 'bg-rose-600 text-white border-rose-700' 
             : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
         }`;
-        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 토글';
+        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 세부지정/해제';
 
         header.onclick = (e) => {
           e.stopPropagation();
           if (trainClickTimer) {
             clearTimeout(trainClickTimer);
             trainClickTimer = null;
-            toggleTrainIssue(t.id);
+            handleTrainDoubleClick(t.id);
           } else {
             trainClickTimer = setTimeout(() => {
               toggleTrainActiveDepot(t.id);
@@ -1374,7 +1623,7 @@
 
         header.innerHTML = `
           <span class="leading-none text-[13.5px] font-black tracking-tight">${t.num}편성</span>
-          <span class="text-[9.5px] font-extrabold mt-0.5 opacity-90">${statusLabel}</span>
+          <span class="text-[9px] font-extrabold mt-0.5 opacity-90 truncate max-w-[55px]">${isIssue && t.issueDetail ? t.issueDetail : statusLabel}</span>
         `;
 
         const dropzone = document.createElement('div');
@@ -1408,22 +1657,37 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    function toggleTrainIssue(trainId) {
+    /* 열차 더블클릭 핸들러: 이미 불량이면 해제 및 복구 기록, 아니면 모달 호출 */
+    function handleTrainDoubleClick(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
       if (tr.status === 'issue') {
         tr.status = tr.prevStatus || 'depot';
-        showToast(`${tr.num}편성 불량 해제 -> [${tr.status === 'active' ? '본선' : '기지'}] 복귀`);
-      } else {
-        tr.prevStatus = tr.status;
-        tr.status = 'issue';
-        showToast(`⚠️ ${tr.num}편성이 [불량] 상태로 지정되었습니다!`);
-      }
+        const oldDetail = tr.issueDetail || '';
+        tr.issueDetail = '';
 
-      renderTrains25Grid();
-      renderStatistics();
-      syncTrainsToCloud();
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        const autoMemoText = `[${timeStr} ${tr.name} 불량 조치완료/복구]`;
+
+        if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+          sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
+        } else {
+          sharedNoticeMemo = autoMemoText;
+        }
+
+        const memoInput = document.getElementById('notice-memo-input');
+        if (memoInput) memoInput.value = sharedNoticeMemo;
+
+        renderTrains25Grid();
+        renderStatistics();
+        syncTrainsToCloud();
+        syncFacilityStatusToCloud();
+        showToast(`${tr.name} 불량 해제 (특이사항 자동기록)`);
+      } else {
+        openTrainIssueModal(trainId);
+      }
     }
 
     function buildNametagElement(staff) {
@@ -1471,6 +1735,7 @@
 
         const isAway = sharedAwayList.includes(zoneId);
         const isIssue = sharedIssueList.includes(zoneId);
+        const detailText = sharedStationIssueDetails[zoneId] || '불량';
 
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
         if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
@@ -1479,10 +1744,10 @@
         if (overlay) {
           if (isAway && isIssue) {
             overlay.innerHTML = `
-              <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-xs bg-black/40 border border-white/50">
-                <span class="text-slate-100 font-black">외 부</span>
+              <span class="flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-black/50 border border-white/50 truncate max-w-full">
+                <span class="text-slate-100 font-black">외부</span>
                 <span class="text-white/40 font-light">|</span>
-                <span class="text-yellow-300 font-black">⚠️ 불 량</span>
+                <span class="text-yellow-300 font-black truncate">⚠️${detailText}</span>
               </span>
             `;
           } else if (isAway) {
@@ -1493,8 +1758,8 @@
             `;
           } else if (isIssue) {
             overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black">
-                <i class="fa-solid fa-triangle-exclamation text-xs"></i> 불 량
+              <span class="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black truncate max-w-full">
+                <i class="fa-solid fa-triangle-exclamation text-xs"></i> <span class="truncate">${detailText}</span>
               </span>
             `;
           } else {
