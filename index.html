@@ -157,7 +157,7 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 */
+    /* 미배치 구역 네임택: 은은한 흐림 효과 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -521,7 +521,7 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 열차 탑승기록 (팀별 독립) -->
+        <!-- [1열 2행]: 팀별 독립 열차 탑승기록 -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -1144,7 +1144,7 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 공통 시설 저장소 (탑승기록은 완전히 제외하여 공유 차단) */
+    /* 공통 시설 저장소 (rideLogs는 완전히 제거하여 공유 차단) */
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
@@ -1157,7 +1157,7 @@
       });
     }
 
-    /* 팀별 독립 데이터 저장 (staff + rideLogs) */
+    /* 현재 팀의 인원 및 탑승기록을 팀 전용 노드에 영구 저장 */
     function syncCurrentTeamDataToCloud() {
       const currentTeamData = teamsData[currentTeamKey] || { staff: [], rideLogs: [] };
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentTeamData.staff || []));
@@ -1204,7 +1204,7 @@
         }
       });
 
-      // 각 팀 전용 노드 수신
+      // 각 팀 전용 리스너 (근무자 명단 + 팀별 탑승기록 독립 수신)
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).on('value', (snapshot) => {
           const cloudTeam = snapshot.val();
@@ -1285,6 +1285,7 @@
       }
     }
 
+    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1680,7 +1681,7 @@
       });
     }
 
-    /* 1. 상단 25편성 렌더링 */
+    /* 1. 상단 25편성 렌더링 (열차 드롭존에 직접 탑승자 네임택 안착) */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       if (!container) return;
@@ -1735,7 +1736,6 @@
         const dropzone = document.createElement('div');
         dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-y-auto';
 
-        // 편성 안에 직접 네임택 안착
         if (ridingStaff.length === 0) {
           dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
         } else {
@@ -1963,7 +1963,6 @@
 
     /* 2. 일반 역사 및 대기함 네임택 배치 */
     function renderStaffAndStations() {
-      // 역사 및 대기함 드롭존만 비우기 (상단 열차는 이미 renderTrains25Grid에서 채움)
       document.querySelectorAll('.station-dropzone').forEach(dz => {
         if (!dz.closest('#trains-grid')) {
           dz.innerHTML = '';
@@ -2053,7 +2052,22 @@
       attachEvents();
     }
 
-    /* 드래그 앤 드롭 전역 이벤트 바인딩 */
+    /* 역사 헤더 클릭 바인딩 (이벤트 중복 차단) */
+    function attachEvents() {
+      document.querySelectorAll('.station-header').forEach(header => {
+        header.onclick = (e) => {
+          e.stopPropagation();
+          const card = header.closest('.station-card');
+          if (!card) return;
+          const zoneId = card.getAttribute('data-zone-id');
+          if (zoneId) {
+            onStationHeaderClicked(zoneId);
+          }
+        };
+      });
+    }
+
+    /* 드래그 앤 드롭 및 터치 전역 이벤트 바인딩 */
     let draggedId = null;
     let lastTapTime = 0;
     let lastTapTargetId = null;
@@ -2089,7 +2103,7 @@
       e.stopPropagation();
 
       const targetTag = e.target.closest('.nametag');
-      if (targetTag && targetTag.id !== draggedId) {
+      if (targetTag && targetTag.id !== draggedId && !targetZone.startsWith('train-')) {
         const rect = targetTag.getBoundingClientRect();
         const isBefore = (e.clientY < rect.top + rect.height / 2);
         reorderStaff(draggedId, targetTag.id, targetZone, isBefore);
@@ -2116,16 +2130,15 @@
       draggedId = null;
     });
 
+    /* 모바일 터치 및 선택 이동 처리 */
     document.addEventListener('touchend', (e) => {
-      const tag = e.target.closest('.nametag');
-      const card = e.target.closest('.station-card');
-      const header = e.target.closest('.station-header');
-
-      if (header && card) {
-        const zoneId = card.getAttribute('data-zone-id');
-        if (zoneId) onStationHeaderClicked(zoneId);
+      // 역사 헤더나 모달창 내부 터치인 경우 통과
+      if (e.target.closest('.station-header') || e.target.closest('#issue-modal') || e.target.closest('#train-issue-modal') || e.target.closest('#add-modal') || e.target.closest('#edit-modal')) {
         return;
       }
+
+      const tag = e.target.closest('.nametag');
+      const card = e.target.closest('.station-card');
 
       if (tag) {
         const currentTime = Date.now();
@@ -2349,7 +2362,7 @@
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
-      // [핵심] 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
+      // 좌측 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
