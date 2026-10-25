@@ -236,7 +236,7 @@
     /* 1. 외부 단독: 세련된 딥 슬레이트 반투명 톤 (빨간색 제외) */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
-      background-color: rgba(30, 41, 59, 0.75); /* Slate-800 반투명 */
+      background-color: rgba(30, 41, 59, 0.78); /* Slate-800 반투명 */
       color: #f8fafc;
       font-size: 13.5px;
     }
@@ -244,7 +244,7 @@
     /* 2. 불량 단독: 레드 반투명 톤 + 옐로우 텍스트 */
     .station-card.is-issue:not(.is-away) .station-status-overlay {
       display: flex;
-      background-color: rgba(220, 38, 38, 0.82); /* Red-600 반투명 */
+      background-color: rgba(220, 38, 38, 0.85); /* Red-600 반투명 */
       color: #fef08a; /* Yellow-200 */
       font-size: 13.5px;
       animation: pulse-issue-bg 1.2s infinite ease-in-out;
@@ -253,9 +253,9 @@
     /* 3. 외부 + 불량 동시: 슬레이트와 레드가 결합된 반투명 그라데이션 */
     .station-card.is-away.is-issue .station-status-overlay {
       display: flex;
-      background: linear-gradient(90deg, rgba(30, 41, 59, 0.85) 45%, rgba(220, 38, 38, 0.85) 55%);
+      background: linear-gradient(90deg, rgba(30, 41, 59, 0.88) 45%, rgba(220, 38, 38, 0.88) 55%);
       color: #ffffff;
-      font-size: 12.5px;
+      font-size: 12px;
       animation: pulse-issue-bg 1.2s infinite ease-in-out;
     }
 
@@ -990,23 +990,56 @@
       }
     }
 
-    /* 역사 헤더 클릭 타이머 맵 */
-    let stationClickTimers = {};
+    /* =========================================================================
+       역사 헤더 클릭 핸들러 (원클릭 vs 더블클릭 완벽 분리 엔진)
+       - 1회 클릭: 280ms 대기 후 [외부 ↔ 외부 취소] 단독 토글
+       - 2회 클릭: 1회 대기 타이머 완전 강제 파기 후 [불량 ↔ 불량 취소] 단독 토글
+    ========================================================================= */
+    let stationClickTimerMap = {};
+    let lastStationClickTimes = {};
 
-    /* 1회 클릭: 오직 [외부 ↔ 외부 취소]만 스위칭 (다른 상태는 건드리지 않음) */
-    function toggleStationAway(zoneId) {
-      const currentTeam = teamsData[currentTeamKey];
-      if (!currentTeam.awayStations) currentTeam.awayStations = {};
-      currentTeam.awayStations[zoneId] = !currentTeam.awayStations[zoneId];
-      
-      renderStaffAndStations();
-      syncCurrentTeamToCloud();
-      const statusText = currentTeam.awayStations[zoneId] ? '외부 설정' : '외부 취소 (정상복귀)';
-      showToast(`${zoneId} ${statusText}`);
+    function onStationHeaderClicked(zoneId) {
+      const now = Date.now();
+      const lastTime = lastStationClickTimes[zoneId] || 0;
+      const timeDiff = now - lastTime;
+      lastStationClickTimes[zoneId] = now;
+
+      // 300ms 이내에 연속 2회 클릭 발생 시 -> 더블클릭(불량 토글) 확정!
+      if (timeDiff > 0 && timeDiff < 300) {
+        if (stationClickTimerMap[zoneId]) {
+          clearTimeout(stationClickTimerMap[zoneId]);
+          delete stationClickTimerMap[zoneId];
+        }
+        toggleStationIssueOnly(zoneId); // 오직 불량만 스위칭!
+        return;
+      }
+
+      // 첫 번째 클릭인 경우 -> 280ms 동안 더블클릭이 들어오는지 대기
+      if (stationClickTimerMap[zoneId]) {
+        clearTimeout(stationClickTimerMap[zoneId]);
+      }
+
+      stationClickTimerMap[zoneId] = setTimeout(() => {
+        delete stationClickTimerMap[zoneId];
+        toggleStationAwayOnly(zoneId); // 오직 외부만 스위칭!
+      }, 280);
     }
 
-    /* 더블 클릭: 오직 [불량 ↔ 불량 취소]만 스위칭 및 특이사항 연동 (외부 상태는 건드리지 않음) */
-    function toggleStationIssue(zoneId) {
+    /* 1회 클릭 전용: 외부 ↔ 외부 취소 (불량 상태는 손대지 않음) */
+    function toggleStationAwayOnly(zoneId) {
+      const currentTeam = teamsData[currentTeamKey];
+      if (!currentTeam.awayStations) currentTeam.awayStations = {};
+      
+      const nextAwayState = !currentTeam.awayStations[zoneId];
+      currentTeam.awayStations[zoneId] = nextAwayState;
+
+      renderStaffAndStations();
+      syncCurrentTeamToCloud();
+      showToast(`${zoneId} ${nextAwayState ? '외부 설정' : '외부 취소 (정상복귀)'}`);
+    }
+
+    /* 더블 클릭 전용: 불량 ↔ 불량 취소 및 특이사항 자동 연동 (외부 상태는 손대지 않음) */
+    function toggleStationIssueOnly(zoneId) {
       const currentTeam = teamsData[currentTeamKey];
       if (!currentTeam.issueStations) currentTeam.issueStations = {};
       
@@ -1024,7 +1057,7 @@
         showToast(`⚠️ ${cleanStationName}역 불량 지정 (특이사항 자동기록)`);
       } else {
         autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
-        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
+        showToast(`${cleanStationName}역 불량 취소 (특이사항 자동기록)`);
       }
 
       if (currentTeam.noticeMemo && currentTeam.noticeMemo.trim().length > 0) {
@@ -1170,7 +1203,7 @@
       syncTrainsToCloud();
     }
 
-    /* 역사 렌더링: 외부출장/불량 상태 오버레이 및 글자 밀림 완전 방지 */
+    /* 역사 렌더링: 외부출장/불량 상태 오버레이 */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -1329,7 +1362,7 @@
       const stationCards = document.querySelectorAll('.station-card');
       const stationHeaders = document.querySelectorAll('.station-header');
 
-      /* 역사 헤더 클릭 이벤트 (원클릭 vs 더블클릭 분리) */
+      /* 역사 헤더 클릭 이벤트 (중복 없는 단일 핸들러 바인딩) */
       stationHeaders.forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
@@ -1338,18 +1371,7 @@
           const zoneId = card.getAttribute('data-zone-id');
           if (!zoneId) return;
 
-          // 더블클릭 이벤트 발생 시
-          if (stationClickTimers[zoneId]) {
-            clearTimeout(stationClickTimers[zoneId]);
-            delete stationClickTimers[zoneId];
-            toggleStationIssue(zoneId); // 오직 불량만 스위칭!
-          } else {
-            // 원클릭 이벤트 대기
-            stationClickTimers[zoneId] = setTimeout(() => {
-              toggleStationAway(zoneId); // 오직 외부만 스위칭!
-              delete stationClickTimers[zoneId];
-            }, 250);
-          }
+          onStationHeaderClicked(zoneId);
         };
       });
 
