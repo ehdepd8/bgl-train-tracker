@@ -157,7 +157,7 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 톤 다운(흐리게) 복원 */
+    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 복원 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -1044,13 +1044,11 @@
     let currentTeamKey = 'team1';
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
-    
-    /* [핵심] 대괄호 에러를 완벽히 막는 배열 구조 [{station: "...", detail: "..."}] */
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
-    /* 로컬 스토리지 1차 즉시 복원 */
+    /* 로컬 스토리지 1차 즉시 복구 (인원 명단 포함하여 증발 원천 방지) */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
@@ -1063,13 +1061,50 @@
     } catch(e) {}
 
     let teamsData = {
-      team1: { staff: INITIAL_STAFF_TEAM1 },
+      team1: { staff: [] },
       team2: { staff: [] },
       team3: { staff: [] },
       team4: { staff: [] }
     };
 
+    // 로컬 스토리지에서 각 팀의 근무자 명단 1차 즉시 복원
+    ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
+      try {
+        const localStaff = localStorage.getItem(`bgl_staff_${tKey}`);
+        if (localStaff) {
+          teamsData[tKey].staff = JSON.parse(localStaff);
+        } else if (tKey === 'team1') {
+          teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
+        }
+      } catch(e) {
+        if (tKey === 'team1') teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
+      }
+    });
+
     let selectedStaffIdForMove = null;
+
+    /* 색상 테마 반환 함수 */
+    function getColorTheme(color) {
+      switch (color) {
+        case 'purple':
+          return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
+        case 'safe_guard':
+        case 'amber':
+          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
+        case 'team1':
+        case 'cyan':
+          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
+        case 'team2':
+          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
+        case 'team3':
+          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
+        case 'team4':
+        case 'blue':
+          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
+        default:
+          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
+      }
+    }
 
     function checkUrlTeamParam() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -1119,7 +1154,9 @@
     }
 
     function syncCurrentTeamStaffToCloud() {
-      rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
+      rootDbRef.child(currentTeamKey).child('staff').set(currentStaffList);
     }
 
     function initRealtimeSync() {
@@ -1165,14 +1202,15 @@
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
           const cloudStaff = snapshot.val();
-          if (cloudStaff) {
+          if (cloudStaff && Array.isArray(cloudStaff)) {
             teamsData[tKey].staff = cloudStaff;
+            localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(cloudStaff));
             if (currentTeamKey === tKey) {
               render();
             }
           } else {
-            if (tKey === 'team1') {
-              syncCurrentTeamStaffToCloud();
+            if (teamsData[tKey].staff && teamsData[tKey].staff.length > 0) {
+              rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
             }
           }
         });
@@ -1222,6 +1260,7 @@
           teamsData[tKey].staff.forEach(s => {
             s.location = '미배치';
           });
+          localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(teamsData[tKey].staff));
           rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
         }
       });
@@ -1240,7 +1279,7 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
+    /* 역사 클릭 이벤트 처리 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1771,7 +1810,7 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
-        // 스마일 아이콘: 카드 안쪽 상단 우측(top: 2px, right: 4px)에 확실히 위치시켜 옆 카드에 가려지지 않음
+        // 스마일 아이콘: 카드 안쪽 상단 우측(top: 2px, right: 3px)에 확실히 위치시켜 옆 카드에 가려지지 않음
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
           ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
@@ -1921,9 +1960,12 @@
       closeEditModal();
     }
 
+    /* 역사 렌더링 및 무인 표시 완벽 보장 */
     function renderStaffAndStations() {
+      // 1. 모든 드롭존 초기화
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
+      // 2. 역사 카드 상태 (외부/불량) 오버레이 적용
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -1966,13 +2008,24 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
+      // 3. 네임택 배치
+      currentStaff.forEach(staff => {
+        const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
+        if (targetDropzone) {
+          const tag = buildNametagElement(staff);
+          targetDropzone.appendChild(tag);
+        }
+      });
+
+      // 4. 인원수별 정렬 및 빈 역사 '무 인' 표시 완벽 보장
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
 
-        const staffList = currentStaff.filter(s => s.location === zoneId);
         const dropzone = card.querySelector('.station-dropzone');
         if (!dropzone) return;
+
+        const staffList = currentStaff.filter(s => s.location === zoneId);
 
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
         if (staffList.length === 1) {
@@ -1985,19 +2038,9 @@
           dropzone.classList.add('count-many');
         }
 
+        // 역사가 비어있을 때 무인 표시
         if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
-        }
-      });
-
-      currentStaff.forEach(staff => {
-        const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
-        if (targetDropzone) {
-          const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
-          if (placeholder) placeholder.remove();
-
-          const tag = buildNametagElement(staff);
-          targetDropzone.appendChild(tag);
         }
       });
 
@@ -2475,8 +2518,8 @@
     });
 
     window.onload = function() {
-      render();
-      initRealtimeSync();
+      render(); // 즉시 로컬 데이터로 렌더링
+      initRealtimeSync(); // Firebase 실시간 동기화 바인딩
     };
   </script>
 </body>
