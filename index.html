@@ -40,7 +40,7 @@
     }
 
     .app-viewport-container {
-      width: 1720px;
+      width: 1780px;
       min-height: 920px;
       display: flex;
       flex-direction: column;
@@ -54,9 +54,10 @@
       gap: 3px;
     }
 
+    /* 1열 너비를 265px로 확장 */
     .matrix-layout-grid {
       display: grid;
-      grid-template-columns: 215px repeat(8, minmax(0, 1fr)) 285px;
+      grid-template-columns: 265px repeat(8, minmax(0, 1fr)) 285px;
       grid-template-rows: repeat(3, minmax(170px, 1fr)) 95px;
       gap: 5px;
     }
@@ -199,7 +200,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -219,7 +219,6 @@
       45%, 75% { opacity: 0.95; }
     }
 
-    /* 1. 외부 단독: 딥 슬레이트 톤 */
     .station-card.is-away:not(.is-issue) .station-status-overlay {
       display: flex;
       background-color: #1e293b;
@@ -227,7 +226,6 @@
       font-size: 13.5px;
     }
 
-    /* 2. 불량 단독: 레드 톤 + 옐로우 텍스트 */
     .station-card.is-issue:not(.is-away) .station-status-overlay {
       display: flex;
       background-color: #dc2626;
@@ -235,7 +233,6 @@
       font-size: 13.5px;
     }
 
-    /* 3. 외부 + 불량 동시: 슬레이트-레드 그라데이션 */
     .station-card.is-away.is-issue .station-status-overlay {
       display: flex;
       background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%);
@@ -327,6 +324,7 @@
         <span id="toast-message">클라우드와 실시간 동기화되었습니다.</span>
       </div>
 
+      <!-- 헤더 바 -->
       <header class="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between shadow-xs shrink-0 mb-1">
         <div class="flex items-center space-x-3">
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
@@ -387,8 +385,8 @@
           <button onclick="openAddModal()" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> 인원등록
           </button>
-          <button onclick="resetData()" class="px-2 py-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold rounded text-xs transition flex items-center gap-1">
-            <i class="fa-solid fa-rotate-left text-slate-400"></i> 초기화
+          <button onclick="resetAllAndMoveToUnassigned()" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold rounded text-xs transition flex items-center gap-1" title="모든 네임택 미배치 이동 및 전체 초기화">
+            <i class="fa-solid fa-rotate-left text-rose-500"></i> 전체초기화
           </button>
 
           <div id="live-clock" class="font-mono font-bold text-slate-600 px-2 text-xs hidden lg:block">
@@ -415,23 +413,23 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
+      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 (1열: 265px 확장) -->
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
-        <!-- [1열 1~2행 병합]: 열차 승무 현황 -->
-        <div class="row-span-2 station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="승무현황">
-          <div class="bg-sky-500 text-white text-xs font-black py-1 px-2 flex items-center justify-between border-b border-sky-600 shrink-0">
-            <span class="flex items-center gap-1">
-              <i class="fa-solid fa-id-badge text-sky-100"></i> 열차 승무 현황
+        <!-- [1열 1행]: 열차 탑승 현황 (명칭 변경) -->
+        <div class="station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="승무현황">
+          <div class="bg-sky-500 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-train-tram text-sky-100"></i> 열차 탑승 현황
             </span>
             <span id="badge-train-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
           </div>
-          <div id="train-riders-list" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto">
-            <span class="text-[11px] text-slate-400 italic p-1 text-center">승무 배정 없음</span>
+          <div id="train-riders-list" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
+            <span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>
           </div>
         </div>
 
-        <!-- 1행 2~9열 -->
+        <!-- 1행 2~9열: 1관리역 -->
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
           <div class="station-header bg-slate-200 hover:bg-slate-300 text-slate-900 border-b border-rose-200">
             <span class="font-black text-base">기지입환</span>
@@ -518,7 +516,20 @@
           </div>
         </div>
 
-        <!-- 2행 2~9열 -->
+        <!-- [1열 2행 신설]: 열차 탑승기록 (편성, 이름, 탑승시간, 하차시간) -->
+        <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
+          <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> 열차 탑승기록
+            </span>
+            <button onclick="clearRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="탑승기록만 비우기">기록삭제</button>
+          </div>
+          <div id="train-ride-logs" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
+            <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
+          </div>
+        </div>
+
+        <!-- 2행 2~9열: 2관리역 -->
         <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
           <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
             <span class="font-black text-base tracking-tight">김해시청</span>
@@ -591,17 +602,17 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 3행 1열: 특이사항 -->
+        <!-- [1열 3행]: 특이사항 (265px 확장) -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
-          <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2 flex items-center justify-between border-b border-amber-500 shrink-0">
-            <span class="flex items-center gap-1">
+          <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
+            <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항 (전체 공유)
             </span>
-            <span class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1 rounded">공통 실시간</span>
+            <span class="text-[9.5px] font-black text-amber-950 bg-amber-200 px-1.5 py-0.2 rounded">실시간</span>
           </div>
-          <div class="p-1 flex-1 flex flex-col bg-white">
+          <div class="p-1.5 flex-1 flex flex-col bg-white">
             <textarea id="notice-memo-input" 
-                      placeholder="예: 4편성 통신불량 점검중&#10;특이사항 입력 시 전 기기 동기화" 
+                      placeholder="특이사항 입력 시 전 기기 동기화" 
                       class="w-full flex-1 p-1 text-xs font-semibold text-slate-800 bg-amber-50/30 rounded border border-amber-200 focus:outline-none focus:border-amber-500 focus:bg-white resize-none leading-relaxed custom-scroll"
                       onchange="updateNoticeMemo(this.value)"></textarea>
           </div>
@@ -836,20 +847,21 @@
 
     let currentTeamKey = 'team1';
 
-    /* [영구 보존 상태]: 대괄호/특수문자 에러가 없는 순수 문자열 배열 형태 */
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
     let sharedIssueList = [];
     let sharedNoticeMemo = '';
+    let sharedRideLogs = []; // { id, staffName, trainNum, startTime, endTime }
 
-    /* 로컬 스토리지 1차 즉시 복원 (새로고침 깜빡임 방지) */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localIssue = localStorage.getItem('bgl_issue_list');
       const localMemo = localStorage.getItem('bgl_notice_memo');
+      const localLogs = localStorage.getItem('bgl_ride_logs');
       if (localAway) sharedAwayList = JSON.parse(localAway);
       if (localIssue) sharedIssueList = JSON.parse(localIssue);
       if (localMemo !== null) sharedNoticeMemo = localMemo;
+      if (localLogs) sharedRideLogs = JSON.parse(localLogs);
     } catch(e) {}
 
     let teamsData = {
@@ -895,18 +907,17 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 역사 상태 및 특이사항을 Firebase + LocalStorage에 안전하게 2중 영구 저장 */
     function syncFacilityStatusToCloud() {
-      // 1) 로컬 스토리지 즉시 저장
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
       localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
+      localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
-      // 2) Firebase 안전 저장 (배열 및 문자열 보장)
       rootDbRef.child('shared_facilities').set({
         awayList: sharedAwayList || [],
         issueList: sharedIssueList || [],
-        noticeMemo: sharedNoticeMemo || ''
+        noticeMemo: sharedNoticeMemo || '',
+        rideLogs: sharedRideLogs || []
       });
     }
 
@@ -914,11 +925,9 @@
       rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff || []);
     }
 
-    /* 실시간 동기화 리스너 */
     function initRealtimeSync() {
       checkUrlTeamParam();
 
-      // 1. 열차 상태
       rootDbRef.child('shared_trains').on('value', (snapshot) => {
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
@@ -930,21 +939,22 @@
         }
       });
 
-      // 2. 역사 외부/불량/특이사항
       rootDbRef.child('shared_facilities').on('value', (snapshot) => {
         const cloudData = snapshot.val();
         if (cloudData) {
           sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
           sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
           sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
+          sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
 
-          // 최신값 로컬 갱신
           localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
           localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
+          localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
           renderStaffAndStations();
           renderStatistics();
+          renderRideLogs();
 
           const memoInput = document.getElementById('notice-memo-input');
           if (memoInput && document.activeElement !== memoInput) {
@@ -955,7 +965,6 @@
         }
       });
 
-      // 3. 1~4팀 인원 배치
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
           const cloudStaff = snapshot.val();
@@ -986,18 +995,49 @@
       showToast('특이사항이 실시간 저장되었습니다.');
     }
 
-    function resetData() {
-      const teamNum = currentTeamKey.replace('team', '');
-      if (confirm(`현재 [${teamNum}팀] 근무자 배치를 초기화하시겠습니까?\n(공통 열차/역사 시설 상태는 그대로 유지됩니다)`)) {
-        teamsData[currentTeamKey].staff = (currentTeamKey === 'team1') ? JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1)) : [];
-        selectedStaffIdForMove = null;
-        render();
-        syncCurrentTeamStaffToCloud();
-        showToast(`${teamNum}팀 근무자 배치가 초기화되었습니다.`);
+    /* 초기화 버튼 개편: 모든 상태 초기화 + 모든 네임택을 미배치 칸으로 일괄 이동 */
+    function resetAllAndMoveToUnassigned() {
+      if (!confirm("전체 초기화를 실행하시겠습니까?\n\n- 모든 근무자 네임택이 [미배치 (대기함)]으로 이동합니다.\n- 열차/역사 불량 및 외부 상태가 정상 복구됩니다.\n- 특이사항 및 탑승기록이 리셋됩니다.")) {
+        return;
+      }
+
+      // 1. 열차 상태 초기화 (1~16 본선, 17~25 기지)
+      sharedTrains = JSON.parse(JSON.stringify(DEFAULT_FLEET));
+      syncTrainsToCloud();
+
+      // 2. 역사 불량, 외부, 특이사항 초기화
+      sharedAwayList = [];
+      sharedIssueList = [];
+      sharedNoticeMemo = '';
+      sharedRideLogs = [];
+      syncFacilityStatusToCloud();
+
+      // 3. 모든 팀의 인원을 삭제하지 않고 '미배치' 칸으로 이동
+      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
+        if (teamsData[tKey] && Array.isArray(teamsData[tKey].staff)) {
+          teamsData[tKey].staff.forEach(s => {
+            s.location = '미배치';
+          });
+          rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
+        }
+      });
+
+      selectedStaffIdForMove = null;
+      render();
+      showToast("전체 초기화 완료: 모든 네임택이 미배치함으로 이동되었습니다.");
+    }
+
+    /* 탑승기록만 비우기 */
+    function clearRideLogs() {
+      if (confirm("열차 탑승기록 내역을 모두 삭제하시겠습니까?")) {
+        sharedRideLogs = [];
+        syncFacilityStatusToCloud();
+        renderRideLogs();
+        showToast("열차 탑승기록이 삭제되었습니다.");
       }
     }
 
-    /* 원클릭 vs 더블클릭 이벤트 독립 제어 */
+    /* 역사 헤더 클릭/더블클릭 */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1007,7 +1047,6 @@
       const timeDiff = now - lastTime;
       lastStationClickTimes[zoneId] = now;
 
-      // 300ms 내 연속 2회 클릭 -> 더블클릭(불량 토글)
       if (timeDiff > 0 && timeDiff < 300) {
         if (stationClickTimerMap[zoneId]) {
           clearTimeout(stationClickTimerMap[zoneId]);
@@ -1017,7 +1056,6 @@
         return;
       }
 
-      // 첫 번째 클릭 -> 280ms 대기 후 단일클릭(외부 토글)
       if (stationClickTimerMap[zoneId]) {
         clearTimeout(stationClickTimerMap[zoneId]);
       }
@@ -1028,7 +1066,6 @@
       }, 280);
     }
 
-    /* 1회 클릭: 외부 ↔ 외부 취소 */
     function toggleStationAwayOnly(zoneId) {
       const idx = sharedAwayList.indexOf(zoneId);
       let isAwayNow = false;
@@ -1046,7 +1083,6 @@
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    /* 더블 클릭: 불량 ↔ 불량 취소 및 특이사항 연동 */
     function toggleStationIssueOnly(zoneId) {
       const idx = sharedIssueList.indexOf(zoneId);
       let isIssueNow = false;
@@ -1090,6 +1126,7 @@
       renderTrains25Grid();
       renderStaffAndStations();
       renderStatistics();
+      renderRideLogs();
       populateLocationOptions();
 
       const memoInput = document.getElementById('notice-memo-input');
@@ -1217,7 +1254,6 @@
       syncTrainsToCloud();
     }
 
-    /* 역사 렌더링 */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -1499,14 +1535,22 @@
       });
     }
 
+    /* 이동 처리 및 열차 탑승/하차 시간 기록 자동 트리거 */
     function moveStaffToEnd(staffId, newLocation) {
       const staffList = teamsData[currentTeamKey].staff;
       const targetIndex = staffList.findIndex(s => s.id === staffId);
       if (targetIndex === -1) return;
 
-      const [staff] = staffList.splice(targetIndex, 1);
-      staff.location = newLocation;
-      staffList.push(staff);
+      const staff = staffList[targetIndex];
+      const prevLocation = staff.location;
+
+      if (prevLocation !== newLocation) {
+        handleRideLogging(staff.name, prevLocation, newLocation);
+      }
+
+      const [sItem] = staffList.splice(targetIndex, 1);
+      sItem.location = newLocation;
+      staffList.push(sItem);
 
       render();
       syncCurrentTeamStaffToCloud();
@@ -1518,15 +1562,22 @@
       const srcIdx = staffList.findIndex(s => s.id === sourceId);
       if (srcIdx === -1) return;
 
-      const [sourceStaff] = staffList.splice(srcIdx, 1);
-      sourceStaff.location = targetZone;
+      const sourceStaff = staffList[srcIdx];
+      const prevLocation = sourceStaff.location;
+
+      if (prevLocation !== targetZone) {
+        handleRideLogging(sourceStaff.name, prevLocation, targetZone);
+      }
+
+      const [sItem] = staffList.splice(srcIdx, 1);
+      sItem.location = targetZone;
 
       let tgtIdx = staffList.findIndex(s => s.id === targetId);
       if (tgtIdx === -1) {
-        staffList.push(sourceStaff);
+        staffList.push(sItem);
       } else {
         const insertIdx = isBefore ? tgtIdx : tgtIdx + 1;
-        staffList.splice(insertIdx, 0, sourceStaff);
+        staffList.splice(insertIdx, 0, sItem);
       }
 
       render();
@@ -1540,9 +1591,16 @@
       const idxB = staffList.findIndex(s => s.id === idB);
       if (idxA === -1 || idxB === -1) return;
 
-      const tempLoc = staffList[idxA].location;
-      staffList[idxA].location = staffList[idxB].location;
-      staffList[idxB].location = tempLoc;
+      const locA = staffList[idxA].location;
+      const locB = staffList[idxB].location;
+
+      if (locA !== locB) {
+        handleRideLogging(staffList[idxA].name, locA, locB);
+        handleRideLogging(staffList[idxB].name, locB, locA);
+      }
+
+      staffList[idxA].location = locB;
+      staffList[idxB].location = locA;
 
       const tempItem = staffList[idxA];
       staffList[idxA] = staffList[idxB];
@@ -1551,6 +1609,81 @@
       render();
       syncCurrentTeamStaffToCloud();
       showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
+    }
+
+    /* 열차 탑승/하차 자동 기록 로직 */
+    function handleRideLogging(staffName, prevLoc, newLoc) {
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      // 1. 열차에서 내리는 경우 -> 하차 시간 기록
+      if (prevLoc && prevLoc.startsWith('train-')) {
+        const trainNum = prevLoc.replace('train-', '');
+        // 탑승 중인 열려있는 로그 찾기
+        const activeLog = sharedRideLogs.find(l => l.staffName === staffName && l.trainNum === trainNum && !l.endTime);
+        if (activeLog) {
+          activeLog.endTime = timeStr;
+        } else {
+          sharedRideLogs.unshift({
+            id: 'log-' + Date.now(),
+            staffName,
+            trainNum,
+            startTime: '-',
+            endTime: timeStr
+          });
+        }
+      }
+
+      // 2. 열차로 탑승하는 경우 -> 탑승 시간 기록
+      if (newLoc && newLoc.startsWith('train-')) {
+        const trainNum = newLoc.replace('train-', '');
+        sharedRideLogs.unshift({
+          id: 'log-' + Date.now(),
+          staffName,
+          trainNum,
+          startTime: timeStr,
+          endTime: null // 탑승 중
+        });
+      }
+
+      // 최대 30개 기록 유지
+      if (sharedRideLogs.length > 30) {
+        sharedRideLogs = sharedRideLogs.slice(0, 30);
+      }
+
+      syncFacilityStatusToCloud();
+      renderRideLogs();
+    }
+
+    /* 열차 탑승기록 렌더링 */
+    function renderRideLogs() {
+      const container = document.getElementById('train-ride-logs');
+      if (!container) return;
+
+      if (sharedRideLogs.length === 0) {
+        container.innerHTML = `<span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>`;
+        return;
+      }
+
+      container.innerHTML = sharedRideLogs.map(l => {
+        const isRiding = !l.endTime;
+        return `
+          <div class="grid grid-cols-[46px_56px_1fr] items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
+            isRiding 
+              ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
+              : 'bg-slate-50 border-slate-200 text-slate-700'
+          }">
+            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.2 rounded">${l.trainNum}편성</span>
+            <span class="truncate font-black text-slate-900">${l.staffName}</span>
+            <div class="font-mono text-[10px] text-right truncate">
+              <span class="text-indigo-700">${l.startTime}</span> ~ 
+              <span class="${isRiding ? 'text-emerald-600 font-extrabold animate-pulse' : 'text-slate-500'}">
+                ${isRiding ? '탑승중' : l.endTime}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderStatistics() {
@@ -1584,21 +1717,22 @@
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
+      /* 열차 탑승 현황 리스트 (1열 너비 265px에 맞춰 여유로운 그리드) */
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
-          riderList.innerHTML = `<span class="text-[11px] text-slate-400 italic p-1 text-center">승무 배정 없음</span>`;
+          riderList.innerHTML = `<span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>`;
         } else {
           riderList.innerHTML = trainStaff.map(s => {
             const tNum = s.location.replace('train-', '');
             const smileBadge = s.icon === 'smile' ? '😊' : '';
             return `
-              <div class="grid grid-cols-[46px_50px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-1 rounded shadow-2xs">
+              <div class="grid grid-cols-[48px_60px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-0.5 rounded shadow-2xs">
                 <span class="bg-sky-600 text-white font-black text-[9.5px] text-center py-0.5 rounded">${tNum}편성</span>
-                <span class="font-black text-xs text-slate-900 truncate flex items-center gap-0.5">
+                <span class="font-black text-xs text-slate-900 truncate">
                   ${s.name} ${smileBadge}
                 </span>
-                <span class="font-mono font-bold text-[10.5px] text-sky-800 tracking-tighter text-right">${s.phone}</span>
+                <span class="font-mono font-bold text-[11px] text-sky-800 tracking-tighter text-right">${s.phone}</span>
               </div>
             `;
           }).join('');
@@ -1655,9 +1789,14 @@
         color,
         icon: isNewbie ? 'smile' : null
       });
+
+      if (location.startsWith('train-')) {
+        handleRideLogging(name, null, location);
+      }
+
       render();
       syncCurrentTeamStaffToCloud();
-      showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 새로 등록되었습니다.`);
+      showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
       closeAddModal();
     }
 
@@ -1676,6 +1815,9 @@
       document.body.appendChild(modal);
       modal.querySelector('#del-cancel').onclick = () => modal.remove();
       modal.querySelector('#del-ok').onclick = () => {
+        if (staff.location.startsWith('train-')) {
+          handleRideLogging(staff.name, staff.location, null);
+        }
         teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
         render();
         syncCurrentTeamStaffToCloud();
@@ -1757,7 +1899,7 @@
     });
 
     window.onload = function() {
-      render(); // 로컬 캐시 즉시 렌더링
+      render();
       initRealtimeSync();
     };
   </script>
