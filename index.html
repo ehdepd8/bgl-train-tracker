@@ -157,7 +157,7 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 복원 */
+    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -389,8 +389,10 @@
           <button onclick="openAddModal()" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> 인원등록
           </button>
-          <button onclick="resetAllAndMoveToUnassigned()" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold rounded text-xs transition flex items-center gap-1" title="모든 네임택 미배치 이동 및 전체 초기화">
-            <i class="fa-solid fa-rotate-left text-rose-500"></i> 전체초기화
+          
+          <!-- 수정: 해당 팀만 미배치로 초기화하는 전용 버튼 -->
+          <button onclick="resetCurrentTeamOnly()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold rounded text-xs transition flex items-center gap-1" title="현재 팀 근무자 전원을 미배치함으로 이동">
+            <i class="fa-solid fa-rotate-left text-amber-600"></i> 팀초기화
           </button>
 
           <div id="live-clock" class="font-mono font-bold text-slate-600 px-2 text-xs hidden lg:block">
@@ -1048,7 +1050,7 @@
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
-    /* 로컬 스토리지 1차 즉시 복구 (인원 명단 포함하여 증발 원천 방지) */
+    /* 로컬 스토리지 1차 즉시 복구 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
@@ -1067,7 +1069,6 @@
       team4: { staff: [] }
     };
 
-    // 로컬 스토리지에서 각 팀의 근무자 명단 1차 즉시 복원
     ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
       try {
         const localStaff = localStorage.getItem(`bgl_staff_${tKey}`);
@@ -1099,7 +1100,6 @@
         case 'team3':
           return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
-        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1241,33 +1241,24 @@
       }
     }
 
-    function resetAllAndMoveToUnassigned() {
-      if (!confirm("전체 초기화를 실행하시겠습니까?\n\n- 모든 근무자 네임택이 [미배치 (대기함)]으로 이동합니다.\n- 열차/역사 불량 및 외부 상태가 정상 복구됩니다.\n- 특이사항 및 탑승기록이 리셋됩니다.")) {
+    /* [개편] 현재 선택된 해당 팀만 미배치 칸으로 초기화하는 함수 */
+    function resetCurrentTeamOnly() {
+      const teamNum = currentTeamKey.replace('team', '');
+      if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치는 변경되지 않습니다.\n- 공통 열차/역사 시설 상태 및 특이사항은 유지됩니다.`)) {
         return;
       }
 
-      sharedTrains = JSON.parse(JSON.stringify(DEFAULT_FLEET));
-      syncTrainsToCloud();
-
-      sharedAwayList = [];
-      sharedStationIssues = [];
-      sharedNoticeMemo = '';
-      sharedRideLogs = [];
-      syncFacilityStatusToCloud();
-
-      ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-        if (teamsData[tKey] && Array.isArray(teamsData[tKey].staff)) {
-          teamsData[tKey].staff.forEach(s => {
-            s.location = '미배치';
-          });
-          localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(teamsData[tKey].staff));
-          rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
-        }
-      });
+      if (teamsData[currentTeamKey] && Array.isArray(teamsData[currentTeamKey].staff)) {
+        teamsData[currentTeamKey].staff.forEach(s => {
+          s.location = '미배치';
+        });
+        localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(teamsData[currentTeamKey].staff));
+        rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff);
+      }
 
       selectedStaffIdForMove = null;
       render();
-      showToast("전체 초기화 완료: 모든 네임택이 미배치함으로 이동되었습니다.");
+      showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
     }
 
     function clearRideLogs() {
@@ -1793,7 +1784,7 @@
       }
     }
 
-    /* 네임택 빌더 (스마일 아이콘이 미배치함에서도 무조건 선명하게 노출되도록 보강) */
+    /* 네임택 빌더 (스마일 아이콘: 카드 안쪽 상단 우측 top: 2px, right: 3px에 배치) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -1810,7 +1801,6 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
-        // 스마일 아이콘: 카드 안쪽 상단 우측(top: 2px, right: 3px)에 확실히 위치시켜 옆 카드에 가려지지 않음
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
           ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
@@ -1827,7 +1817,6 @@
         `;
       }
 
-      // 우클릭 시 [수정/삭제/취소] 컨텍스트 팝업
       el.oncontextmenu = (e) => {
         e.preventDefault();
         openStaffActionMenu(staff);
@@ -1836,7 +1825,6 @@
       return el;
     }
 
-    /* 근무자 우클릭 메뉴 (수정 / 삭제 / 취소) */
     function openStaffActionMenu(staff) {
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
@@ -1870,7 +1858,6 @@
       };
     }
 
-    /* 근무자 삭제 로직 */
     function deleteStaffDirect(staff) {
       if (staff.location.startsWith('train-')) {
         handleRideLogging(staff.name, staff.location, null);
@@ -1881,7 +1868,6 @@
       showToast(`${staff.name} 근무자가 삭제되었습니다.`);
     }
 
-    /* 근무자 수정 모달 제어 */
     let editingStaffId = null;
 
     function openEditModal(staff) {
@@ -1962,10 +1948,8 @@
 
     /* 역사 렌더링 및 무인 표시 완벽 보장 */
     function renderStaffAndStations() {
-      // 1. 모든 드롭존 초기화
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
-      // 2. 역사 카드 상태 (외부/불량) 오버레이 적용
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2008,7 +1992,6 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 3. 네임택 배치
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2017,7 +2000,6 @@
         }
       });
 
-      // 4. 인원수별 정렬 및 빈 역사 '무 인' 표시 완벽 보장
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2038,7 +2020,6 @@
           dropzone.classList.add('count-many');
         }
 
-        // 역사가 비어있을 때 무인 표시
         if (staffList.length === 0 && !zoneId.startsWith('train-') && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
@@ -2518,8 +2499,8 @@
     });
 
     window.onload = function() {
-      render(); // 즉시 로컬 데이터로 렌더링
-      initRealtimeSync(); // Firebase 실시간 동기화 바인딩
+      render();
+      initRealtimeSync();
     };
   </script>
 </body>
