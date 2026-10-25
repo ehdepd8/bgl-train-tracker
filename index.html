@@ -157,13 +157,12 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 칸 안의 네임택 (스마일 아이콘이 잘리지 않도록 overflow 허용) */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
       flex-shrink: 0 !important;
-      opacity: 0.85;
-      filter: saturate(0.85);
+      opacity: 0.9;
+      filter: saturate(0.9);
       box-shadow: none !important;
       overflow: visible !important;
     }
@@ -905,6 +904,94 @@
     </div>
   </div>
 
+  <!-- [신규] 근무자 정보 수정 모달 -->
+  <div id="edit-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-user-pen text-amber-600"></i> 근무자 정보 수정
+        </h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">성명</label>
+          <input type="text" id="edit-name" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">연락처</label>
+          <input type="text" id="edit-phone" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">배치 위치</label>
+          <select id="edit-location" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500"></select>
+        </div>
+
+        <div class="pt-1 border-t border-slate-100">
+          <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-800 bg-amber-50/70 p-2 rounded border border-amber-200">
+            <input type="checkbox" id="edit-is-newbie" class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
+            <span class="flex items-center gap-1">
+              신입 사원 <span class="text-sm">😊</span> <span class="text-[10px] text-amber-700 font-normal">(체크 시 네임택에 스마일 표시)</span>
+            </span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">직무 및 팀 구분</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="team1" class="accent-emerald-600"> 1팀
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+            </label>
+
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="team2" class="accent-orange-600"> 2팀
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
+            </label>
+
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="team3" class="accent-lime-600"> 3팀
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span>
+            </label>
+
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="team4" class="accent-blue-600"> 4팀
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span>
+            </label>
+
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="purple" class="accent-purple-700"> 일근자
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
+            </label>
+
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
+              <span class="flex items-center gap-1.5">
+                <input type="radio" name="edit-color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
+              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
+        <button onclick="closeEditModal()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
+        <button onclick="confirmEditStaff()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* 0. Firebase 설정 */
     const firebaseConfig = {
@@ -956,21 +1043,21 @@
     let currentTeamKey = 'team1';
     let sharedTrains = DEFAULT_FLEET;
     let sharedAwayList = [];
-    let sharedIssueList = []; 
-    let sharedStationIssueDetails = {};
+    
+    /* [핵심] 대괄호 키 에러를 원천 차단하는 배열 구조 */
+    /* 형태: [ { station: "가야대 [9621]", detail: "PSD 상선 1, 3번" } ] */
+    let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
     let sharedRideLogs = [];
 
-    /* 로컬 스토리지 1차 복구 */
+    /* 로컬 스토리지 1차 즉시 복구 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
-      const localIssue = localStorage.getItem('bgl_issue_list');
-      const localStationDetails = localStorage.getItem('bgl_station_issue_details');
+      const localStationIssues = localStorage.getItem('bgl_station_issues');
       const localMemo = localStorage.getItem('bgl_notice_memo');
       const localLogs = localStorage.getItem('bgl_ride_logs');
       if (localAway) sharedAwayList = JSON.parse(localAway);
-      if (localIssue) sharedIssueList = JSON.parse(localIssue);
-      if (localStationDetails) sharedStationIssueDetails = JSON.parse(localStationDetails);
+      if (localStationIssues) sharedStationIssues = JSON.parse(localStationIssues);
       if (localMemo !== null) sharedNoticeMemo = localMemo;
       if (localLogs) sharedRideLogs = JSON.parse(localLogs);
     } catch(e) {}
@@ -1000,6 +1087,7 @@
         case 'team3':
           return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
+        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1039,17 +1127,16 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
+    /* 배열 기반 시설 상태를 Firebase + LocalStorage에 안전하게 저장 */
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
-      localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
-      localStorage.setItem('bgl_station_issue_details', JSON.stringify(sharedStationIssueDetails));
+      localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
       localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
       localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
       rootDbRef.child('shared_facilities').set({
         awayList: sharedAwayList || [],
-        issueList: sharedIssueList || [],
-        stationIssueDetails: sharedStationIssueDetails || {},
+        stationIssues: sharedStationIssues || [],
         noticeMemo: sharedNoticeMemo || '',
         rideLogs: sharedRideLogs || []
       });
@@ -1077,14 +1164,12 @@
         const cloudData = snapshot.val();
         if (cloudData) {
           sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
-          sharedIssueList = Array.isArray(cloudData.issueList) ? cloudData.issueList : [];
-          sharedStationIssueDetails = cloudData.stationIssueDetails || {};
+          sharedStationIssues = Array.isArray(cloudData.stationIssues) ? cloudData.stationIssues : [];
           sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
           sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
 
           localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
-          localStorage.setItem('bgl_issue_list', JSON.stringify(sharedIssueList));
-          localStorage.setItem('bgl_station_issue_details', JSON.stringify(sharedStationIssueDetails));
+          localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
           localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
@@ -1132,7 +1217,6 @@
       showToast('특이사항이 실시간 저장되었습니다.');
     }
 
-    /* 특이사항 메모 내용 비우기 */
     function clearNoticeMemo() {
       if (confirm("특이사항 내용을 모두 삭제하시겠습니까?")) {
         sharedNoticeMemo = '';
@@ -1152,8 +1236,7 @@
       syncTrainsToCloud();
 
       sharedAwayList = [];
-      sharedIssueList = [];
-      sharedStationIssueDetails = {};
+      sharedStationIssues = [];
       sharedNoticeMemo = '';
       sharedRideLogs = [];
       syncFacilityStatusToCloud();
@@ -1181,7 +1264,7 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량 모달) */
+    /* 역사 클릭 이벤트 (원클릭 외부, 더블클릭 불량) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1228,11 +1311,10 @@
     }
 
     function toggleStationIssueOnly(zoneId) {
-      const idx = sharedIssueList.indexOf(zoneId);
+      const existingIdx = sharedStationIssues.findIndex(item => item.station === zoneId);
 
-      if (idx > -1) {
-        sharedIssueList.splice(idx, 1);
-        delete sharedStationIssueDetails[zoneId];
+      if (existingIdx > -1) {
+        sharedStationIssues.splice(existingIdx, 1);
 
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -1257,7 +1339,7 @@
       }
     }
 
-    /* 역사 불량 세부 선택 모달 제어 */
+    /* 역사 불량 세부 선택 모달 */
     let currentModalZoneId = null;
     let selectedIssueType = null;
     let selectedPsdLine = '상선';
@@ -1382,10 +1464,12 @@
     }
 
     function applyIssueFinal(zoneId, detailText) {
-      if (!sharedIssueList.includes(zoneId)) {
-        sharedIssueList.push(zoneId);
+      const existingIdx = sharedStationIssues.findIndex(item => item.station === zoneId);
+      if (existingIdx > -1) {
+        sharedStationIssues[existingIdx].detail = detailText || '불량';
+      } else {
+        sharedStationIssues.push({ station: zoneId, detail: detailText || '불량' });
       }
-      sharedStationIssueDetails[zoneId] = detailText || '불량';
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -1408,7 +1492,7 @@
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
-    /* 열차 불량 세부 선택 모달 제어 */
+    /* 열차 불량 세부 선택 모달 */
     let currentModalTrainId = null;
     let selectedTrainIssueType = null;
     let selectedTrainDoors = [];
@@ -1694,7 +1778,7 @@
       }
     }
 
-    /* 네임택 빌더 (신입 사원 스마일 아이콘이 미배치함에서도 선명하게 표시되도록 보강) */
+    /* 네임택 빌더 (스마일 아이콘이 미배치함에서도 무조건 선명하게 노출되도록 보강) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -1711,9 +1795,9 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
-        // 스마일 아이콘 z-20으로 상단 노출 보장
-        const smile = (staff.icon === 'smile') 
-          ? `<span class="absolute -top-2 right-0 text-sm select-none z-20 leading-none drop-shadow-xs" title="신입 사원">😊</span>` 
+        const isNewbie = (staff.icon === 'smile');
+        const smile = isNewbie 
+          ? `<span class="absolute -top-2.5 right-0 text-sm select-none z-30 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
         el.innerHTML = `
@@ -1727,12 +1811,139 @@
         `;
       }
 
+      // 우클릭 시 [수정/삭제/취소] 컨텍스트 팝업
       el.oncontextmenu = (e) => {
         e.preventDefault();
-        confirmDeleteStaff(staff);
+        openStaffActionMenu(staff);
       };
 
       return el;
+    }
+
+    /* 근무자 우클릭 메뉴 (수정 / 삭제 / 취소) */
+    function openStaffActionMenu(staff) {
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
+      modal.innerHTML = `
+        <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
+          <div class="font-black text-slate-900 text-sm border-b border-slate-100 pb-2">
+            '${staff.name}' 근무자 관리
+          </div>
+          <p class="text-xs text-slate-600">원하시는 작업을 선택해 주세요.</p>
+          <div class="flex justify-center gap-2 pt-1">
+            <button id="act-cancel" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded">취소</button>
+            <button id="act-edit" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center gap-1">
+              <i class="fa-solid fa-pen"></i> 수정
+            </button>
+            <button id="act-delete" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center gap-1">
+              <i class="fa-solid fa-trash"></i> 삭제
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelector('#act-cancel').onclick = () => modal.remove();
+      modal.querySelector('#act-edit').onclick = () => {
+        modal.remove();
+        openEditModal(staff);
+      };
+      modal.querySelector('#act-delete').onclick = () => {
+        modal.remove();
+        deleteStaffDirect(staff);
+      };
+    }
+
+    /* 근무자 삭제 로직 */
+    function deleteStaffDirect(staff) {
+      if (staff.location.startsWith('train-')) {
+        handleRideLogging(staff.name, staff.location, null);
+      }
+      teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast(`${staff.name} 근무자가 삭제되었습니다.`);
+    }
+
+    /* [근무자 수정 모달] 제어 로직 */
+    let editingStaffId = null;
+
+    function openEditModal(staff) {
+      editingStaffId = staff.id;
+      document.getElementById('edit-name').value = staff.name || '';
+      document.getElementById('edit-phone').value = staff.phone || '';
+      document.getElementById('edit-is-newbie').checked = (staff.icon === 'smile');
+
+      // 라디오 버튼 세팅
+      const radio = document.querySelector(`input[name="edit-color-choice"][value="${staff.color || 'team1'}"]`);
+      if (radio) radio.checked = true;
+
+      // 위치 셀렉트박스 채우기
+      populateEditLocationOptions(staff.location);
+
+      document.getElementById('edit-modal').classList.remove('hidden');
+      document.getElementById('edit-modal').classList.add('flex');
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+      document.getElementById('edit-modal').classList.remove('flex');
+      editingStaffId = null;
+    }
+
+    function populateEditLocationOptions(currentLoc) {
+      const sel = document.getElementById('edit-location');
+      if (!sel) return;
+      let opts = `<optgroup label="기본 대기"><option value="미배치">미배치 (대기함)</option></optgroup>`;
+      opts += `<optgroup label="역사">`;
+      document.querySelectorAll('.station-card').forEach(c => {
+        const id = c.getAttribute('data-zone-id');
+        if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황') {
+          opts += `<option value="${id}">${id}</option>`;
+        }
+      });
+      opts += `</optgroup><optgroup label="열차 직접 탑승">`;
+      sharedTrains.forEach(t => {
+        opts += `<option value="${t.id}">${t.name} (${t.status === 'active' ? '본선' : (t.status === 'issue' ? '불량⚠️' : '기지')})</option>`;
+      });
+      opts += `</optgroup><optgroup label="기타"><option value="휴무자">휴무자</option></optgroup>`;
+      sel.innerHTML = opts;
+      sel.value = currentLoc || '미배치';
+    }
+
+    function confirmEditStaff() {
+      if (!editingStaffId) return;
+
+      const currentTeam = teamsData[currentTeamKey];
+      const staff = currentTeam.staff.find(s => s.id === editingStaffId);
+      if (!staff) return;
+
+      const newName = document.getElementById('edit-name').value.trim();
+      const newPhone = document.getElementById('edit-phone').value.trim() || '010-0000-0000';
+      const newLocation = document.getElementById('edit-location').value;
+      const newColor = document.querySelector('input[name="edit-color-choice"]:checked').value;
+      const isNewbie = document.getElementById('edit-is-newbie').checked;
+
+      if (!newName) {
+        alert('성명을 입력해 주세요.');
+        return;
+      }
+
+      const prevLoc = staff.location;
+      if (prevLoc !== newLocation) {
+        handleRideLogging(newName, prevLoc, newLocation);
+      }
+
+      staff.name = newName;
+      staff.phone = newPhone;
+      staff.location = newLocation;
+      staff.color = newColor;
+      staff.icon = isNewbie ? 'smile' : null;
+
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast(`${newName} 근무자 정보가 수정되었습니다.`);
+      closeEditModal();
     }
 
     function renderStaffAndStations() {
@@ -1743,8 +1954,9 @@
         if (!zoneId) return;
 
         const isAway = sharedAwayList.includes(zoneId);
-        const isIssue = sharedIssueList.includes(zoneId);
-        const detailText = sharedStationIssueDetails[zoneId] || '불량';
+        const issueItem = sharedStationIssues.find(item => item.station === zoneId);
+        const isIssue = !!issueItem;
+        const detailText = issueItem ? issueItem.detail : '불량';
 
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
         if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
@@ -2112,7 +2324,7 @@
       document.getElementById('stat-depot').textContent = depotTrains;
       document.getElementById('stat-issue').textContent = issueTrains;
 
-      document.getElementById('stat-station-issue').textContent = `${sharedIssueList.length}개역`;
+      document.getElementById('stat-station-issue').textContent = `${sharedStationIssues.length}개역`;
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
@@ -2214,32 +2426,6 @@
       syncCurrentTeamStaffToCloud();
       showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
       closeAddModal();
-    }
-
-    function confirmDeleteStaff(staff) {
-      const modal = document.createElement('div');
-      modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
-      modal.innerHTML = `
-        <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
-          <p class="text-xs font-bold text-slate-800">'${staff.name}' 근무자를 명단에서 삭제하시겠습니까?</p>
-          <div class="flex justify-center gap-2">
-            <button id="del-cancel" class="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded">취소</button>
-            <button id="del-ok" class="px-3 py-1 bg-rose-600 text-white font-bold text-xs rounded">삭제</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      modal.querySelector('#del-cancel').onclick = () => modal.remove();
-      modal.querySelector('#del-ok').onclick = () => {
-        if (staff.location.startsWith('train-')) {
-          handleRideLogging(staff.name, staff.location, null);
-        }
-        teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
-        render();
-        syncCurrentTeamStaffToCloud();
-        showToast(`${staff.name} 근무자가 삭제되었습니다.`);
-        modal.remove();
-      };
     }
 
     let toastTimeout = null;
