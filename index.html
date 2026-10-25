@@ -390,7 +390,6 @@
             <i class="fa-solid fa-plus"></i> 인원등록
           </button>
           
-          <!-- 수정: 해당 팀만 미배치로 초기화하는 전용 버튼 -->
           <button onclick="resetCurrentTeamOnly()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold rounded text-xs transition flex items-center gap-1" title="현재 팀 근무자 전원을 미배치함으로 이동">
             <i class="fa-solid fa-rotate-left text-amber-600"></i> 팀초기화
           </button>
@@ -522,13 +521,13 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 열차 탑승기록 -->
+        <!-- [1열 2행]: 열차 탑승기록 (해당 팀 전용으로 표시) -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> 열차 탑승기록
+              <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> <span id="team-ride-log-title">1팀</span> 탑승기록
             </span>
-            <button onclick="clearRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="탑승기록만 비우기">기록삭제</button>
+            <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록만 비우기">기록삭제</button>
           </div>
           <div id="train-ride-logs" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
             <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
@@ -1048,34 +1047,38 @@
     let sharedAwayList = [];
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
-    let sharedRideLogs = [];
 
     /* 로컬 스토리지 1차 즉시 복구 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
       const localMemo = localStorage.getItem('bgl_notice_memo');
-      const localLogs = localStorage.getItem('bgl_ride_logs');
       if (localAway) sharedAwayList = JSON.parse(localAway);
       if (localStationIssues) sharedStationIssues = JSON.parse(localStationIssues);
       if (localMemo !== null) sharedNoticeMemo = localMemo;
-      if (localLogs) sharedRideLogs = JSON.parse(localLogs);
     } catch(e) {}
 
+    /* [핵심] 열차 탑승기록(rideLogs)을 각 팀별 독립 데이터로 구성 */
     let teamsData = {
-      team1: { staff: [] },
-      team2: { staff: [] },
-      team3: { staff: [] },
-      team4: { staff: [] }
+      team1: { staff: [], rideLogs: [] },
+      team2: { staff: [], rideLogs: [] },
+      team3: { staff: [], rideLogs: [] },
+      team4: { staff: [], rideLogs: [] }
     };
 
     ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
       try {
         const localStaff = localStorage.getItem(`bgl_staff_${tKey}`);
+        const localRideLogs = localStorage.getItem(`bgl_ride_logs_${tKey}`);
+        
         if (localStaff) {
           teamsData[tKey].staff = JSON.parse(localStaff);
         } else if (tKey === 'team1') {
           teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
+        }
+
+        if (localRideLogs) {
+          teamsData[tKey].rideLogs = JSON.parse(localRideLogs);
         }
       } catch(e) {
         if (tKey === 'team1') teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
@@ -1128,6 +1131,9 @@
       const modalTitle = document.getElementById('modal-team-title');
       if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
 
+      const logTitle = document.getElementById('team-ride-log-title');
+      if (logTitle) logTitle.textContent = `${teamNum}팀`;
+
       const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
       if (teamRadio) teamRadio.checked = true;
 
@@ -1143,20 +1149,25 @@
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
       localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
-      localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
+      // 탑승기록은 공통 저장소에서 제외됨
       rootDbRef.child('shared_facilities').set({
         awayList: sharedAwayList || [],
         stationIssues: sharedStationIssues || [],
-        noticeMemo: sharedNoticeMemo || '',
-        rideLogs: sharedRideLogs || []
+        noticeMemo: sharedNoticeMemo || ''
       });
     }
 
-    function syncCurrentTeamStaffToCloud() {
-      const currentStaffList = teamsData[currentTeamKey].staff || [];
-      localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
-      rootDbRef.child(currentTeamKey).child('staff').set(currentStaffList);
+    /* 현재 팀의 인원 및 탑승기록을 팀 전용 노드에 영구 저장 */
+    function syncCurrentTeamDataToCloud() {
+      const currentTeamData = teamsData[currentTeamKey] || { staff: [], rideLogs: [] };
+      localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentTeamData.staff || []));
+      localStorage.setItem(`bgl_ride_logs_${currentTeamKey}`, JSON.stringify(currentTeamData.rideLogs || []));
+      
+      rootDbRef.child(currentTeamKey).set({
+        staff: currentTeamData.staff || [],
+        rideLogs: currentTeamData.rideLogs || []
+      });
     }
 
     function initRealtimeSync() {
@@ -1179,16 +1190,13 @@
           sharedAwayList = Array.isArray(cloudData.awayList) ? cloudData.awayList : [];
           sharedStationIssues = Array.isArray(cloudData.stationIssues) ? cloudData.stationIssues : [];
           sharedNoticeMemo = typeof cloudData.noticeMemo === 'string' ? cloudData.noticeMemo : '';
-          sharedRideLogs = Array.isArray(cloudData.rideLogs) ? cloudData.rideLogs : [];
 
           localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
           localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
-          localStorage.setItem('bgl_ride_logs', JSON.stringify(sharedRideLogs));
 
           renderStaffAndStations();
           renderStatistics();
-          renderRideLogs();
 
           const memoInput = document.getElementById('notice-memo-input');
           if (memoInput && document.activeElement !== memoInput) {
@@ -1199,18 +1207,26 @@
         }
       });
 
+      // 각 팀 전용 리스너 (근무자 명단 + 팀별 탑승기록 수신)
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-        rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
-          const cloudStaff = snapshot.val();
-          if (cloudStaff && Array.isArray(cloudStaff)) {
-            teamsData[tKey].staff = cloudStaff;
-            localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(cloudStaff));
+        rootDbRef.child(tKey).on('value', (snapshot) => {
+          const cloudTeam = snapshot.val();
+          if (cloudTeam) {
+            const staffList = Array.isArray(cloudTeam.staff) ? cloudTeam.staff : [];
+            const rideLogs = Array.isArray(cloudTeam.rideLogs) ? cloudTeam.rideLogs : [];
+            
+            teamsData[tKey].staff = staffList;
+            teamsData[tKey].rideLogs = rideLogs;
+
+            localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(staffList));
+            localStorage.setItem(`bgl_ride_logs_${tKey}`, JSON.stringify(rideLogs));
+
             if (currentTeamKey === tKey) {
               render();
             }
           } else {
             if (teamsData[tKey].staff && teamsData[tKey].staff.length > 0) {
-              rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
+              rootDbRef.child(tKey).set(teamsData[tKey]);
             }
           }
         });
@@ -1223,6 +1239,9 @@
       const teamNum = currentTeamKey.replace('team', '');
       const modalTitle = document.getElementById('modal-team-title');
       if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
+
+      const logTitle = document.getElementById('team-ride-log-title');
+      if (logTitle) logTitle.textContent = `${teamNum}팀`;
     }
 
     function updateNoticeMemo(val) {
@@ -1241,10 +1260,10 @@
       }
     }
 
-    /* [개편] 현재 선택된 해당 팀만 미배치 칸으로 초기화하는 함수 */
+    /* 현재 팀 근무자만 미배치 칸으로 초기화 */
     function resetCurrentTeamOnly() {
       const teamNum = currentTeamKey.replace('team', '');
-      if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치는 변경되지 않습니다.\n- 공통 열차/역사 시설 상태 및 특이사항은 유지됩니다.`)) {
+      if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치 및 탑승기록은 유지됩니다.\n- 공통 열차/역사 시설 상태는 그대로 유지됩니다.`)) {
         return;
       }
 
@@ -1252,8 +1271,7 @@
         teamsData[currentTeamKey].staff.forEach(s => {
           s.location = '미배치';
         });
-        localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(teamsData[currentTeamKey].staff));
-        rootDbRef.child(currentTeamKey).child('staff').set(teamsData[currentTeamKey].staff);
+        syncCurrentTeamDataToCloud();
       }
 
       selectedStaffIdForMove = null;
@@ -1261,12 +1279,14 @@
       showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
     }
 
-    function clearRideLogs() {
-      if (confirm("열차 탑승기록 내역을 모두 삭제하시겠습니까?")) {
-        sharedRideLogs = [];
-        syncFacilityStatusToCloud();
+    /* 현재 팀의 탑승기록만 삭제 */
+    function clearCurrentTeamRideLogs() {
+      const teamNum = currentTeamKey.replace('team', '');
+      if (confirm(`현재 [${teamNum}팀] 열차 탑승기록 내역을 모두 삭제하시겠습니까?`)) {
+        teamsData[currentTeamKey].rideLogs = [];
+        syncCurrentTeamDataToCloud();
         renderRideLogs();
-        showToast("열차 탑승기록이 삭제되었습니다.");
+        showToast(`${teamNum}팀 열차 탑승기록이 삭제되었습니다.`);
       }
     }
 
@@ -1864,7 +1884,7 @@
       }
       teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast(`${staff.name} 근무자가 삭제되었습니다.`);
     }
 
@@ -1941,7 +1961,7 @@
       staff.icon = isNewbie ? 'smile' : null;
 
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast(`${newName} 근무자 정보가 수정되었습니다.`);
       closeEditModal();
     }
@@ -2187,7 +2207,7 @@
       staffList.push(sItem);
 
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast(`${staff.name} 근무자가 배치되었습니다.`);
     }
 
@@ -2215,7 +2235,7 @@
       }
 
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
     }
 
@@ -2241,21 +2261,23 @@
       staffList[idxB] = tempItem;
 
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
     }
 
+    /* [수정] 해당 팀 전용 열차 탑승/하차 기록 로직 */
     function handleRideLogging(staffName, prevLoc, newLoc) {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
 
       if (prevLoc && prevLoc.startsWith('train-')) {
         const trainNum = prevLoc.replace('train-', '');
-        const activeLog = sharedRideLogs.find(l => l.staffName === staffName && l.trainNum === trainNum && !l.endTime);
+        const activeLog = currentRideLogs.find(l => l.staffName === staffName && l.trainNum === trainNum && !l.endTime);
         if (activeLog) {
           activeLog.endTime = timeStr;
         } else {
-          sharedRideLogs.unshift({
+          currentRideLogs.unshift({
             id: 'log-' + Date.now(),
             staffName,
             trainNum,
@@ -2267,7 +2289,7 @@
 
       if (newLoc && newLoc.startsWith('train-')) {
         const trainNum = newLoc.replace('train-', '');
-        sharedRideLogs.unshift({
+        currentRideLogs.unshift({
           id: 'log-' + Date.now(),
           staffName,
           trainNum,
@@ -2276,24 +2298,30 @@
         });
       }
 
-      if (sharedRideLogs.length > 30) {
-        sharedRideLogs = sharedRideLogs.slice(0, 30);
+      // 해당 팀당 최대 30개 기록 유지
+      if (currentRideLogs.length > 30) {
+        teamsData[currentTeamKey].rideLogs = currentRideLogs.slice(0, 30);
+      } else {
+        teamsData[currentTeamKey].rideLogs = currentRideLogs;
       }
 
-      syncFacilityStatusToCloud();
+      syncCurrentTeamDataToCloud();
       renderRideLogs();
     }
 
+    /* [수정] 현재 팀의 독립된 탑승기록만 렌더링 */
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
 
-      if (sharedRideLogs.length === 0) {
+      const currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
+
+      if (currentRideLogs.length === 0) {
         container.innerHTML = `<span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>`;
         return;
       }
 
-      container.innerHTML = sharedRideLogs.map(l => {
+      container.innerHTML = currentRideLogs.map(l => {
         const isRiding = !l.endTime;
         return `
           <div class="grid grid-cols-[46px_56px_1fr] items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
@@ -2422,7 +2450,7 @@
       }
 
       render();
-      syncCurrentTeamStaffToCloud();
+      syncCurrentTeamDataToCloud();
       showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
       closeAddModal();
     }
