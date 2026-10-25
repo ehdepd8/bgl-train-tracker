@@ -157,7 +157,6 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 은은한 흐림 효과 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -201,7 +200,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -1285,7 +1283,6 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1681,7 +1678,7 @@
       });
     }
 
-    /* 1. 상단 25편성 렌더링 (열차 드롭존에 직접 탑승자 네임택 안착) */
+    /* 1. 상단 25편성 렌더링 */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       if (!container) return;
@@ -1798,7 +1795,7 @@
       }
     }
 
-    /* 네임택 빌더 (스마일 아이콘: 카드 안쪽 상단 우측 top: 2px, right: 3px에 배치) */
+    /* 네임택 빌더 */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -2052,7 +2049,7 @@
       attachEvents();
     }
 
-    /* 역사 헤더 클릭 바인딩 (이벤트 중복 차단) */
+    /* 역사 헤더 클릭 이벤트 바인딩 */
     function attachEvents() {
       document.querySelectorAll('.station-header').forEach(header => {
         header.onclick = (e) => {
@@ -2067,16 +2064,16 @@
       });
     }
 
-    /* 드래그 앤 드롭 및 터치 전역 이벤트 바인딩 */
+    /* 드래그 앤 드롭 및 터치 이벤트 */
     let draggedId = null;
     let lastTapTime = 0;
     let lastTapTargetId = null;
 
     document.addEventListener('dragover', (e) => {
-      const dropzone = e.target.closest('.station-dropzone');
       const card = e.target.closest('.station-card');
-      if (dropzone || card) {
+      if (card) {
         e.preventDefault();
+        const dropzone = card.querySelector('.station-dropzone');
         if (dropzone) dropzone.classList.add('drag-hover');
       }
     });
@@ -2132,7 +2129,6 @@
 
     /* 모바일 터치 및 선택 이동 처리 */
     document.addEventListener('touchend', (e) => {
-      // 역사 헤더나 모달창 내부 터치인 경우 통과
       if (e.target.closest('.station-header') || e.target.closest('#issue-modal') || e.target.closest('#train-issue-modal') || e.target.closest('#add-modal') || e.target.closest('#edit-modal')) {
         return;
       }
@@ -2362,7 +2358,7 @@
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
-      // 좌측 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
+      // [핵심] 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
