@@ -519,7 +519,7 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 열차 탑승기록 -->
+        <!-- [1열 2행]: 열차 탑승기록 (팀별 독립) -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -1640,7 +1640,7 @@
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
     }
 
-    /* 통합 렌더링 파이프라인 (열차와 역사 네임택 렌더링을 완전히 통합하여 분실 방지) */
+    /* 통합 렌더링 파이프라인 */
     function render() {
       renderTrains25Grid();
       renderStaffAndStations();
@@ -1674,7 +1674,7 @@
       });
     }
 
-    /* 1. 상단 25편성 렌더링 (열차 드롭존에 직접 탑승 인원 안착) */
+    /* 1. 상단 25편성 렌더링 (탑승 중인 인원을 드롭존에 직접 안착) */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       if (!container) return;
@@ -1956,7 +1956,12 @@
 
     /* 2. 일반 역사 및 대기함 네임택 배치 */
     function renderStaffAndStations() {
-      // 역사 카드 오버레이 설정
+      document.querySelectorAll('.station-dropzone').forEach(dz => {
+        if (!dz.closest('#trains-grid')) {
+          dz.innerHTML = '';
+        }
+      });
+
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId || zoneId.startsWith('train-')) return;
@@ -1999,13 +2004,6 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 비열차 위치에 네임택 배치 (기존 드롭존 내용 비운 뒤 채우기)
-      document.querySelectorAll('.station-dropzone').forEach(dz => {
-        if (!dz.closest('#trains-grid')) {
-          dz.innerHTML = '';
-        }
-      });
-
       currentStaff.forEach(staff => {
         if (staff.location && !staff.location.startsWith('train-')) {
           const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
@@ -2016,7 +2014,6 @@
         }
       });
 
-      // 각 카드의 인원수별 정렬 및 빈 역사 '무인' 표시
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId || zoneId.startsWith('train-')) return;
