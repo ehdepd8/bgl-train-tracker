@@ -519,7 +519,7 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 열차 탑승기록 (팀별 독립) -->
+        <!-- [1열 2행]: 팀별 독립 열차 탑승기록 -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
@@ -684,7 +684,7 @@
         </div>
 
         <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="괘법 [9602]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
+          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-emerald-200">
             <span class="font-black text-base tracking-tight">괘법</span>
             <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9602]</span>
             <div class="station-status-overlay"></div>
@@ -1153,6 +1153,7 @@
       });
     }
 
+    /* 팀 전용 저장소(staff + rideLogs) 동기화 (전역 rideLogs 완전히 제외) */
     function syncCurrentTeamDataToCloud() {
       const currentTeamData = teamsData[currentTeamKey] || { staff: [], rideLogs: [] };
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentTeamData.staff || []));
