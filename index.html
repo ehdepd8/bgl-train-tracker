@@ -489,7 +489,7 @@
         <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="봉황 [9616]">
           <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
             <span class="font-black text-base tracking-tight">봉황</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9616]</span>
+            <span class="font-mono text-rose-700 ml-1 font-semibold">[9616]</span>
             <div class="station-status-overlay"></div>
           </div>
           <div class="station-dropzone station-slot-height bg-white"></div>
@@ -1046,6 +1046,7 @@
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
 
+    /* 로컬 스토리지 1차 복구 */
     try {
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
@@ -1098,7 +1099,6 @@
         case 'team3':
           return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
-        case 'blue':
           return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
         default:
           return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
@@ -1780,7 +1780,7 @@
       }
     }
 
-    /* 네임택 엘리먼트 생성기 */
+    /* 네임택 빌더 (열차 안과 일반 카드 크기 구분) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
@@ -1790,14 +1790,12 @@
       const isSelected = (selectedStaffIdForMove === staff.id);
 
       if (isOnTrain) {
-        // 열차 편성 안의 미니 네임택 (이름 + 스마일)
         const smile = (staff.icon === 'smile') ? `<span class="text-[10px] ml-0.5">😊</span>` : '';
         el.className = `nametag w-full rounded py-0.5 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         el.innerHTML = `
           <span class="font-black text-[12px] leading-tight text-slate-900 tracking-tight flex items-center justify-center">${staff.name}${smile}</span>
         `;
       } else {
-        // 역사 및 대기함의 표준 네임택
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
         
         const isNewbie = (staff.icon === 'smile');
@@ -1945,12 +1943,11 @@
       closeEditModal();
     }
 
-    /* 2. 전체 드롭존 네임택 배치 & 무인 표시 보장 */
+    /* 2. 전체 드롭존 네임택 배치 & 무인 표시 완벽 보장 */
     function renderStaffAndStations() {
-      // 1) 모든 드롭존 청소
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
-      // 2) 역사 카드 오버레이 설정
+      // 역사 카드 오버레이 설정
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -1993,7 +1990,7 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 3) 네임택을 해당 위치의 드롭존(열차, 역사, 휴무자, 미배치 등)에 안착
+      // 네임택 배치
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2002,7 +1999,7 @@
         }
       });
 
-      // 4) 각 카드의 인원수별 정렬 및 빈 역사 '무인', 열차 빈자리 '-' 표시
+      // 각 카드의 인원수별 정렬 및 빈 역사 '무인', 열차 빈자리 '-' 표시
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2012,7 +2009,7 @@
 
         const staffList = currentStaff.filter(s => s.location === zoneId);
 
-        // 상단 열차 카드 빈자리 표시
+        // 상단 열차 카드 빈자리 처리
         if (zoneId.startsWith('train-')) {
           if (staffList.length === 0) {
             dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
@@ -2020,7 +2017,7 @@
           return;
         }
 
-        // 일반 역사 카드 인원수별 CSS
+        // 일반 역사 카드 정렬
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
         if (staffList.length === 1) {
           dropzone.classList.add('count-1');
@@ -2032,156 +2029,134 @@
           dropzone.classList.add('count-many');
         }
 
-        // 역사가 비어있을 때 무인 표시
+        // 빈 역사 무인 표시
         if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
-
-      attachEvents();
     }
 
+    /* ========================================================
+       드래그 앤 드롭 전역 이벤트 바인딩 (열차 편성 드롭 보장)
+    ======================================================== */
     let draggedId = null;
     let lastTapTime = 0;
     let lastTapTargetId = null;
 
-    function attachEvents() {
-      const nametags = document.querySelectorAll('.nametag');
-      const dropzones = document.querySelectorAll('.station-dropzone');
-      const stationCards = document.querySelectorAll('.station-card');
-      const stationHeaders = document.querySelectorAll('.station-header');
+    // 문서 전역 드래그오버: 어디든 안전하게 드롭 가능하게 처리
+    document.addEventListener('dragover', (e) => {
+      const dropzone = e.target.closest('.station-dropzone');
+      const card = e.target.closest('.station-card');
+      if (dropzone || card) {
+        e.preventDefault();
+        if (dropzone) dropzone.classList.add('drag-hover');
+      }
+    });
 
-      stationHeaders.forEach(header => {
-        header.onclick = (e) => {
-          e.stopPropagation();
-          const card = header.closest('.station-card');
-          if (!card) return;
-          const zoneId = card.getAttribute('data-zone-id');
-          if (!zoneId) return;
+    document.addEventListener('dragleave', (e) => {
+      const dropzone = e.target.closest('.station-dropzone');
+      if (dropzone) {
+        dropzone.classList.remove('drag-hover');
+      }
+    });
 
-          onStationHeaderClicked(zoneId);
-        };
-      });
+    // 문서 전역 드롭: 열차/역사/미배치 가리지 않고 100% 안착
+    document.addEventListener('drop', (e) => {
+      document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
 
-      nametags.forEach(tag => {
-        tag.addEventListener('dragstart', (e) => {
-          draggedId = tag.id;
-          tag.classList.add('dragging');
-          e.dataTransfer.setData('text/plain', tag.id);
-        });
+      if (!draggedId) return;
 
-        tag.addEventListener('dragend', () => {
-          tag.classList.remove('dragging');
-          document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
-          document.querySelectorAll('.nametag').forEach(nt => nt.classList.remove('drag-insert-before', 'drag-insert-after'));
-        });
+      const card = e.target.closest('.station-card');
+      if (!card) return;
 
-        tag.addEventListener('dragover', (e) => {
+      const targetZone = card.getAttribute('data-zone-id');
+      if (!targetZone) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetTag = e.target.closest('.nametag');
+      if (targetTag && targetTag.id !== draggedId) {
+        const rect = targetTag.getBoundingClientRect();
+        const isBefore = (e.clientY < rect.top + rect.height / 2);
+        reorderStaff(draggedId, targetTag.id, targetZone, isBefore);
+      } else {
+        moveStaffToEnd(draggedId, targetZone);
+      }
+
+      draggedId = null;
+    });
+
+    document.addEventListener('dragstart', (e) => {
+      const tag = e.target.closest('.nametag');
+      if (tag) {
+        draggedId = tag.id;
+        tag.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', tag.id);
+      }
+    });
+
+    document.addEventListener('dragend', (e) => {
+      const tag = e.target.closest('.nametag');
+      if (tag) tag.classList.remove('dragging');
+      document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
+      draggedId = null;
+    });
+
+    // 모바일 터치 기반 이동 및 헤더 클릭
+    document.addEventListener('touchend', (e) => {
+      const tag = e.target.closest('.nametag');
+      const card = e.target.closest('.station-card');
+      const header = e.target.closest('.station-header');
+
+      // 헤더 클릭 이벤트
+      if (header && card) {
+        const zoneId = card.getAttribute('data-zone-id');
+        if (zoneId) onStationHeaderClicked(zoneId);
+        return;
+      }
+
+      // 모바일 네임택 터치/더블탭
+      if (tag) {
+        const currentTime = Date.now();
+        const tapLength = currentTime - lastTapTime;
+
+        if (selectedStaffIdForMove && selectedStaffIdForMove !== tag.id) {
           e.preventDefault();
-          e.stopPropagation();
-          if (!draggedId || draggedId === tag.id) return;
+          const srcId = selectedStaffIdForMove;
+          selectedStaffIdForMove = null;
+          swapStaffPositions(srcId, tag.id);
+          return;
+        }
 
-          const rect = tag.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
-          if (e.clientY < midY) {
-            tag.classList.add('drag-insert-before');
-            tag.classList.remove('drag-insert-after');
+        if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
+          e.preventDefault();
+          if (selectedStaffIdForMove === tag.id) {
+            selectedStaffIdForMove = null;
+            showToast('선택이 해제되었습니다.');
           } else {
-            tag.classList.add('drag-insert-after');
-            tag.classList.remove('drag-insert-before');
+            selectedStaffIdForMove = tag.id;
+            const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
+            showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 편성이나 역사를 터치하세요.`);
           }
-        });
+          render();
+        }
+        lastTapTime = currentTime;
+        lastTapTargetId = tag.id;
+        return;
+      }
 
-        tag.addEventListener('dragleave', () => {
-          tag.classList.remove('drag-insert-before', 'drag-insert-after');
-        });
-
-        tag.addEventListener('drop', (e) => {
+      // 모바일 선택 상태에서 빈 공간 터치 이동
+      if (selectedStaffIdForMove && card) {
+        const targetZone = card.getAttribute('data-zone-id');
+        if (targetZone) {
           e.preventDefault();
-          e.stopPropagation();
-          tag.classList.remove('drag-insert-before', 'drag-insert-after');
-
-          if (!draggedId || draggedId === tag.id) return;
-
-          const targetCard = tag.closest('.station-card');
-          if (!targetCard) return;
-
-          const targetZone = targetCard.getAttribute('data-zone-id');
-          const rect = tag.getBoundingClientRect();
-          const isBefore = (e.clientY < rect.top + rect.height / 2);
-
-          reorderStaff(draggedId, tag.id, targetZone, isBefore);
-          draggedId = null;
-        });
-
-        tag.addEventListener('touchend', (e) => {
-          const currentTime = Date.now();
-          const tapLength = currentTime - lastTapTime;
-
-          if (selectedStaffIdForMove && selectedStaffIdForMove !== tag.id) {
-            e.preventDefault();
-            e.stopPropagation();
-            const sourceId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            swapStaffPositions(sourceId, tag.id);
-            return;
-          }
-
-          if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (selectedStaffIdForMove === tag.id) {
-              selectedStaffIdForMove = null;
-              showToast('선택이 해제되었습니다.');
-            } else {
-              selectedStaffIdForMove = tag.id;
-              const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
-              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸 또는 맞바꿀 네임택을 터치하세요.`);
-            }
-            render();
-          }
-
-          lastTapTime = currentTime;
-          lastTapTargetId = tag.id;
-        });
-      });
-
-      stationCards.forEach(card => {
-        card.addEventListener('touchend', (e) => {
-          if (!selectedStaffIdForMove) return;
-          if (e.target.closest('.nametag') || e.target.closest('.station-header')) return;
-
-          const newZone = card.getAttribute('data-zone-id');
-          if (newZone) {
-            e.preventDefault();
-            const staffId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            moveStaffToEnd(staffId, newZone);
-          }
-        });
-      });
-
-      dropzones.forEach(dz => {
-        dz.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dz.classList.add('drag-hover');
-        });
-        dz.addEventListener('dragleave', () => {
-          dz.classList.remove('drag-hover');
-        });
-        dz.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dz.classList.remove('drag-hover');
-          const card = dz.closest('.station-card');
-          if (card && draggedId) {
-            const newZone = card.getAttribute('data-zone-id');
-            moveStaffToEnd(draggedId, newZone);
-            draggedId = null;
-          }
-        });
-      });
-    }
+          const sId = selectedStaffIdForMove;
+          selectedStaffIdForMove = null;
+          moveStaffToEnd(sId, targetZone);
+        }
+      }
+    });
 
     function moveStaffToEnd(staffId, newLocation) {
       const staffList = teamsData[currentTeamKey].staff;
@@ -2363,7 +2338,7 @@
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
-      // [핵심] 열차 탑승 현황 리스트 (근무자 탑승 시 즉시 렌더링)
+      // [핵심] 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
