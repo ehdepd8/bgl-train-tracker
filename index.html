@@ -41,7 +41,7 @@
       height: max-content;
     }
 
-    /* PC 관제 레이아웃 규격 (우측 2열 네임택 대기함 285px 확보) */
+    /* PC 관제 레이아웃 규격 */
     .app-viewport-container {
       width: 1720px;
       min-height: 920px;
@@ -92,6 +92,14 @@
     @keyframes pulse-selection {
       0%, 100% { outline-color: #f97316; }
       50% { outline-color: #ea580c; }
+    }
+
+    /* 네임택끼리 드래그 오버 시 위치 교환 가이드라인 */
+    .nametag.drag-insert-before {
+      border-top: 3px solid #0284c7 !important;
+    }
+    .nametag.drag-insert-after {
+      border-bottom: 3px solid #0284c7 !important;
     }
 
     /* 역사 드롭존 기본 높이 */
@@ -158,11 +166,23 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 칸 안의 네임택은 항상 정확히 2분할(좌우 2열) 크기로 고정 */
+    /* 미배치 칸 안의 네임택은 항상 정확히 2분할(좌우 2열) 크기 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
       flex-shrink: 0 !important;
+    }
+
+    /* [미배치함] 톤 다운 및 은은한 흐림(Muted) 스타일 */
+    .unassigned-box-muted {
+      opacity: 0.88;
+      background-color: #f8fafc !important;
+      border: 2px dashed #94a3b8 !important;
+      transition: opacity 0.2s ease, border-color 0.2s ease;
+    }
+    .unassigned-box-muted:hover {
+      opacity: 1;
+      border-color: #38bdf8 !important;
     }
 
     /* 드롭 하이라이트 */
@@ -434,18 +454,18 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [10열 1~4행 전체 관통 병합]: 우측 2열 나란히 수납되는 미배치 (대기함) -->
-        <div class="row-span-4 station-card bg-white border-2 border-dashed border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
-          <div class="bg-sky-500 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
+        <!-- [10열 1~4행 전체 관통 병합]: 우측 은은하게 톤 다운된 미배치 (대기함) -->
+        <div class="row-span-4 station-card unassigned-box-muted rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
+          <div class="bg-slate-400 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-slate-300 shrink-0">
             <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-boxes-stacked text-sky-100"></i> 미배치 (대기함)
+              <i class="fa-solid fa-boxes-stacked text-slate-200"></i> 미배치 (대기함)
             </span>
-            <span id="badge-unassigned-count" class="bg-sky-700 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0명</span>
+            <span id="badge-unassigned-count" class="bg-slate-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0명</span>
           </div>
-          <div class="text-[10.5px] text-slate-400 text-center py-1 bg-sky-50/50 border-b border-sky-100 font-bold select-none">
-            근무자 네임택 보관 (좌우 2열 배치)
+          <div class="text-[10px] text-slate-400 text-center py-0.5 bg-slate-100/70 border-b border-slate-200 font-semibold select-none">
+            대기 네임택 보관 (좌우 2열)
           </div>
-          <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-sky-50/20">
+          <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-slate-50/40">
           </div>
         </div>
 
@@ -727,7 +747,7 @@
       status: i + 1 <= 16 ? 'active' : 'depot'
     }));
 
-    /* 1팀 초기 기본 데이터 */
+    /* 1팀 초기 기본 데이터 (순서대로 차곡차곡 유지) */
     const INITIAL_STAFF_TEAM1 = [
       { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
       { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
@@ -996,6 +1016,7 @@
         }
       });
 
+      // 배열 순서(차곡차곡 등록/이동된 순서) 그대로 각 드롭존에 append
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -1077,7 +1098,7 @@
       const dropzones = document.querySelectorAll('.station-dropzone');
       const stationCards = document.querySelectorAll('.station-card');
 
-      /* PC 마우스 드래그 앤 드롭 */
+      /* PC 마우스 드래그 앤 드롭 및 위/아래 순서 바꾸기 */
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
@@ -1088,12 +1109,61 @@
         tag.addEventListener('dragend', () => {
           tag.classList.remove('dragging');
           document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
+          document.querySelectorAll('.nametag').forEach(nt => nt.classList.remove('drag-insert-before', 'drag-insert-after'));
         });
 
-        /* 모바일 더블 탭 선택 이동 */
+        tag.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!draggedId || draggedId === tag.id) return;
+
+          const rect = tag.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) {
+            tag.classList.add('drag-insert-before');
+            tag.classList.remove('drag-insert-after');
+          } else {
+            tag.classList.add('drag-insert-after');
+            tag.classList.remove('drag-insert-before');
+          }
+        });
+
+        tag.addEventListener('dragleave', () => {
+          tag.classList.remove('drag-insert-before', 'drag-insert-after');
+        });
+
+        tag.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          tag.classList.remove('drag-insert-before', 'drag-insert-after');
+
+          if (!draggedId || draggedId === tag.id) return;
+
+          const targetCard = tag.closest('.station-card');
+          if (!targetCard) return;
+
+          const targetZone = targetCard.getAttribute('data-zone-id');
+          const rect = tag.getBoundingClientRect();
+          const isBefore = (e.clientY < rect.top + rect.height / 2);
+
+          reorderStaff(draggedId, tag.id, targetZone, isBefore);
+          draggedId = null;
+        });
+
+        /* 모바일: 더블 탭 선택 및 순서 교환 */
         tag.addEventListener('touchend', (e) => {
           const currentTime = Date.now();
           const tapLength = currentTime - lastTapTime;
+
+          if (selectedStaffIdForMove && selectedStaffIdForMove !== tag.id) {
+            // 이미 다른 네임택이 선택된 상태에서 이 네임택을 탭하면 -> 두 네임택의 순서/위치 맞바꾸기!
+            e.preventDefault();
+            e.stopPropagation();
+            const sourceId = selectedStaffIdForMove;
+            selectedStaffIdForMove = null;
+            swapStaffPositions(sourceId, tag.id);
+            return;
+          }
 
           if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
             e.preventDefault();
@@ -1105,7 +1175,7 @@
             } else {
               selectedStaffIdForMove = tag.id;
               const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
-              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸을 터치하세요.`);
+              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸 또는 맞바꿀 네임택을 터치하세요.`);
             }
             render();
           }
@@ -1115,23 +1185,23 @@
         });
       });
 
-      /* 모바일: 선택 상태에서 목표 칸 터치 이동 */
+      /* 모바일: 선택 상태에서 빈 공간이나 역사 헤더 터치 시 이동 */
       stationCards.forEach(card => {
         card.addEventListener('touchend', (e) => {
           if (!selectedStaffIdForMove) return;
-          if (e.target.closest('.nametag')) return;
+          if (e.target.closest('.nametag')) return; // 네임택 탭은 위에서 처리
 
           const newZone = card.getAttribute('data-zone-id');
           if (newZone) {
             e.preventDefault();
             const staffId = selectedStaffIdForMove;
             selectedStaffIdForMove = null;
-            moveStaff(staffId, newZone);
+            moveStaffToEnd(staffId, newZone);
           }
         });
       });
 
-      /* PC 마우스 드롭존 이벤트 */
+      /* PC 마우스 드롭존 (역사 빈 영역 드롭 시 맨 아래로 추가) */
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -1146,22 +1216,71 @@
           const card = dz.closest('.station-card');
           if (card && draggedId) {
             const newZone = card.getAttribute('data-zone-id');
-            moveStaff(draggedId, newZone);
+            moveStaffToEnd(draggedId, newZone);
             draggedId = null;
           }
         });
       });
     }
 
-    function moveStaff(staffId, newLocation) {
+    /* 특정 역의 맨 아래로 차곡차곡 추가 */
+    function moveStaffToEnd(staffId, newLocation) {
       const staffList = teamsData[currentTeamKey].staff;
-      const staff = staffList.find(s => s.id === staffId);
-      if (staff && staff.location !== newLocation) {
-        staff.location = newLocation;
-        render();
-        syncCurrentTeamToCloud();
-        showToast(`${staff.name} 근무자가 이동 배치되었습니다.`);
+      const targetIndex = staffList.findIndex(s => s.id === staffId);
+      if (targetIndex === -1) return;
+
+      const [staff] = staffList.splice(targetIndex, 1);
+      staff.location = newLocation;
+      // 배열의 맨 끝으로 보내어 먼저 들어온 사람 아래에 배치되도록 함
+      staffList.push(staff);
+
+      render();
+      syncCurrentTeamToCloud();
+      showToast(`${staff.name} 근무자가 배치되었습니다.`);
+    }
+
+    /* 드래그 앤 드롭으로 특정 네임택의 위/아래 순서 변경 */
+    function reorderStaff(sourceId, targetId, targetZone, isBefore) {
+      const staffList = teamsData[currentTeamKey].staff;
+      const srcIdx = staffList.findIndex(s => s.id === sourceId);
+      if (srcIdx === -1) return;
+
+      const [sourceStaff] = staffList.splice(srcIdx, 1);
+      sourceStaff.location = targetZone;
+
+      let tgtIdx = staffList.findIndex(s => s.id === targetId);
+      if (tgtIdx === -1) {
+        staffList.push(sourceStaff);
+      } else {
+        const insertIdx = isBefore ? tgtIdx : tgtIdx + 1;
+        staffList.splice(insertIdx, 0, sourceStaff);
       }
+
+      render();
+      syncCurrentTeamToCloud();
+      showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
+    }
+
+    /* 모바일 터치로 두 네임택 위치/순서 맞바꾸기 */
+    function swapStaffPositions(idA, idB) {
+      const staffList = teamsData[currentTeamKey].staff;
+      const idxA = staffList.findIndex(s => s.id === idA);
+      const idxB = staffList.findIndex(s => s.id === idB);
+      if (idxA === -1 || idxB === -1) return;
+
+      // 같은 구역이면 순서 교환, 다른 구역이면 위치 맞바꿈
+      const tempLoc = staffList[idxA].location;
+      staffList[idxA].location = staffList[idxB].location;
+      staffList[idxB].location = tempLoc;
+
+      // 배열 순서도 스왑
+      const tempItem = staffList[idxA];
+      staffList[idxA] = staffList[idxB];
+      staffList[idxB] = tempItem;
+
+      render();
+      syncCurrentTeamToCloud();
+      showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
     }
 
     function renderStatistics() {
