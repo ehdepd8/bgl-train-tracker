@@ -2507,21 +2507,44 @@
     }
 
     // 2. 탑승기록 렌더링 + 최신 기록 스크롤 자동 내림
+    // 마지막 기록 상태를 기억하여 신규 탑승/하차 시 상단 스크롤을 강제하기 위한 변수
+    let lastRideLogsSignature = '';
+
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
 
-      // 1. HTML을 새로 그리기 전, 현재 사용자의 스크롤 위치를 미리 기억
-      const prevScrollTop = container.scrollTop;
+      const rawRideLogs = teamsData[currentTeamKey].rideLogs || [];
 
-      const currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
-
-      if (currentRideLogs.length === 0) {
+      if (rawRideLogs.length === 0) {
         container.innerHTML = `<span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>`;
+        lastRideLogsSignature = '';
         return;
       }
 
-      container.innerHTML = currentRideLogs.map(l => {
+      // [정렬 우선순위 적용]
+      // 1순위: 현재 '탑승중'인 항목이 무조건 최상단 (!endTime)
+      // 2순위: 탑승 중인 항목들 간에는 최근 탑승 시간 순 (내림차순)
+      // 3순위: 하차 완료된 항목들 중에서는 최근 하차/탑승 순 (내림차순)
+      const sortedRideLogs = [...rawRideLogs].sort((a, b) => {
+        const aActive = !a.endTime;
+        const bActive = !b.endTime;
+
+        if (aActive && !bActive) return -1; // a(탑승중) 우선
+        if (!aActive && bActive) return 1;  // b(탑승중) 우선
+
+        // 둘 다 탑승 중이거나 둘 다 하차한 경우: 시작 타임스탬프 기준 내림차순 (최신순)
+        const aTime = a.startTimestamp || 0;
+        const bTime = b.startTimestamp || 0;
+        return bTime - aTime;
+      });
+
+      // 탈 때 / 내릴 때 (상태 변화 및 항목 증감)를 감지하는 시그니처 생성
+      const currentSignature = sortedRideLogs.map(l => `${l.id}_${l.endTime || 'riding'}`).join('|');
+      const isStatusChanged = (lastRideLogsSignature !== '' && lastRideLogsSignature !== currentSignature);
+      const prevScrollTop = container.scrollTop;
+
+      container.innerHTML = sortedRideLogs.map(l => {
         const isRiding = !l.endTime;
         const durationText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : '';
 
@@ -2537,7 +2560,7 @@
             <!-- 2. 근무자 성명 -->
             <span class="truncate font-black text-slate-900 leading-normal shrink-0">${l.staffName}</span>
             
-            <!-- 3. 경과시간 뱃지 (탑승 중일 때만 표시, 분 단위) -->
+            <!-- 3. 경과시간 뱃지 (탑승 중일 때만 분 단위로 표시) -->
             <div class="flex items-center justify-start shrink-0">
               ${isRiding && durationText ? `
                 <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full leading-tight animate-pulse">
@@ -2562,13 +2585,16 @@
         `;
       }).join('');
 
-      // 2. 맨 위에 있었으면(10px 이내) 정확히 0(맨 꼭대기)으로 고정,
-      //    내려서 보고 있었으면 보던 위치 그대로 완벽 복원
-      if (prevScrollTop <= 10) {
+      // [스크롤 정책]
+      // 1) 승무원이 열차에 타거나 내릴 때 (isStatusChanged) -> 무조건 맨 위(0)로 올려서 최신 상태 표출
+      // 2) 일반 주기적 분(경과시간) 갱신일 때 -> 사용자가 보던 스크롤 위치 유지
+      if (isStatusChanged || prevScrollTop <= 10) {
         container.scrollTop = 0;
       } else {
         container.scrollTop = prevScrollTop;
       }
+
+      lastRideLogsSignature = currentSignature;
     }
 
     function renderStatistics() {
