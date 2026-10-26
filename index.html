@@ -2502,21 +2502,21 @@
         const elapsedText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : l.endTime;
 
         return `
-          <div class="grid grid-cols-[44px_50px_1fr_18px] items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold border ${
+          <div class="grid grid-cols-[44px_48px_1fr_16px] items-center gap-1 px-1.5 py-1 rounded text-[11px] font-bold leading-normal border ${
             isRiding 
               ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
               : 'bg-slate-50 border-slate-200 text-slate-700'
           }">
-            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.2 rounded">${l.trainNum}편성</span>
-            <span class="truncate font-black text-slate-900">${l.staffName}</span>
-            <div class="font-mono text-[9.5px] text-right truncate">
+            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.5 rounded leading-tight">${l.trainNum}편성</span>
+            <span class="truncate font-black text-slate-900 leading-normal">${l.staffName}</span>
+            <div class="font-mono text-[9px] text-right truncate leading-normal">
               <span class="text-indigo-700">${l.startTime}</span> ~ 
               <span class="${isRiding ? 'text-emerald-600 font-extrabold animate-pulse' : 'text-slate-500'}">
                 ${elapsedText}
               </span>
             </div>
             <!-- 개별 삭제 버튼 -->
-            <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition" title="이 기록 삭제">
+            <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition flex items-center justify-center" title="이 기록 삭제">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
