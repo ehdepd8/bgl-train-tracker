@@ -2919,18 +2919,18 @@
         const candidate = (teamsData[tKey].staff || []).find(s => s.name === targetName);
         if (candidate) {
           return {
-            id: 'st-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+            id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
             name: candidate.name,
             phone: candidate.phone,
             color: candidate.color || 'team1',
-            icon: candidate.icon || null,
+            icon: candidate.icon === 'smile' ? 'smile' : null,
             location: '미배치',
             isSupport: true
           };
         }
       }
       return {
-        id: 'st-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+        id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
         name: targetName,
         phone: '010-0000-0000',
         color: 'purple',
