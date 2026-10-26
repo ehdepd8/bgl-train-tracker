@@ -335,15 +335,29 @@
   overflow: hidden !important;
 }
 
-    // 다중 선택된 역사 ID 관리
-    const selectedStationZones = new Set();
-
-    function clearStationSelection() {
-      selectedStationZones.clear();
-      document.querySelectorAll('.station-card.station-selected').forEach(c => {
-        c.classList.remove('station-selected');
-      });
-    }
+/* ★ 역사 다중 선택 스타일 */
+.station-card.station-selected {
+  outline: 3.5px solid #2563eb !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6) !important;
+  position: relative;
+  z-index: 20 !important;
+}
+.station-card.station-selected::after {
+  content: '✓ 선택';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  background-color: #2563eb;
+  color: white;
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 3px;
+  z-index: 30;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
 
     function toggleStationSelection(zoneId) {
       // 미배치, 휴무자, 본사, 열차 등은 역사 다중 선택 대상에서 제외
@@ -1176,6 +1190,38 @@
     let sharedAwayList = [];
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
+
+    // ★ 역사 다중 선택 관리 Set 및 함수
+    const selectedStationZones = new Set();
+
+    function clearStationSelection() {
+      selectedStationZones.clear();
+      document.querySelectorAll('.station-card.station-selected').forEach(c => {
+        c.classList.remove('station-selected');
+      });
+    }
+
+    function toggleStationSelection(zoneId) {
+      if (!zoneId || ['unassigned', '휴무자', '본사', '미배치', '승무현황'].includes(zoneId) || zoneId.startsWith('train-')) return;
+
+      if (selectedStationZones.has(zoneId)) {
+        selectedStationZones.delete(zoneId);
+      } else {
+        selectedStationZones.add(zoneId);
+      }
+      applyStationSelectionUI();
+    }
+
+    function applyStationSelectionUI() {
+      document.querySelectorAll('main .station-card').forEach(card => {
+        const zoneId = card.getAttribute('data-zone-id');
+        if (zoneId && selectedStationZones.has(zoneId)) {
+          card.classList.add('station-selected');
+        } else {
+          card.classList.remove('station-selected');
+        }
+      });
+    }
 
     try {
       const localTrains = localStorage.getItem('bgl_shared_trains'); // ★ 추가된 줄 1
@@ -2502,89 +2548,7 @@
       });
     }
 
-    // 3. 중앙/하단 고정 역사 상자/헤더 이벤트 (페이지 로딩 후 딱 1번만 등록하여 렉 완전 차단)
-   let isStationEventsAttached = false;
-    function attachStationStaticEvents() {
-      if (isStationEventsAttached) return;
-      isStationEventsAttached = true;
-
-      const dropzones = document.querySelectorAll('main .station-dropzone');
-      const stationHeaders = document.querySelectorAll('.station-header');
-      const stationCards = document.querySelectorAll('main .station-card');
-
-      // 1. 헤더 클릭: 기존 외부/내부 토글 유지
-      stationHeaders.forEach(header => {
-        header.onclick = (e) => {
-          e.stopPropagation();
-          const card = header.closest('.station-card');
-          if (!card) return;
-          const zoneId = card.getAttribute('data-zone-id');
-          if (zoneId) {
-            onStationHeaderClicked(zoneId);
-          }
-        };
-      });
-
-      // 2. 카드 클릭 (Ctrl+클릭 시 다중 선택) 및 더블클릭 (불량 팝업)
-      stationCards.forEach(card => {
-        const zoneId = card.getAttribute('data-zone-id');
-
-        // Ctrl + 클릭으로 다중 선택 토글
-        card.addEventListener('click', (e) => {
-          // 네임택 클릭 시는 제외
-          if (e.target.closest('.nametag')) return;
-
-          if (e.ctrlKey || e.metaKey) {
-            e.stopPropagation();
-            toggleStationSelection(zoneId);
-          }
-        });
-
-        // 빈 공간 더블클릭 시 불량 모달 열기
-        card.addEventListener('dblclick', (e) => {
-          // 네임택을 더블클릭한 경우는 직원 수정 창이 떠야 하므로 차단
-          if (e.target.closest('.nametag')) return;
-          e.stopPropagation();
-
-          // 현재 클릭한 역이 선택 목록에 없다면 단독 선택으로 모달 오픈
-          if (!selectedStationZones.has(zoneId)) {
-            clearStationSelection();
-            selectedStationZones.add(zoneId);
-            applyStationSelectionUI();
-          }
-
-          openBatchStationIssueModal();
-        });
-      });
-
-      // 3. 드롭존 기본 드래그 앤 드롭 유지
-      dropzones.forEach(dz => {
-        dz.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dz.classList.add('drag-hover');
-        });
-        dz.addEventListener('dragleave', () => {
-          dz.classList.remove('drag-hover');
-        });
-        dz.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dz.classList.remove('drag-hover');
-          const card = dz.closest('.station-card');
-          if (card && draggedId) {
-            const newZone = card.getAttribute('data-zone-id');
-            moveStaffToEnd(draggedId, newZone);
-            draggedId = null;
-          }
-        });
-      });
-
-      // 4. ESC 누르면 선택 취소
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && selectedStationZones.size > 0) {
-          clearStationSelection();
-        }
-      });
-    }
+    attachStationStaticEvents
 
     function moveStaffToEnd(staffId, newLocation) {
       const staffList = teamsData[currentTeamKey].staff;
