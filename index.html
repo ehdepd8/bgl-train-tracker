@@ -56,7 +56,8 @@
 
     .matrix-layout-grid {
       display: grid;
-      grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 315px; /* 285px -> 315px로 30px 확장 */
+      grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 285px;
+      grid-template-rows: repeat(3, minmax(0, 1fr)) 95px;
       gap: 5px;
     }
 
@@ -138,18 +139,21 @@
     }
 
     .unassigned-double-dropzone {
-      display: grid !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important; /* 좌우 2열 균등 분할 */
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
       align-content: flex-start !important;
+      justify-content: flex-start !important;
       gap: 6px !important;
       padding: 6px !important;
       overflow-y: auto !important;
     }
 
     .unassigned-double-dropzone .nametag {
-      width: 100% !important; /* grid 칸에 딱 맞춤 */
-      max-width: 100% !important;
-      box-sizing: border-box !important;
+      width: calc(50% - 4px) !important;
+      max-width: none !important;
+      flex-shrink: 0 !important;
       opacity: 0.85 !important;
       filter: saturate(0.85) !important;
       box-shadow: none !important;
@@ -723,7 +727,7 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 4행: 휴무자(확장) 및 본사(428px 미세 축소) -->
+        <!-- 4행: 휴무자 및 본사 -->
         <div class="col-span-9 flex gap-1 h-full min-h-0">
           
           <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
@@ -1125,6 +1129,7 @@
     let sharedAwayList = [];
     let sharedStationIssues = []; 
     let sharedNoticeMemo = '';
+    let isSavingToCloud = false; // 동기화 충돌 방지 플래그
 
     try {
       const localTrains = localStorage.getItem('bgl_shared_trains');
@@ -1244,9 +1249,12 @@
     }
 
     function syncCurrentTeamStaffToCloud() {
+      isSavingToCloud = true;
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
-      rootDbRef.child(currentTeamKey).child('staff').set(currentStaffList);
+      rootDbRef.child(currentTeamKey).child('staff').set(currentStaffList).then(() => {
+        setTimeout(() => { isSavingToCloud = false; }, 300);
+      });
     }
 
     function syncCurrentTeamRideLogsToCloud() {
@@ -1293,6 +1301,9 @@
 
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
+          // 내가 방금 로컬에서 저장 중인 상태라면 리시브 덮어쓰기 무시
+          if (isSavingToCloud && currentTeamKey === tKey) return;
+
           const cloudStaff = snapshot.val();
           if (cloudStaff && Array.isArray(cloudStaff)) {
             teamsData[tKey].staff = cloudStaff;
@@ -1888,7 +1899,6 @@
         container.appendChild(trainBox);
       });
 
-      // 열차 상자들이 모두 생성된 직후 드롭 이벤트 연결
       attachTrainDropEvents();
     }
 
@@ -2070,20 +2080,16 @@
       let pastedCount = 0;
 
       staffClipboardArray.forEach((sourceStaff, index) => {
-        // 1. 깊은 복사로 원본 객체와 연결 완전히 분리
         const newStaff = JSON.parse(JSON.stringify(sourceStaff));
 
-        // 2. 밀리초 중복 완벽 방지: index와 고유 랜덤값을 섞어 절대 안 겹치는 ID 생성
         newStaff.id = 'st-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 100000);
         newStaff.location = '미배치';
-        newStaff.isSupport = true; // ★ 복사된 인원은 무조건 지원자 딱지 강제 부여!
+        newStaff.isSupport = true; // 무조건 지원자 부여
         
-        // 원본의 스마일 아이콘도 유실되지 않고 무조건 보존
         if (sourceStaff.icon === 'smile') {
           newStaff.icon = 'smile';
         }
 
-        // 3. 중복 이름 체크로 버리지 않고, 복사한 인원은 무조건 지원자 카드로 추가!
         currentStaffList.push(newStaff);
         pastedCount++;
       });
@@ -2310,7 +2316,6 @@
 
     let draggedId = null;
 
-    // 1. 네임택 드래그 이벤트 (렌더링마다 갱신)
     function attachNametagEvents() {
       const nametags = document.querySelectorAll('.nametag');
 
@@ -2367,7 +2372,6 @@
       });
     }
 
-    // 2. 상단 열차 전용 드롭 이벤트 (열차 리렌더링마다 갱신)
     function attachTrainDropEvents() {
       const trainDropzones = document.querySelectorAll('#trains-grid .station-dropzone');
       trainDropzones.forEach(dz => {
@@ -2391,7 +2395,6 @@
       });
     }
 
-    // 3. 고정 역사 상자/헤더 이벤트 (최초 1회만 등록하여 이벤트 누적 렉 방지)
     let isStationEventsAttached = false;
     function attachStationStaticEvents() {
       if (isStationEventsAttached) return;
@@ -2482,7 +2485,6 @@
       showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
     }
 
-    /* 열차 탑승/하차 로깅 */
     function handleRideLogging(staffName, prevLoc, newLoc) {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -2592,7 +2594,6 @@
               ` : ''}
             </div>
 
-            <!-- 탑승 시간 및 또렷한 초록색 탑승중 뱃지 -->
             <div class="text-[11px] text-right truncate leading-normal flex items-center justify-end gap-1">
               <span class="font-mono text-indigo-700 font-semibold">${l.startTime}</span>
               <span class="text-slate-400 font-mono">~</span>
