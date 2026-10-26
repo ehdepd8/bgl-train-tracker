@@ -291,6 +291,22 @@
       box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
     }
 
+    /* 달력 교번 뱃지 스타일 */
+    .badge-common {
+      font-size: 9.5px;
+      padding: 0px 4px;
+      border-radius: 3px;
+      line-height: 14px;
+      height: 14px;
+      display: inline-block;
+      font-weight: 700;
+      transform: scale(0.95);
+    }
+    .badge-ju { background-color: #fef3c7; color: #92400e; }
+    .badge-ya { background-color: #e0e7ff; color: #3730a3; }
+    .badge-bi { background-color: #e2e8f0; color: #475569; }
+    .badge-hyu { background-color: #ffe4e6; color: #be123c; }
+
     #toast {
       position: fixed;
       top: 20px;
@@ -385,6 +401,11 @@
           </button>
 
           <div class="h-4 w-px bg-slate-300 mx-1"></div>
+
+          <!-- 신규 추가: 시트 자동배치 캘린더 모달 열기 버튼 -->
+          <button onclick="openCalendarDialog()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1.5" title="구글 스프레드시트 근무표 기준 자동배치">
+            <i class="fa-solid fa-calendar-days text-emerald-200"></i> 시트 자동배치
+          </button>
 
           <button onclick="openAddModal()" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> 인원등록
@@ -718,6 +739,49 @@
 
       </main>
 
+    </div>
+  </div>
+
+  <!-- [신규] 시트 자동배치 날짜/교번 선택 캘린더 모달 -->
+  <div id="calendar-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-300 rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+        <div class="font-black text-sm text-slate-800">
+          📍 <span id="cal-team-label">1팀</span> 근무 달력
+        </div>
+        <div class="flex gap-1 font-black text-[10px]">
+          <span class="badge-common badge-ju">주</span>
+          <span class="badge-common badge-ya">야</span>
+          <span class="badge-common badge-bi">비</span>
+          <span class="badge-common badge-hyu">휴</span>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-xl p-3">
+        <div class="flex justify-between items-center mb-2 px-1">
+          <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-xs font-black text-slate-600" onclick="changeCalMonth(-1)">◀</button>
+          <div class="font-black text-sm text-slate-800" id="calMonthTitle">2026년 10월</div>
+          <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-xs font-black text-slate-600" onclick="changeCalMonth(1)">▶</button>
+        </div>
+
+        <div class="grid grid-cols-7 gap-1 text-center font-black text-xs text-slate-400 mb-1">
+          <div class="text-rose-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-500">토</div>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center" id="calendarDays"></div>
+      </div>
+
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+        <div class="text-xs font-bold text-slate-700">
+          선택: <span id="displaySelectedDate" class="text-blue-600 font-mono font-black">2026-10-25</span>
+          <span id="displaySelectedDuty" class="ml-1"></span>
+        </div>
+        <div class="flex gap-1.5">
+          <button type="button" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg" onclick="closeCalendarDialog()">취소</button>
+          <button type="button" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1" id="btnSubmitAutoArrange" onclick="executeAutoArrangeFromCalendar()">
+            <i class="fa-solid fa-bolt"></i> 자동배치 실행
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1057,7 +1121,7 @@
       if (localMemo !== null) sharedNoticeMemo = localMemo;
     } catch(e) {}
 
-    // 각 팀별 독립 데이터 (근무자 배열 + 팀별 독립 탑승기록 배열)
+    // 각 팀별 독립 데이터 (staff + 독립 rideLogs)
     let teamsData = {
       team1: { staff: [], rideLogs: [] },
       team2: { staff: [], rideLogs: [] },
@@ -1133,6 +1197,9 @@
       const logTitle = document.getElementById('team-ride-log-title');
       if (logTitle) logTitle.textContent = `${teamNum}팀`;
 
+      const calLabel = document.getElementById('cal-team-label');
+      if (calLabel) calLabel.textContent = `${teamNum}팀`;
+
       const teamRadio = document.querySelector(`input[name="color-choice"][value="${teamKey}"]`);
       if (teamRadio) teamRadio.checked = true;
 
@@ -1157,7 +1224,7 @@
       });
     }
 
-    /* [핵심] 원본의 검증된 staff 경로 100% 보존 + rideLogs만 독립 서브노드로 분리 저장 */
+    /* 검증된 원본 staff 경로 보존 + rideLogs만 독립 서브노드로 분리 저장 */
     function syncCurrentTeamStaffToCloud() {
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
@@ -1207,7 +1274,7 @@
         }
       });
 
-      // 각 팀 전용 리스너 (근무자 staff 리스너 + 팀별 rideLogs 독립 리스너)
+      // 각 팀 전용 리스너 (근무자 staff + 팀별 rideLogs 독립 수신)
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
           const cloudStaff = snapshot.val();
@@ -1246,6 +1313,9 @@
 
       const logTitle = document.getElementById('team-ride-log-title');
       if (logTitle) logTitle.textContent = `${teamNum}팀`;
+
+      const calLabel = document.getElementById('cal-team-label');
+      if (calLabel) calLabel.textContent = `${teamNum}팀`;
     }
 
     function updateNoticeMemo(val) {
@@ -1264,7 +1334,6 @@
       }
     }
 
-    /* 현재 팀 근무자만 미배치 칸으로 초기화 */
     function resetCurrentTeamOnly() {
       const teamNum = currentTeamKey.replace('team', '');
       if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치 및 탑승기록은 유지됩니다.\n- 공통 열차/역사 시설 상태는 그대로 유지됩니다.`)) {
@@ -1283,7 +1352,6 @@
       showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
     }
 
-    /* 현재 팀의 탑승기록만 단독 삭제 */
     function clearCurrentTeamRideLogs() {
       const teamNum = currentTeamKey.replace('team', '');
       if (confirm(`현재 [${teamNum}팀] 열차 탑승기록 내역을 모두 삭제하시겠습니까?`)) {
@@ -1521,7 +1589,6 @@
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
-    /* 열차 불량 세부 선택 모달 */
     let currentModalTrainId = null;
     let selectedTrainIssueType = null;
     let selectedTrainDoors = [];
@@ -1660,7 +1727,7 @@
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
     }
 
-    /* 통합 렌더링 */
+    /* 통합 렌더링 파이프라인 */
     function render() {
       renderTrains25Grid();
       renderStaffAndStations();
@@ -1694,7 +1761,7 @@
       });
     }
 
-    /* 1. 상단 25편성 렌더링 */
+    /* 1. 상단 25편성 렌더링 (원본 구조 100% 동일) */
     function renderTrains25Grid() {
       const container = document.getElementById('trains-grid');
       if (!container) return;
@@ -1970,7 +2037,7 @@
       closeEditModal();
     }
 
-    /* 2. 전체 역사 및 열차 드롭존 네임택 배치 [새 텍스트 문서 (2)_2.txt의 원본 정상 방식 그대로 복원] */
+    /* 2. 전체 역사 및 열차 드롭존 네임택 배치 [새 텍스트 문서 (2)_2.txt의 검증된 원본 로직 100% 동일] */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -2017,7 +2084,7 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 모든 카드(열차 train-X, 역사, 미배치)에 네임택 배치 [가장 확실한 원본 방식]
+      // 모든 카드(열차 train-X, 역사, 미배치)에 네임택 배치 [원본 코드 그대로]
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2072,7 +2139,7 @@
     let lastTapTime = 0;
     let lastTapTargetId = null;
 
-    /* [핵심] 원본의 정상 작동 이벤트 리스너 100% 복원 */
+    /* 새 텍스트 문서 (2)_2.txt의 원본 정상 이벤트 핸들러 복원 */
     function attachEvents() {
       const nametags = document.querySelectorAll('.nametag');
       const dropzones = document.querySelectorAll('.station-dropzone');
@@ -2387,13 +2454,13 @@
       const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
-      const trainStaff = currentStaff.filter(s => s.location && s.location.startsWith('train-'));
+      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
         trainBadge.textContent = `${trainStaff.length}명`;
       }
 
-      // 좌측 열차 탑승 현황 리스트 (탑승 인원 실시간 표기)
+      // 좌측 열차 탑승 현황 리스트 (실시간 표기)
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
@@ -2474,6 +2541,217 @@
       syncCurrentTeamStaffToCloud();
       showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
       closeAddModal();
+    }
+
+    // =========================================================================
+    // ★★★ [신규: 구글 시트 기반 자동배치 캘린더 엔진] ★★★
+    // =========================================================================
+    const SHIFT_PATTERN = ['주', '야', '비', '휴'];
+    const BASE_DATE = new Date(2026, 7, 1, 12, 0, 0); // 2026-08-01 12:00 KST
+    const TEAM_BASE_OFFSET = { "1": 1, "2": 2, "3": 3, "4": 0 };
+    
+    let calCurrentYear = 2026;
+    let calCurrentMonth = 9; // 10월
+    let calSelectedDateStr = "2026-10-25";
+
+    // 배포된 Apps Script 웹앱 URL (설정 시 즉시 시트와 다이렉트 통신)
+    let SHEET_WEB_APP_URL = localStorage.getItem('bgl_sheet_web_app_url') || "";
+
+    function getShiftType(year, month, day, teamNumStr) {
+      const targetDate = new Date(year, month, day, 12, 0, 0);
+      const diffDays = Math.round((targetDate - BASE_DATE) / 86400000);
+      let patternIndex = (TEAM_BASE_OFFSET[teamNumStr] + diffDays) % 4;
+      if (patternIndex < 0) patternIndex += 4;
+      return SHIFT_PATTERN[patternIndex];
+    }
+
+    function getDutyBadgeHtml(shift) {
+      if (shift === '주') return '<span class="badge-common badge-ju">주</span>';
+      if (shift === '야') return '<span class="badge-common badge-ya">야</span>';
+      if (shift === '비') return '<span class="badge-common badge-bi">비</span>';
+      if (shift === '휴') return '<span class="badge-common badge-hyu">휴</span>';
+      return `<span class="badge-common badge-ju">${shift}</span>`;
+    }
+
+    function openCalendarDialog() {
+      const now = new Date();
+      calCurrentYear = now.getFullYear();
+      calCurrentMonth = now.getMonth();
+      const mStr = String(now.getMonth() + 1).padStart(2, '0');
+      const dStr = String(now.getDate()).padStart(2, '0');
+      calSelectedDateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+
+      const teamNum = currentTeamKey.replace('team', '');
+      document.getElementById('cal-team-label').textContent = `${teamNum}팀`;
+
+      renderCalendarGrid();
+      document.getElementById('calendar-modal').classList.remove('hidden');
+      document.getElementById('calendar-modal').classList.add('flex');
+    }
+
+    function closeCalendarDialog() {
+      document.getElementById('calendar-modal').classList.add('hidden');
+      document.getElementById('calendar-modal').classList.remove('flex');
+    }
+
+    function changeCalMonth(delta) {
+      calCurrentMonth += delta;
+      if (calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear--;
+      } else if (calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear++;
+      }
+      renderCalendarGrid();
+    }
+
+    function renderCalendarGrid() {
+      document.getElementById('calMonthTitle').innerText = `${calCurrentYear}년 ${calCurrentMonth + 1}월`;
+      const container = document.getElementById('calendarDays');
+      container.innerHTML = '';
+
+      const firstDay = new Date(calCurrentYear, calCurrentMonth, 1, 12, 0, 0).getDay();
+      const lastDate = new Date(calCurrentYear, calCurrentMonth + 1, 0, 12, 0, 0).getDate();
+      const teamNum = currentTeamKey.replace('team', '');
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'min-h-[40px]';
+        container.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const mStr = String(calCurrentMonth + 1).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const dateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+        const shift = getShiftType(calCurrentYear, calCurrentMonth, day, teamNum);
+
+        const isSelected = (dateStr === calSelectedDateStr);
+        const dow = new Date(calCurrentYear, calCurrentMonth, day, 12, 0, 0).getDay();
+
+        const dayCell = document.createElement('div');
+        dayCell.className = `min-h-[40px] py-1 border rounded-lg flex flex-col items-center justify-center gap-0.5 cursor-pointer transition ${
+          isSelected ? 'border-2 border-blue-600 bg-blue-50/70 font-black' : 'border-transparent hover:bg-slate-100'
+        }`;
+
+        let numColor = 'text-slate-800';
+        if (dow === 0) numColor = 'text-rose-500 font-bold';
+        if (dow === 6) numColor = 'text-blue-500 font-bold';
+
+        dayCell.innerHTML = `
+          <span class="text-xs leading-none ${numColor}">${day}</span>
+          ${getDutyBadgeHtml(shift)}
+        `;
+
+        dayCell.onclick = () => {
+          calSelectedDateStr = dateStr;
+          updateCalSelectedInfo(dateStr, shift);
+          renderCalendarGrid();
+        };
+
+        if (isSelected) {
+          updateCalSelectedInfo(dateStr, shift);
+        }
+
+        container.appendChild(dayCell);
+      }
+    }
+
+    function updateCalSelectedInfo(dateStr, shift) {
+      document.getElementById('displaySelectedDate').innerText = dateStr;
+      const dutyArea = document.getElementById('displaySelectedDuty');
+      if (dutyArea) {
+        dutyArea.innerHTML = getDutyBadgeHtml(shift);
+      }
+    }
+
+    /* 시트 연동 자동배치 실행 */
+    async function executeAutoArrangeFromCalendar() {
+      const teamNum = currentTeamKey.replace('team', '');
+      const parts = calSelectedDateStr.split('-').map(v => parseInt(v, 10));
+      const shift = getShiftType(parts[0], parts[1] - 1, parts[2], teamNum);
+
+      if (shift === '비' || shift === '휴') {
+        alert(`[${calSelectedDateStr}] ${teamNum}팀은 '${shift === '비' ? '비번' : '휴무'}'일입니다.\n배치를 중단합니다.`);
+        return;
+      }
+
+      if (!SHEET_WEB_APP_URL) {
+        const inputUrl = prompt(
+          "구글 시트 연동용 Apps Script 웹앱 URL을 입력해 주세요.\n(1단계에서 배포한 웹앱 URL을 입력하시면 영구 저장됩니다):"
+        );
+        if (!inputUrl) return;
+        SHEET_WEB_APP_URL = inputUrl.trim();
+        localStorage.setItem('bgl_sheet_web_app_url', SHEET_WEB_APP_URL);
+      }
+
+      const btn = document.getElementById('btnSubmitAutoArrange');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 배치중...`;
+
+      try {
+        const fetchUrl = `${SHEET_WEB_APP_URL}?team=${teamNum}&date=${calSelectedDateStr}`;
+        const res = await fetch(fetchUrl);
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.message || "시트 데이터 읽기 실패");
+        }
+
+        applyAutoArrangementData(data);
+        closeCalendarDialog();
+        showToast(`[${calSelectedDateStr}] ${teamNum}팀 자동배치가 완료되었습니다!`);
+
+      } catch (err) {
+        alert("자동배치 오류: " + err.message + "\n\n(Apps Script 웹앱 URL이 올바른지 확인해 주세요)");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> 자동배치 실행`;
+      }
+    }
+
+    /* 시트에서 가져온 stationMap과 leaveList를 현재 팀 네임택에 정확히 분배 */
+    function applyAutoArrangementData(data) {
+      const stationMap = data.stationMap || {};
+      const leaveList = data.leaveList || [];
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+
+      // 1. 모든 인원 먼저 미배치로 원복
+      currentStaffList.forEach(s => s.location = '미배치');
+
+      // 2. 역사별 근무자 매핑
+      const stationCards = document.querySelectorAll('.station-card');
+      const validZoneIds = Array.from(stationCards).map(c => c.getAttribute('data-zone-id')).filter(id => id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황');
+
+      for (const [stName, names] of Object.entries(stationMap)) {
+        // "가야대" ➔ "가야대 [9621]" 형태로 카드 zoneId 매칭
+        let matchedZone = validZoneIds.find(z => z.includes(stName) || stName.includes(z.split(' ')[0]));
+        if (stName === '차량기지' || stName === '기지') matchedZone = '기지입환';
+
+        if (matchedZone && Array.isArray(names)) {
+          names.forEach(name => {
+            const staff = currentStaffList.find(s => s.name === name);
+            if (staff) {
+              staff.location = matchedZone;
+            }
+          });
+        }
+      }
+
+      // 3. 휴무자 매핑
+      if (Array.isArray(leaveList)) {
+        leaveList.forEach(name => {
+          const staff = currentStaffList.find(s => s.name === name);
+          if (staff) {
+            staff.location = '휴무자';
+          }
+        });
+      }
+
+      // 4. 로컬 및 클라우드 즉시 저장 & 렌더링
+      render();
+      syncCurrentTeamStaffToCloud();
     }
 
     let toastTimeout = null;
