@@ -2330,28 +2330,15 @@
         }
       });
 
-      attachEvents();
+      attachNametagEvents();
+      attachStaticContainerEvents();
     }
 
     let draggedId = null;
 
-    function attachEvents() {
+    // 1. 네임택에만 드래그 이벤트를 거는 함수 (네임택이 새로 그려질 때마다 호출)
+    function attachNametagEvents() {
       const nametags = document.querySelectorAll('.nametag');
-      const dropzones = document.querySelectorAll('.station-dropzone');
-      const stationCards = document.querySelectorAll('.station-card');
-      const stationHeaders = document.querySelectorAll('.station-header');
-
-      stationHeaders.forEach(header => {
-        header.onclick = (e) => {
-          e.stopPropagation();
-          const card = header.closest('.station-card');
-          if (!card) return;
-          const zoneId = card.getAttribute('data-zone-id');
-          if (zoneId) {
-            onStationHeaderClicked(zoneId);
-          }
-        };
-      });
 
       nametags.forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
@@ -2403,6 +2390,28 @@
           reorderStaff(draggedId, tag.id, targetZone, isBefore);
           draggedId = null;
         });
+      });
+    }
+
+    // 2. 고정된 역사 상자/헤더에 센서를 거는 함수 (페이지 켜지고 딱 1번만 실행되고 잠김)
+    let isStaticEventsAttached = false;
+    function attachStaticContainerEvents() {
+      if (isStaticEventsAttached) return; // 이미 센서가 붙어있으면 바로 통과!
+      isStaticEventsAttached = true;      // 센서 붙였다고 도장 쾅 찍기
+
+      const dropzones = document.querySelectorAll('.station-dropzone');
+      const stationHeaders = document.querySelectorAll('.station-header');
+
+      stationHeaders.forEach(header => {
+        header.onclick = (e) => {
+          e.stopPropagation();
+          const card = header.closest('.station-card');
+          if (!card) return;
+          const zoneId = card.getAttribute('data-zone-id');
+          if (zoneId) {
+            onStationHeaderClicked(zoneId);
+          }
+        };
       });
 
       dropzones.forEach(dz => {
