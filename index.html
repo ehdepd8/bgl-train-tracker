@@ -325,6 +325,16 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+    /* 1열 3개 카드(탑승현황, 탑승기록, 특이사항)의 세로 높이를 절대 늘어나지 않게 강제 고정 */
+.sidebar-fixed-card {
+  height: 170px !important;
+  max-height: 170px !important;
+  min-height: 170px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+    
   </style>
 </head>
 <body>
@@ -435,14 +445,15 @@
       <main class="flex-1 matrix-layout-grid min-h-0 w-full">
 
         <!-- [1열 1행]: 열차 탑승 현황 -->
-        <div class="station-card bg-sky-50/60 border-2 border-sky-400 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="승무현황">
+        <div class="station-card sidebar-fixed-card bg-sky-50/60 border-2 border-sky-400 rounded-md shadow-xs" data-zone-id="승무현황">
           <div class="bg-sky-500 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-train-tram text-sky-100"></i> 열차 탑승 현황
             </span>
             <span id="badge-train-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
           </div>
-          <div id="train-riders-list" class="custom-scroll flex-1 h-0 min-h-0 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
+          <!-- 내부 스크롤 목록 -->
+          <div id="train-riders-list" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
             <span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>
           </div>
         </div>
@@ -534,15 +545,16 @@
           </div>
         </div>
 
-       <!-- [1열 2행]: 팀별 독립 열차 탑승기록 -->
-        <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col h-full min-h-0 shadow-xs">
+       <!-- [1열 2행]: 탑승기록 -->
+        <div class="station-card sidebar-fixed-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> <span id="team-ride-log-title">1팀</span> 탑승기록
             </span>
             <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록 전체 비우기">전체삭제</button>
           </div>
-          <div id="train-ride-logs" class="custom-scroll flex-1 h-0 min-h-0 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
+          <!-- 내부 스크롤 목록 -->
+          <div id="train-ride-logs" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
             <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
           </div>
         </div>
@@ -621,7 +633,7 @@
         </div>
 
         <!-- [1열 3행]: 특이사항 -->
-        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col h-full min-h-0 shadow-xs">
+        <div class="station-card sidebar-fixed-card bg-amber-50/70 border-2 border-amber-400 rounded-md shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
@@ -631,12 +643,12 @@
             </button>
           </div>
           
-          <!-- flex-1 h-0 min-h-0 적용으로 입력창 위까지만 정확하게 높이 제한 -->
-          <div id="notice-memo-list" class="custom-scroll flex-1 h-0 min-h-0 overflow-y-auto p-1.5 space-y-1 bg-white">
+          <!-- 내부 스크롤 목록 -->
+          <div id="notice-memo-list" class="custom-scroll flex-1 overflow-y-auto p-1.5 space-y-1 bg-white">
             <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
           </div>
 
-          <!-- shrink-0으로 맨 아래 고정 -->
+          <!-- 하단 입력창 고정 -->
           <div class="p-1 border-t border-amber-200 bg-amber-50/60 flex gap-1 shrink-0">
             <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
                    class="flex-1 px-2 py-1 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
