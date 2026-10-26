@@ -2294,6 +2294,12 @@
           return;
         }
 
+        // ★ 미배치함은 좌우 2열 전용이므로 count 정렬 클래스를 적용하지 않고 제외!
+        if (zoneId === '미배치' || zoneId === '휴무자' || zoneId === '본사') {
+          dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
+          return;
+        }
+
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
         if (staffList.length === 1) {
           dropzone.classList.add('count-1');
