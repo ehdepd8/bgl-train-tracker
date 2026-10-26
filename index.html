@@ -334,6 +334,39 @@
   flex-direction: column !important;
   overflow: hidden !important;
 }
+
+    // 다중 선택된 역사 ID 관리
+    const selectedStationZones = new Set();
+
+    function clearStationSelection() {
+      selectedStationZones.clear();
+      document.querySelectorAll('.station-card.station-selected').forEach(c => {
+        c.classList.remove('station-selected');
+      });
+    }
+
+    function toggleStationSelection(zoneId) {
+      // 미배치, 휴무자, 본사, 열차 등은 역사 다중 선택 대상에서 제외
+      if (['unassigned', '휴무자', '본사'].includes(zoneId) || zoneId.startsWith('train-')) return;
+
+      if (selectedStationZones.has(zoneId)) {
+        selectedStationZones.delete(zoneId);
+      } else {
+        selectedStationZones.add(zoneId);
+      }
+      applyStationSelectionUI();
+    }
+
+    function applyStationSelectionUI() {
+      document.querySelectorAll('main .station-card').forEach(card => {
+        const zoneId = card.getAttribute('data-zone-id');
+        if (selectedStationZones.has(zoneId)) {
+          card.classList.add('station-selected');
+        } else {
+          card.classList.remove('station-selected');
+        }
+      });
+    }
     
   </style>
 </head>
@@ -1462,6 +1495,54 @@
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
+    function openBatchStationIssueModal() {
+      if (selectedStationZones.size === 0) return;
+
+      const targetStations = Array.from(selectedStationZones);
+      const stationNames = targetStations.join(', ');
+
+      // 간단한 prompt 선택 또는 기존 불량 지정 모달 재사용
+      const issueType = prompt(
+        `[ ${stationNames} ]\n일괄 적용할 시설 상태 번호를 입력하세요:\n\n1: 정상 (불량 해제)\n2: PSD 장애\n3: 통신 불량\n4: 역사 시설 불량`,
+        '1'
+      );
+
+      if (!issueType) return; // 취소 누름
+
+      const issueMap = {
+        '1': null,
+        '2': 'PSD 장애',
+        '3': '통신 불량',
+        '4': '시설 불량'
+      };
+
+      const selectedIssue = issueMap[issueType.trim()];
+      if (selectedIssue === undefined) {
+        alert('올바른 번호를 입력해 주세요.');
+        return;
+      }
+
+      // sharedStationIssues 배열 갱신
+      targetStations.forEach(stId => {
+        // 기존 불량 제거
+        sharedStationIssues = sharedStationIssues.filter(item => item.station !== stId);
+        // 새 불량 등록 (정상 해제가 아닐 경우)
+        if (selectedIssue) {
+          sharedStationIssues.push({ station: stId, issue: selectedIssue });
+        }
+      });
+
+      // Firebase 동기화 및 로컬 저장
+      try {
+        localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
+      } catch(e) {}
+      rootDbRef.child('shared_station_issues').set(sharedStationIssues);
+
+      // 선택 해제 및 렌더링
+      clearStationSelection();
+      renderStaffAndStations();
+    }
+    
     function onStationHeaderClicked(zoneId) {
       const now = Date.now();
       const lastTime = lastStationClickTimes[zoneId] || 0;
@@ -2335,6 +2416,7 @@
 
       attachNametagEvents();
       attachStationStaticEvents();
+      applyStationSelectionUI(); // ★ 화면이 다시 그려져도 선택 상태 유지!
     }
 
     let draggedId = null;
@@ -2421,15 +2503,16 @@
     }
 
     // 3. 중앙/하단 고정 역사 상자/헤더 이벤트 (페이지 로딩 후 딱 1번만 등록하여 렉 완전 차단)
-    let isStationEventsAttached = false;
+   let isStationEventsAttached = false;
     function attachStationStaticEvents() {
       if (isStationEventsAttached) return;
       isStationEventsAttached = true;
 
-      // 상단 열차를 제외한 본문 영역의 드롭존만 지정
       const dropzones = document.querySelectorAll('main .station-dropzone');
       const stationHeaders = document.querySelectorAll('.station-header');
+      const stationCards = document.querySelectorAll('main .station-card');
 
+      // 1. 헤더 클릭: 기존 외부/내부 토글 유지
       stationHeaders.forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
@@ -2442,6 +2525,39 @@
         };
       });
 
+      // 2. 카드 클릭 (Ctrl+클릭 시 다중 선택) 및 더블클릭 (불량 팝업)
+      stationCards.forEach(card => {
+        const zoneId = card.getAttribute('data-zone-id');
+
+        // Ctrl + 클릭으로 다중 선택 토글
+        card.addEventListener('click', (e) => {
+          // 네임택 클릭 시는 제외
+          if (e.target.closest('.nametag')) return;
+
+          if (e.ctrlKey || e.metaKey) {
+            e.stopPropagation();
+            toggleStationSelection(zoneId);
+          }
+        });
+
+        // 빈 공간 더블클릭 시 불량 모달 열기
+        card.addEventListener('dblclick', (e) => {
+          // 네임택을 더블클릭한 경우는 직원 수정 창이 떠야 하므로 차단
+          if (e.target.closest('.nametag')) return;
+          e.stopPropagation();
+
+          // 현재 클릭한 역이 선택 목록에 없다면 단독 선택으로 모달 오픈
+          if (!selectedStationZones.has(zoneId)) {
+            clearStationSelection();
+            selectedStationZones.add(zoneId);
+            applyStationSelectionUI();
+          }
+
+          openBatchStationIssueModal();
+        });
+      });
+
+      // 3. 드롭존 기본 드래그 앤 드롭 유지
       dropzones.forEach(dz => {
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
@@ -2460,6 +2576,13 @@
             draggedId = null;
           }
         });
+      });
+
+      // 4. ESC 누르면 선택 취소
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && selectedStationZones.size > 0) {
+          clearStationSelection();
+        }
       });
     }
 
