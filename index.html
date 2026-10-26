@@ -39,14 +39,15 @@
       height: max-content;
     }
 
-    .app-viewport-container {
-      width: 1780px;
-      min-height: 920px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 8px;
-    }
+    /* 수정 전: width: 1780px; */
+.app-viewport-container {
+  width: 1860px; /* 우측 빈 여백만큼 가로 전체 확장 */
+  min-height: 920px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+}
 
     .grid-cols-25 {
       display: grid;
@@ -54,12 +55,13 @@
       gap: 3px;
     }
 
-    .matrix-layout-grid {
-      display: grid;
-      grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 285px;
-      grid-template-rows: repeat(3, minmax(170px, 1fr)) 95px;
-      gap: 5px;
-    }
+    /* 수정 전: grid-template-columns: 265px repeat(8, minmax(0, 1fr)) 285px; */
+.matrix-layout-grid {
+  display: grid;
+  grid-template-columns: 340px repeat(8, minmax(0, 1fr)) 285px; /* 1열 가로를 340px로 넉넉하게 확장 */
+  grid-template-rows: repeat(3, minmax(170px, 1fr)) 95px;
+  gap: 5px;
+}
 
     .nametag {
       cursor: grab;
