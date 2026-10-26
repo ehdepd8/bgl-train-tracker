@@ -1967,9 +1967,9 @@
           : '';
 
         const supportBadge = staff.isSupport 
-          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none">지원</span>` 
+          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
           : '';
-
+        
         el.innerHTML = `
           ${supportBadge}
           ${smile}
