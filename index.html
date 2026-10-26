@@ -737,32 +737,34 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 4행: 휴무자(남은 공간 전체) 및 본사(3명 맞춤 440px) -->
-        <div class="col-span-9 flex gap-1.5 h-full min-h-0">
+        <!-- 4행: 휴무자(확장) 및 본사(428px 미세 축소) -->
+        <div class="col-span-9 flex gap-1 h-full min-h-0">
           
-          <!-- 좌측: 휴무자 (flex-1로 남는 폭 전부 차지 -> 8명 1열 완벽 수용) -->
-          <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0">
+          <!-- 좌측: 휴무자 (남은 폭 전체 차지 -> 8명 1열 완벽 수용) -->
+          <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
               <div class="flex items-center gap-1.5 font-black text-slate-800">
                 <i class="fa-solid fa-bed text-amber-500"></i>
                 <span>휴 무 자</span>
               </div>
               <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
             </div>
-            <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200 flex-1">
+            <!-- gap을 6px(!gap-1.5)로 살짝 좁혀 8명이 한눈에 여유롭게 정렬 -->
+            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-slate-50/60 rounded border border-slate-200 flex-1">
             </div>
           </div>
 
-          <!-- 우측: 본사 (3명 폭에 딱 맞춘 w-[440px] 고정) -->
-          <div class="w-[440px] station-card bg-white border border-purple-300 rounded-md p-1.5 flex flex-col shadow-xs shrink-0" data-zone-id="본사">
-            <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0">
+          <!-- 우측: 본사 (3명 규격에 맞춘 428px로 축소하여 휴무자에 공간 양보) -->
+          <div class="w-[428px] station-card bg-white border border-purple-300 rounded-md p-1 flex flex-col shadow-xs shrink-0" data-zone-id="본사">
+            <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
               <div class="flex items-center gap-1.5 font-black text-purple-900">
                 <i class="fa-solid fa-building text-purple-600"></i>
                 <span>본 사</span>
               </div>
               <span id="badge-hq-count" class="font-black text-xs px-2 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">0명</span>
             </div>
-            <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] overflow-y-auto bg-purple-50/40 p-1.5 rounded border border-purple-200 flex-1">
+            <!-- 본사 3명 딱 맞춤 간격 -->
+            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-purple-50/40 rounded border border-purple-200 flex-1">
             </div>
           </div>
 
