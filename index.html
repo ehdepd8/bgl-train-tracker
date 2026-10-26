@@ -1910,6 +1910,9 @@
         trainBox.appendChild(dropzone);
         container.appendChild(trainBox);
       });
+
+      // 열차 상자들이 모두 생성된 직후 드롭 이벤트 센서 연결
+      attachTrainDropEvents();
     }
 
     function toggleTrainActiveDepot(trainId) {
@@ -2331,12 +2334,12 @@
       });
 
       attachNametagEvents();
-      attachStaticContainerEvents();
+      attachStationStaticEvents();
     }
 
     let draggedId = null;
 
-    // 1. 네임택에만 드래그 이벤트를 거는 함수 (네임택이 새로 그려질 때마다 호출)
+    // 1. 네임택 전용 드래그 이벤트 (네임택 렌더링마다 호출)
     function attachNametagEvents() {
       const nametags = document.querySelectorAll('.nametag');
 
@@ -2393,13 +2396,38 @@
       });
     }
 
-    // 2. 고정된 역사 상자/헤더에 센서를 거는 함수 (페이지 켜지고 딱 1번만 실행되고 잠김)
-    let isStaticEventsAttached = false;
-    function attachStaticContainerEvents() {
-      if (isStaticEventsAttached) return; // 이미 센서가 붙어있으면 바로 통과!
-      isStaticEventsAttached = true;      // 센서 붙였다고 도장 쾅 찍기
+    // 2. 상단 열차 전용 드롭 이벤트 (열차 버튼 새로 그려질 때마다 호출)
+    function attachTrainDropEvents() {
+      const trainDropzones = document.querySelectorAll('#trains-grid .station-dropzone');
+      trainDropzones.forEach(dz => {
+        dz.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dz.classList.add('drag-hover');
+        });
+        dz.addEventListener('dragleave', () => {
+          dz.classList.remove('drag-hover');
+        });
+        dz.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dz.classList.remove('drag-hover');
+          const card = dz.closest('.station-card');
+          if (card && draggedId) {
+            const newZone = card.getAttribute('data-zone-id');
+            moveStaffToEnd(draggedId, newZone);
+            draggedId = null;
+          }
+        });
+      });
+    }
 
-      const dropzones = document.querySelectorAll('.station-dropzone');
+    // 3. 중앙/하단 고정 역사 상자/헤더 이벤트 (페이지 로딩 후 딱 1번만 등록하여 렉 완전 차단)
+    let isStationEventsAttached = false;
+    function attachStationStaticEvents() {
+      if (isStationEventsAttached) return;
+      isStationEventsAttached = true;
+
+      // 상단 열차를 제외한 본문 영역의 드롭존만 지정
+      const dropzones = document.querySelectorAll('main .station-dropzone');
       const stationHeaders = document.querySelectorAll('.station-header');
 
       stationHeaders.forEach(header => {
