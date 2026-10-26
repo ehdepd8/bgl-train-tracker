@@ -139,29 +139,29 @@
     }
 
     .unassigned-double-dropzone {
-      display: grid !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
       align-content: flex-start !important;
+      justify-content: flex-start !important;
       gap: 6px !important;
       padding: 6px !important;
       overflow-y: auto !important;
     }
 
     .unassigned-double-dropzone .nametag {
-      width: 100% !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      opacity: 0.9 !important;
-      filter: saturate(0.9) !important;
+      width: calc(50% - 4px) !important;
+      max-width: none !important;
+      flex-shrink: 0 !important;
+      opacity: 0.85 !important;
+      filter: saturate(0.85) !important;
       box-shadow: none !important;
-      isolation: isolate !important; /* ★ 각 카드의 뱃지가 다른 카드에 가려지지 않도록 독립 레이어 격리 */
-      overflow: hidden !important;   /* ★ 카드가 스크롤바에 밀려도 내용물이 밖으로 튕겨나가지 않음 */
     }
 
     .unassigned-double-dropzone .nametag:hover {
-      opacity: 1 !important;
+      opacity: 0.95 !important;
       filter: saturate(1) !important;
-      z-index: 10 !important;
     }
     .unassigned-box-muted {
       background-color: #f1f5f9 !important;
@@ -1969,11 +1969,11 @@
         
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
-          ? `<span class="absolute top-1 right-1.5 text-xs select-none z-30 leading-none pointer-events-none" title="신입 사원">😊</span>` 
+          ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
         const supportBadge = staff.isSupport 
-          ? `<span class="absolute top-1 left-1.5 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-30 leading-tight">지원</span>` 
+          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
           : '';
         
         el.innerHTML = `
