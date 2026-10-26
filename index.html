@@ -75,19 +75,13 @@
       opacity: 0.35 !important;
     }
 
-    .nametag.mobile-selected {
+    /* 선택된 네임택 시각화 스타일 */
+    .nametag.multi-selected {
       outline: 3px solid #f97316 !important;
       outline-offset: 1px;
-      transform: scale(1.04);
-      box-shadow: 0 0 12px rgba(249, 115, 22, 0.6) !important;
-      animation: pulse-selection 1.2s infinite ease-in-out;
-      opacity: 1 !important;
-      filter: none !important;
-    }
-
-    @keyframes pulse-selection {
-      0%, 100% { outline-color: #f97316; }
-      50% { outline-color: #ea580c; }
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.75) !important;
+      transform: scale(1.02);
+      z-index: 30 !important;
     }
 
     .nametag.drag-insert-before {
@@ -157,7 +151,6 @@
       overflow-y: auto !important;
     }
 
-    /* 미배치 구역 네임택: 좌우 2열 배치 + 은은한 흐림 효과 */
     .unassigned-double-dropzone .nametag {
       width: calc(50% - 4px) !important;
       max-width: none !important;
@@ -201,7 +194,6 @@
       cursor: pointer;
     }
 
-    /* 역명 위에 덧씌워지는 완전 점멸(Blink) 오버레이 */
     .station-status-overlay {
       position: absolute;
       inset: 0;
@@ -291,7 +283,6 @@
       box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
     }
 
-    /* 달력 교번 뱃지 스타일 */
     .badge-common {
       font-size: 9.5px;
       padding: 0px 4px;
@@ -402,7 +393,6 @@
 
           <div class="h-4 w-px bg-slate-300 mx-1"></div>
 
-          <!-- 시트 자동배치 캘린더 모달 열기 버튼 -->
           <button onclick="openCalendarDialog()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1.5" title="구글 스프레드시트 근무표 기준 자동배치">
             <i class="fa-solid fa-calendar-days text-emerald-200"></i> 시트 자동배치
           </button>
@@ -542,13 +532,13 @@
           </div>
         </div>
 
-        <!-- [1열 2행]: 팀별 독립 열차 탑승기록 -->
+        <!-- [1열 2행]: 팀별 독립 열차 탑승기록 (개별 삭제 지원) -->
         <div class="station-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> <span id="team-ride-log-title">1팀</span> 탑승기록
             </span>
-            <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록만 비우기">기록삭제</button>
+            <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록 전체 비우기">전체삭제</button>
           </div>
           <div id="train-ride-logs" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
             <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
@@ -628,21 +618,28 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [1열 3행]: 특이사항 -->
+        <!-- [1열 3행]: 특이사항 (줄별 개별 삭제 지원) -->
         <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
             </span>
-            <button onclick="clearNoticeMemo()" class="text-[9.5px] bg-amber-600 hover:bg-amber-700 px-1.5 py-0.2 rounded font-bold text-white transition shadow-2xs" title="특이사항 메모 내용 비우기">
-              기록삭제
+            <button onclick="clearNoticeMemo()" class="text-[9.5px] bg-amber-600 hover:bg-amber-700 px-1.5 py-0.2 rounded font-bold text-white transition shadow-2xs" title="특이사항 전체 내용 비우기">
+              전체삭제
             </button>
           </div>
-          <div class="p-1.5 flex-1 flex flex-col bg-white">
-            <textarea id="notice-memo-input" 
-                      placeholder="특이사항 입력 시 전 기기 동기화" 
-                      class="w-full flex-1 p-1 text-xs font-semibold text-slate-800 bg-amber-50/30 rounded border border-amber-200 focus:outline-none focus:border-amber-500 focus:bg-white resize-none leading-relaxed custom-scroll"
-                      onchange="updateNoticeMemo(this.value)"></textarea>
+          
+          <div id="notice-memo-list" class="flex-1 p-1.5 overflow-y-auto max-h-[110px] space-y-1 bg-white custom-scroll">
+            <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
+          </div>
+
+          <div class="p-1 border-t border-amber-200 bg-amber-50/50 flex gap-1">
+            <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
+                   class="flex-1 px-2 py-0.5 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
+                   onkeydown="if(event.key==='Enter') addNoticeMemoDirect()">
+            <button onclick="addNoticeMemoDirect()" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded transition shrink-0">
+              추가
+            </button>
           </div>
         </div>
 
@@ -1121,7 +1118,6 @@
       if (localMemo !== null) sharedNoticeMemo = localMemo;
     } catch(e) {}
 
-    // 각 팀별 독립 데이터
     let teamsData = {
       team1: { staff: [], rideLogs: [] },
       team2: { staff: [], rideLogs: [] },
@@ -1148,10 +1144,10 @@
       }
     });
 
-    let selectedStaffIdForMove = null;
-
-    // [신규] 클립보드 복사 버퍼 (Ctrl+C, Ctrl+V 지원)
-    let staffClipboard = null;
+    // 다중 선택 Set (여러 개 선택 가능)
+    let selectedStaffIds = new Set();
+    // 클립보드 다중 복사 버퍼 (배열)
+    let staffClipboardArray = [];
 
     function getColorTheme(color) {
       switch (color) {
@@ -1187,7 +1183,7 @@
 
     function switchTeam(teamKey) {
       currentTeamKey = teamKey;
-      selectedStaffIdForMove = null;
+      selectedStaffIds.clear();
 
       document.querySelectorAll('.team-tab-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = document.getElementById(`tab-${teamKey}`);
@@ -1214,7 +1210,6 @@
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
-    /* 공통 시설 저장소 (탑승기록 rideLogs는 완전히 제거하여 전팀 공유 차단) */
     function syncFacilityStatusToCloud() {
       localStorage.setItem('bgl_away_list', JSON.stringify(sharedAwayList));
       localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
@@ -1227,7 +1222,6 @@
       });
     }
 
-    /* 검증된 원본 staff 경로 보존 + rideLogs만 독립 서브노드로 분리 저장 */
     function syncCurrentTeamStaffToCloud() {
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
@@ -1267,17 +1261,12 @@
 
           renderStaffAndStations();
           renderStatistics();
-
-          const memoInput = document.getElementById('notice-memo-input');
-          if (memoInput && document.activeElement !== memoInput) {
-            memoInput.value = sharedNoticeMemo;
-          }
+          renderNoticeMemoList();
         } else {
           syncFacilityStatusToCloud();
         }
       });
 
-      // 각 팀 전용 리스너 (근무자 staff + 팀별 rideLogs 독립 수신)
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
           const cloudStaff = snapshot.val();
@@ -1286,10 +1275,6 @@
             localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(cloudStaff));
             if (currentTeamKey === tKey) {
               render();
-            }
-          } else {
-            if (teamsData[tKey].staff && teamsData[tKey].staff.length > 0) {
-              rootDbRef.child(tKey).child('staff').set(teamsData[tKey].staff);
             }
           }
         });
@@ -1321,19 +1306,68 @@
       if (calLabel) calLabel.textContent = `${teamNum}팀`;
     }
 
-    function updateNoticeMemo(val) {
-      sharedNoticeMemo = val;
+    // =========================================================================
+    // ★ [특이사항 줄별 개별 삭제 및 렌더링]
+    // =========================================================================
+    function renderNoticeMemoList() {
+      const container = document.getElementById('notice-memo-list');
+      if (!container) return;
+
+      const lines = (sharedNoticeMemo || '').split('\n').filter(l => l.trim().length > 0);
+
+      if (lines.length === 0) {
+        container.innerHTML = `<span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>`;
+        return;
+      }
+
+      container.innerHTML = lines.map((line, idx) => `
+        <div class="flex items-center justify-between gap-1.5 px-2 py-1 bg-amber-50/70 border border-amber-200 rounded text-[11px] font-semibold text-slate-800 leading-tight">
+          <span class="break-all flex-1">${escapeHtml(line)}</span>
+          <button onclick="deleteNoticeMemoLine(${idx})" class="text-slate-400 hover:text-rose-600 font-bold px-1 transition" title="이 항목 삭제">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function addNoticeMemoDirect() {
+      const input = document.getElementById('notice-memo-direct-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const lineWithTime = `[${timeStr}] ${val}`;
+
+      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + lineWithTime;
+      } else {
+        sharedNoticeMemo = lineWithTime;
+      }
+
+      input.value = '';
       syncFacilityStatusToCloud();
-      showToast('특이사항이 실시간 저장되었습니다.');
+      renderNoticeMemoList();
+      showToast('특이사항 항목이 추가되었습니다.');
+    }
+
+    function deleteNoticeMemoLine(idx) {
+      const lines = (sharedNoticeMemo || '').split('\n').filter(l => l.trim().length > 0);
+      if (idx >= 0 && idx < lines.length) {
+        lines.splice(idx, 1);
+        sharedNoticeMemo = lines.join('\n');
+        syncFacilityStatusToCloud();
+        renderNoticeMemoList();
+        showToast('해당 특이사항 항목이 삭제되었습니다.');
+      }
     }
 
     function clearNoticeMemo() {
-      if (confirm("특이사항 내용을 모두 삭제하시겠습니까?")) {
+      if (confirm("특이사항 전체 내용을 모두 삭제하시겠습니까?")) {
         sharedNoticeMemo = '';
-        const memoInput = document.getElementById('notice-memo-input');
-        if (memoInput) memoInput.value = '';
         syncFacilityStatusToCloud();
-        showToast("특이사항 기록이 삭제되었습니다.");
+        renderNoticeMemoList();
+        showToast("특이사항 전체 기록이 삭제되었습니다.");
       }
     }
 
@@ -1350,9 +1384,20 @@
         syncCurrentTeamStaffToCloud();
       }
 
-      selectedStaffIdForMove = null;
+      selectedStaffIds.clear();
       render();
       showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
+    }
+
+    // =========================================================================
+    // ★ [탑승기록 개별 삭제 함수]
+    // =========================================================================
+    function deleteRideLogItem(logId) {
+      let currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
+      teamsData[currentTeamKey].rideLogs = currentRideLogs.filter(l => l.id !== logId);
+      syncCurrentTeamRideLogsToCloud();
+      renderRideLogs();
+      showToast('해당 탑승 기록이 삭제되었습니다.');
     }
 
     function clearCurrentTeamRideLogs() {
@@ -1361,7 +1406,7 @@
         teamsData[currentTeamKey].rideLogs = [];
         syncCurrentTeamRideLogsToCloud();
         renderRideLogs();
-        showToast(`${teamNum}팀 열차 탑승기록이 삭제되었습니다.`);
+        showToast(`${teamNum}팀 열차 탑승기록이 전체 삭제되었습니다.`);
       }
     }
 
@@ -1428,11 +1473,9 @@
           sharedNoticeMemo = autoMemoText;
         }
 
-        const memoInput = document.getElementById('notice-memo-input');
-        if (memoInput) memoInput.value = sharedNoticeMemo;
-
         renderStaffAndStations();
         renderStatistics();
+        renderNoticeMemoList();
         syncFacilityStatusToCloud();
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
@@ -1583,11 +1626,9 @@
         sharedNoticeMemo = recordText;
       }
 
-      const memoInput = document.getElementById('notice-memo-input');
-      if (memoInput) memoInput.value = sharedNoticeMemo;
-
       renderStaffAndStations();
       renderStatistics();
+      renderNoticeMemoList();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
@@ -1720,11 +1761,9 @@
         sharedNoticeMemo = recordText;
       }
 
-      const memoInput = document.getElementById('notice-memo-input');
-      if (memoInput) memoInput.value = sharedNoticeMemo;
-
       renderTrains25Grid();
       renderStatistics();
+      renderNoticeMemoList();
       syncTrainsToCloud();
       syncFacilityStatusToCloud();
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
@@ -1736,12 +1775,8 @@
       renderStaffAndStations();
       renderStatistics();
       renderRideLogs();
+      renderNoticeMemoList();
       populateLocationOptions();
-
-      const memoInput = document.getElementById('notice-memo-input');
-      if (memoInput && document.activeElement !== memoInput) {
-        memoInput.value = sharedNoticeMemo || '';
-      }
     }
 
     let trainClickTimer = null;
@@ -1864,11 +1899,9 @@
           sharedNoticeMemo = autoMemoText;
         }
 
-        const memoInput = document.getElementById('notice-memo-input');
-        if (memoInput) memoInput.value = sharedNoticeMemo;
-
         renderTrains25Grid();
         renderStatistics();
+        renderNoticeMemoList();
         syncTrainsToCloud();
         syncFacilityStatusToCloud();
         showToast(`${tr.name} 불량 해제 (특이사항 자동기록)`);
@@ -1877,22 +1910,22 @@
       }
     }
 
-    /* 네임택 빌더 */
+    /* 네임택 빌더 (다중 선택 스타일 및 클릭 핸들러 반영) */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
       el.draggable = true;
 
       const isOnTrain = staff.location.startsWith('train-');
-      const isSelected = (selectedStaffIdForMove === staff.id);
+      const isSelected = selectedStaffIds.has(staff.id);
 
       if (isOnTrain) {
-        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
         el.innerHTML = `
           <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
         `;
       } else {
-        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'mobile-selected' : ''}`;
+        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
         
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
@@ -1920,8 +1953,27 @@
         openStaffActionMenu(staff);
       };
 
-      el.onclick = () => {
-        selectedStaffIdForMove = staff.id;
+      // 좌클릭: 일반 클릭 시 단일 선택, Ctrl/Cmd 누른 채 클릭 시 다중 선택 토글
+      el.onclick = (e) => {
+        e.stopPropagation();
+        if (e.ctrlKey || e.metaKey) {
+          if (selectedStaffIds.has(staff.id)) {
+            selectedStaffIds.delete(staff.id);
+          } else {
+            selectedStaffIds.add(staff.id);
+          }
+        } else {
+          if (selectedStaffIds.has(staff.id) && selectedStaffIds.size === 1) {
+            selectedStaffIds.clear();
+          } else {
+            selectedStaffIds.clear();
+            selectedStaffIds.add(staff.id);
+          }
+        }
+        renderStaffAndStations();
+        if (selectedStaffIds.size > 0) {
+          showToast(`${selectedStaffIds.size}명 선택됨 (Ctrl+C 복사 가능)`);
+        }
       };
 
       return el;
@@ -1943,7 +1995,7 @@
             <button id="act-edit" class="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
               <i class="fa-solid fa-pen"></i> 수정
             </button>
-            <button id="act-delete" class="px-2 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
+            <button id="act-delete" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
               <i class="fa-solid fa-trash"></i> 삭제
             </button>
           </div>
@@ -1954,7 +2006,9 @@
 
       modal.querySelector('#act-cancel').onclick = () => modal.remove();
       modal.querySelector('#act-copy').onclick = () => {
-        copyStaffToClipboard(staff);
+        selectedStaffIds.clear();
+        selectedStaffIds.add(staff.id);
+        copySelectedStaffsToClipboard();
         modal.remove();
       };
       modal.querySelector('#act-edit').onclick = () => {
@@ -1967,54 +2021,78 @@
       };
     }
 
-    function copyStaffToClipboard(staff) {
-      staffClipboard = JSON.parse(JSON.stringify(staff));
-      showToast(`'${staff.name}' 근무자가 복사되었습니다. (Ctrl+V로 다른 팀에 붙여넣기 가능)`);
+    // =========================================================================
+    // ★ [다중 복사 / 붙여넣기 로직 (Ctrl+C, Ctrl+V)]
+    // =========================================================================
+    function copySelectedStaffsToClipboard() {
+      if (selectedStaffIds.size === 0) return;
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      staffClipboardArray = currentStaffList
+        .filter(s => selectedStaffIds.has(s.id))
+        .map(s => JSON.parse(JSON.stringify(s)));
+
+      showToast(`${staffClipboardArray.length}명 복사 완료! (다른 팀 탭에서 Ctrl+V로 붙여넣기 가능)`);
     }
 
-    function pasteStaffFromClipboard() {
-      if (!staffClipboard) {
-        showToast('클립보드에 복사된 근무자가 없습니다. 먼저 복사(Ctrl+C)하세요.');
+    function pasteStaffsFromClipboard() {
+      if (!staffClipboardArray || staffClipboardArray.length === 0) {
+        showToast('클립보드에 복사된 근무자가 없습니다. 먼저 선택 후 Ctrl+C를 누르세요.');
         return;
       }
 
-      const currentStaffList = teamsData[currentTeamKey].staff;
-      const newStaff = JSON.parse(JSON.stringify(staffClipboard));
-      
-      newStaff.id = 'st-' + Date.now();
-      newStaff.location = '미배치';
-      newStaff.isSupport = true;
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      let pastedCount = 0;
 
-      const existing = currentStaffList.find(s => s.name === newStaff.name);
-      if (existing) {
-        if (!confirm(`현재 [${currentTeamKey.replace('team','') }팀]에 이미 '${newStaff.name}' 근무자가 있습니다. 그래도 추가 복사하시겠습니까?`)) {
-          return;
+      staffClipboardArray.forEach(sourceStaff => {
+        const newStaff = JSON.parse(JSON.stringify(sourceStaff));
+        newStaff.id = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+        newStaff.location = '미배치';
+        newStaff.isSupport = true; // 복사된 인원은 지원자로 등록
+
+        // 동일 팀에 이미 같은 이름이 있으면 중복 등록 스킵 또는 확인
+        const existing = currentStaffList.find(s => s.name === newStaff.name);
+        if (!existing) {
+          currentStaffList.push(newStaff);
+          pastedCount++;
         }
-      }
+      });
 
-      currentStaffList.push(newStaff);
       render();
       syncCurrentTeamStaffToCloud();
-      showToast(`'${newStaff.name}' 근무자가 현재 팀의 [미배치] 칸으로 복사 완료되었습니다.`);
+      showToast(`${pastedCount}명의 근무자가 현재 팀의 [미배치] 칸으로 복사 완료되었습니다.`);
     }
 
+    // 전역 단축키 이벤트
     window.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (selectedStaffIdForMove) {
-          const staff = teamsData[currentTeamKey].staff.find(s => s.id === selectedStaffIdForMove);
-          if (staff) {
-            e.preventDefault();
-            copyStaffToClipboard(staff);
-          }
+        if (selectedStaffIds.size > 0) {
+          e.preventDefault();
+          copySelectedStaffsToClipboard();
         }
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (staffClipboard) {
+        if (staffClipboardArray.length > 0) {
           e.preventDefault();
-          pasteStaffFromClipboard();
+          pasteStaffsFromClipboard();
+        }
+      }
+
+      // ESC 누르면 전체 선택 해제
+      if (e.key === 'Escape') {
+        selectedStaffIds.clear();
+        renderStaffAndStations();
+      }
+    });
+
+    // 바탕화면 빈 공간 클릭 시 선택 해제
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn')) {
+        if (selectedStaffIds.size > 0) {
+          selectedStaffIds.clear();
+          renderStaffAndStations();
         }
       }
     });
@@ -2024,6 +2102,7 @@
         handleRideLogging(staff.name, staff.location, null);
       }
       teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
+      selectedStaffIds.delete(staff.id);
       render();
       syncCurrentTeamStaffToCloud();
       showToast(`${staff.name} 근무자가 삭제되었습니다.`);
@@ -2111,7 +2190,6 @@
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
-      // 역사 카드 오버레이 설정
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2154,7 +2232,6 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      // 모든 카드(열차 train-X, 역사, 미배치)에 네임택 배치
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
@@ -2166,7 +2243,6 @@
         }
       });
 
-      // 각 카드의 인원수별 정렬 및 빈 역사 '무인', 열차 빈자리 '-' 표시
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
@@ -2176,7 +2252,6 @@
 
         const staffList = currentStaff.filter(s => s.location === zoneId);
 
-        // 상단 열차 카드 빈자리 처리
         if (zoneId.startsWith('train-')) {
           if (staffList.length === 0) {
             dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
@@ -2184,7 +2259,6 @@
           return;
         }
 
-        // 일반 역사 카드 정렬
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
         if (staffList.length === 1) {
           dropzone.classList.add('count-1');
@@ -2196,7 +2270,6 @@
           dropzone.classList.add('count-many');
         }
 
-        // 빈 역사 무인 표시
         if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
@@ -2206,8 +2279,6 @@
     }
 
     let draggedId = null;
-    let lastTapTime = 0;
-    let lastTapTargetId = null;
 
     function attachEvents() {
       const nametags = document.querySelectorAll('.nametag');
@@ -2276,53 +2347,6 @@
 
           reorderStaff(draggedId, tag.id, targetZone, isBefore);
           draggedId = null;
-        });
-
-        tag.addEventListener('touchend', (e) => {
-          const currentTime = Date.now();
-          const tapLength = currentTime - lastTapTime;
-
-          if (selectedStaffIdForMove && selectedStaffIdForMove !== tag.id) {
-            e.preventDefault();
-            e.stopPropagation();
-            const sourceId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            swapStaffPositions(sourceId, tag.id);
-            return;
-          }
-
-          if (lastTapTargetId === tag.id && tapLength < 350 && tapLength > 0) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (selectedStaffIdForMove === tag.id) {
-              selectedStaffIdForMove = null;
-              showToast('선택이 해제되었습니다.');
-            } else {
-              selectedStaffIdForMove = tag.id;
-              const staff = teamsData[currentTeamKey].staff.find(s => s.id === tag.id);
-              showToast(`'${staff ? staff.name : ''}' 선택됨. 이동할 칸 또는 맞바꿀 네임택을 터치하세요.`);
-            }
-            render();
-          }
-
-          lastTapTime = currentTime;
-          lastTapTargetId = tag.id;
-        });
-      });
-
-      stationCards.forEach(card => {
-        card.addEventListener('touchend', (e) => {
-          if (!selectedStaffIdForMove) return;
-          if (e.target.closest('.nametag') || e.target.closest('.station-header')) return;
-
-          const newZone = card.getAttribute('data-zone-id');
-          if (newZone) {
-            e.preventDefault();
-            const staffId = selectedStaffIdForMove;
-            selectedStaffIdForMove = null;
-            moveStaffToEnd(staffId, newZone);
-          }
         });
       });
 
@@ -2396,32 +2420,7 @@
       showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
     }
 
-    function swapStaffPositions(idA, idB) {
-      const staffList = teamsData[currentTeamKey].staff;
-      const idxA = staffList.findIndex(s => s.id === idA);
-      const idxB = staffList.findIndex(s => s.id === idB);
-      if (idxA === -1 || idxB === -1) return;
-
-      const locA = staffList[idxA].location;
-      const locB = staffList[idxB].location;
-
-      if (locA !== locB) {
-        handleRideLogging(staffList[idxA].name, locA, locB);
-        handleRideLogging(staffList[idxB].name, locB, locA);
-      }
-
-      staffList[idxA].location = locB;
-      staffList[idxB].location = locA;
-
-      const tempItem = staffList[idxA];
-      staffList[idxA] = staffList[idxB];
-      staffList[idxB] = tempItem;
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast('근무자 위치 및 순서가 맞바뀌었습니다.');
-    }
-
+    /* 열차 탑승/하차 로깅 (탑승 시작 시간 timestamp 기록) */
     function handleRideLogging(staffName, prevLoc, newLoc) {
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -2438,7 +2437,8 @@
             staffName,
             trainNum,
             startTime: '-',
-            endTime: timeStr
+            endTime: timeStr,
+            startTimestamp: null
           });
         }
       }
@@ -2450,7 +2450,8 @@
           staffName,
           trainNum,
           startTime: timeStr,
-          endTime: null
+          endTime: null,
+          startTimestamp: now.getTime() // 실시간 경과 시간 계산용
         });
       }
 
@@ -2462,6 +2463,27 @@
 
       syncCurrentTeamRideLogsToCloud();
       renderRideLogs();
+    }
+
+    // =========================================================================
+    // ★ [실시간 탑승 경과 시간 계산 및 개별 삭제 버튼 렌더링]
+    // =========================================================================
+    function getElapsedDurationText(startTimestamp, startTimeStr) {
+      let startMs = startTimestamp;
+      if (!startMs && startTimeStr && startTimeStr.includes(':')) {
+        const [h, m] = startTimeStr.split(':').map(v => parseInt(v, 10));
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        startMs = d.getTime();
+      }
+      if (!startMs) return '탑승중';
+
+      const diffMinutes = Math.max(0, Math.floor((Date.now() - startMs) / 60000));
+      if (diffMinutes < 1) return '탑승중 (방금)';
+      if (diffMinutes < 60) return `탑승중 (${diffMinutes}분째)`;
+      const hours = Math.floor(diffMinutes / 60);
+      const mins = diffMinutes % 60;
+      return `탑승중 (${hours}시간 ${mins}분째)`;
     }
 
     function renderRideLogs() {
@@ -2477,20 +2499,26 @@
 
       container.innerHTML = currentRideLogs.map(l => {
         const isRiding = !l.endTime;
+        const elapsedText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : l.endTime;
+
         return `
-          <div class="grid grid-cols-[46px_56px_1fr] items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold border ${
+          <div class="grid grid-cols-[44px_50px_1fr_18px] items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold border ${
             isRiding 
               ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
               : 'bg-slate-50 border-slate-200 text-slate-700'
           }">
             <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.2 rounded">${l.trainNum}편성</span>
             <span class="truncate font-black text-slate-900">${l.staffName}</span>
-            <div class="font-mono text-[10px] text-right truncate">
+            <div class="font-mono text-[9.5px] text-right truncate">
               <span class="text-indigo-700">${l.startTime}</span> ~ 
               <span class="${isRiding ? 'text-emerald-600 font-extrabold animate-pulse' : 'text-slate-500'}">
-                ${isRiding ? '탑승중' : l.endTime}
+                ${elapsedText}
               </span>
             </div>
+            <!-- 개별 삭제 버튼 -->
+            <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition" title="이 기록 삭제">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
         `;
       }).join('');
@@ -2521,7 +2549,7 @@
       const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
-      const trainStaff = currentStaff.filter(s => s.location && s.location.startsWith('train-'));
+      const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
         trainBadge.textContent = `${trainStaff.length}명`;
@@ -2610,14 +2638,14 @@
     }
 
     // =========================================================================
-    // ★★★ [구글 시트 연동 자동배치 & 타 팀 지원자 복사/만료 소각 엔진] ★★★
+    // ★ [구글 시트 연동 자동배치 캘린더 엔진]
     // =========================================================================
     const SHIFT_PATTERN = ['주', '야', '비', '휴'];
-    const BASE_DATE = new Date(2026, 7, 1, 12, 0, 0); // 2026-08-01 12:00 KST
+    const BASE_DATE = new Date(2026, 7, 1, 12, 0, 0);
     const TEAM_BASE_OFFSET = { "1": 1, "2": 2, "3": 3, "4": 0 };
     
     let calCurrentYear = 2026;
-    let calCurrentMonth = 9; // 10월
+    let calCurrentMonth = 9;
     let calSelectedDateStr = "2026-10-26";
 
     let SHEET_WEB_APP_URL = localStorage.getItem('bgl_sheet_web_app_url') || "";
@@ -2774,7 +2802,6 @@
       }
     }
 
-    /* 타 팀 지원자 검색 및 복사 헬퍼 함수 */
     function findStaffFromOtherTeams(targetName) {
       const allTeamKeys = ['team1', 'team2', 'team3', 'team4'];
       for (const tKey of allTeamKeys) {
@@ -2803,20 +2830,18 @@
       };
     }
 
-    /* 시트 데이터 배치 + 지원자 자동 복사 및 만료 지원자 자동 소각 로직 */
     function applyAutoArrangementWithSupportLogic(data) {
       const stationMap = data.stationMap || {};
       const leaveList = data.leaveList || [];
       let currentStaffList = teamsData[currentTeamKey].staff || [];
 
-      // 이번 시트 전체 명단 취합 (역사 근무자 + 휴무자)
       const allDutyNamesInSheet = new Set();
       Object.values(stationMap).forEach(list => {
         if (Array.isArray(list)) list.forEach(name => allDutyNamesInSheet.add(name));
       });
       leaveList.forEach(name => allDutyNamesInSheet.add(name));
 
-      // [1단계: 이전 지원자 자동 소각]
+      // 지원자 만료 시 자동 소각
       currentStaffList = currentStaffList.filter(s => {
         if (s.isSupport && !allDutyNamesInSheet.has(s.name)) {
           return false;
@@ -2824,10 +2849,10 @@
         return true;
       });
 
-      // [2단계: 모든 인원 일단 미배치로 원복]
+      // 전체 인원 미배치로 원복
       currentStaffList.forEach(s => s.location = '미배치');
 
-      // [3단계: 타 팀 지원자 자동 복사해오기]
+      // 타 팀 지원자 자동 복사
       const newlyAddedSupports = [];
       allDutyNamesInSheet.forEach(name => {
         let exists = currentStaffList.find(s => s.name === name);
@@ -2838,7 +2863,7 @@
         }
       });
 
-      // [4단계: 역사별 배치]
+      // 역사별 배치 (사전점검 제외 방어 로직 포함)
       const stationCards = document.querySelectorAll('.station-card');
       const validZoneIds = Array.from(stationCards)
         .map(c => c.getAttribute('data-zone-id'))
@@ -2848,13 +2873,10 @@
       for (const [stName, names] of Object.entries(stationMap)) {
         let matchedZone = null;
 
-        // 차량기지 예외 처리
         if (stName === '차량기지' || stName === '기지' || stName === '기지입환') {
           matchedZone = '기지입환';
         } else {
-          // 🎯 [핵심 보정]: 사전점검 카드는 절대 매칭되지 않도록 방어하고 순수 본선 역사([96xx]) 우선 매칭!
           matchedZone = validZoneIds.find(z => !z.includes('사전점검') && z.startsWith(stName));
-
           if (!matchedZone) {
             matchedZone = validZoneIds.find(z => !z.includes('사전점검') && (z.includes(stName) || stName.includes(z.split(' ')[0])));
           }
@@ -2871,7 +2893,7 @@
         }
       }
 
-      // [5단계: 휴무자 배치]
+      // 휴무자 배치
       let placedLeaveCount = 0;
       if (Array.isArray(leaveList)) {
         leaveList.forEach(name => {
@@ -2883,13 +2905,22 @@
         });
       }
 
-      // 최종 갱신
       teamsData[currentTeamKey].staff = currentStaffList;
+      selectedStaffIds.clear();
       render();
       syncCurrentTeamStaffToCloud();
 
       let supportMsg = newlyAddedSupports.length > 0 ? `\n(타 팀 지원자 복사: ${newlyAddedSupports.join(', ')})` : '';
       showToast(`자동배치 완료! (근무 ${placedDutyCount}명, 휴무 ${placedLeaveCount}명)${supportMsg}`);
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     let toastTimeout = null;
@@ -2906,12 +2937,14 @@
       }, 2500);
     }
 
+    // 1초마다 시계 및 실시간 탑승 경과 시간 리렌더링
     setInterval(() => {
       const now = new Date();
       const clock = document.getElementById('live-clock');
       if (clock) {
         clock.textContent = now.toTimeString().split(' ')[0];
       }
+      renderRideLogs();
     }, 1000);
 
     let currentZoom = 1.0;
