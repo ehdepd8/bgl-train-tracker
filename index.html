@@ -740,8 +740,8 @@
         <!-- 4행: 휴무자 및 본사 분할 배치 -->
         <div class="col-span-9 grid grid-cols-12 gap-1.5 h-full min-h-0">
           
-          <!-- 좌측: 휴무자 (최대 8명 정렬) -->
-          <div class="col-span-9 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="휴무자">
+          <!-- 좌측: 휴무자 (8칸 차지로 살짝 축소, 8명은 가로 한 줄에 충분히 유지) -->
+          <div class="col-span-8 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="휴무자">
             <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0">
               <div class="flex items-center gap-1.5 font-black text-slate-800">
                 <i class="fa-solid fa-bed text-amber-500"></i>
@@ -753,8 +753,8 @@
             </div>
           </div>
 
-          <!-- 우측 신설: 본사 (최대 3명 정렬) -->
-          <div class="col-span-3 station-card bg-white border border-purple-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="본사">
+          <!-- 우측 신설: 본사 (4칸 차지로 확장, 네임택 3개 가로 한 줄 정렬) -->
+          <div class="col-span-4 station-card bg-white border border-purple-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="본사">
             <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0">
               <div class="flex items-center gap-1.5 font-black text-purple-900">
                 <i class="fa-solid fa-building text-purple-600"></i>
