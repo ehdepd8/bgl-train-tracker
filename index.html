@@ -1965,25 +1965,31 @@
           <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
         `;
       } else {
-        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
+        el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-between items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
         
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
-          ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
-          : '';
+          ? `<span class="text-sm select-none leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
+          : `<span class="w-3"></span>`;
 
         const supportBadge = staff.isSupport 
-          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
-          : '';
-        
+          ? `<span class="text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none leading-tight">지원</span>` 
+          : `<span class="w-3"></span>`;
+
         el.innerHTML = `
-          ${supportBadge}
-          ${smile}
-          <div class="staff-name-text font-black text-[18px] leading-tight tracking-tight text-slate-900 w-full text-center">
-            ${staff.name}
+          <!-- 1. 상단 뱃지 전용 고정 라인 (절대 텍스트와 안 겹침) -->
+          <div class="w-full flex items-center justify-between px-0.5 h-3.5 pointer-events-none select-none">
+            ${supportBadge}
+            ${smile}
           </div>
-          <div class="staff-phone-text text-[13px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
-            ${staff.phone}
+          <!-- 2. 중앙 이름 및 전화번호 라인 -->
+          <div class="flex-1 flex flex-col justify-center items-center w-full leading-none -mt-1">
+            <div class="staff-name-text font-black text-[17px] leading-tight tracking-tight text-slate-900 w-full text-center truncate">
+              ${staff.name}
+            </div>
+            <div class="staff-phone-text text-[12px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center truncate">
+              ${staff.phone}
+            </div>
           </div>
         `;
       }
