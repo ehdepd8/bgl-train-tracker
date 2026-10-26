@@ -56,7 +56,7 @@
 
     .matrix-layout-grid {
       display: grid;
-      grid-template-columns: 265px repeat(8, minmax(0, 1fr)) 285px;
+      grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 285px;
       grid-template-rows: repeat(3, minmax(170px, 1fr)) 95px;
       gap: 5px;
     }
@@ -618,8 +618,8 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- [1열 3행]: 특이사항 (줄별 개별 삭제 지원) -->
-        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col shadow-xs">
+        <!-- [1열 3행]: 특이사항 (줄별 개별 삭제 지원 및 입력창 하단 밀착) -->
+        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col justify-between shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
@@ -629,15 +629,15 @@
             </button>
           </div>
           
-          <div id="notice-memo-list" class="flex-1 p-1.5 overflow-y-auto max-h-[110px] space-y-1 bg-white custom-scroll">
+          <div id="notice-memo-list" class="flex-1 p-1.5 overflow-y-auto space-y-1 bg-white custom-scroll">
             <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
           </div>
 
-          <div class="p-1 border-t border-amber-200 bg-amber-50/50 flex gap-1">
+          <div class="p-1 border-t border-amber-200 bg-amber-50/60 flex gap-1 shrink-0">
             <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
-                   class="flex-1 px-2 py-0.5 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
+                   class="flex-1 px-2 py-1 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
                    onkeydown="if(event.key==='Enter') addNoticeMemoDirect()">
-            <button onclick="addNoticeMemoDirect()" class="px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded transition shrink-0">
+            <button onclick="addNoticeMemoDirect()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded transition shrink-0">
               추가
             </button>
           </div>
@@ -1328,6 +1328,9 @@
           </button>
         </div>
       `).join('');
+
+      // 새 항목 추가 시 맨 아래로 자동 스크롤
+      container.scrollTop = container.scrollHeight;
     }
 
     function addNoticeMemoDirect() {
@@ -2468,6 +2471,7 @@
     // =========================================================================
     // ★ [실시간 탑승 경과 시간 계산 및 개별 삭제 버튼 렌더링]
     // =========================================================================
+    // 1. 무조건 '분' 단위로만 계산
     function getElapsedDurationText(startTimestamp, startTimeStr) {
       let startMs = startTimestamp;
       if (!startMs && startTimeStr && startTimeStr.includes(':')) {
@@ -2480,11 +2484,10 @@
 
       const diffMinutes = Math.max(0, Math.floor((Date.now() - startMs) / 60000));
       if (diffMinutes < 1) return '방금';
-      if (diffMinutes < 60) return `${diffMinutes}분`;
-      const hours = Math.floor(diffMinutes / 60);
-      const mins = diffMinutes % 60;
-      return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
+      return `${diffMinutes}분`; // 60분 넘어도 75분, 120분 등으로 표기
     }
+
+    // 2. 탑승기록 렌더링 + 최신 기록 스크롤 자동 내림
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
@@ -2506,13 +2509,8 @@
               ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
               : 'bg-slate-50 border-slate-200 text-slate-700'
           }">
-            <!-- 1. 편성 번호 -->
             <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.5 rounded leading-tight shrink-0">${l.trainNum}편성</span>
-            
-            <!-- 2. 근무자 성명 -->
             <span class="truncate font-black text-slate-900 leading-normal shrink-0">${l.staffName}</span>
-            
-            <!-- 3. [중간] 경과시간 뱃지 (탑승 중일 때만 표시) -->
             <div class="flex items-center justify-start shrink-0">
               ${isRiding && durationText ? `
                 <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full leading-tight animate-pulse">
@@ -2520,22 +2518,21 @@
                 </span>
               ` : ''}
             </div>
-
-            <!-- 4. [우측] 탑승 시간 일관 정렬 -->
             <div class="font-mono text-[10px] text-right truncate leading-normal">
               <span class="text-indigo-700">${l.startTime}</span> ~ 
               <span class="${isRiding ? 'text-emerald-600 font-extrabold' : 'text-slate-500'}">
                 ${isRiding ? '탑승중' : l.endTime}
               </span>
             </div>
-
-            <!-- 5. 개별 삭제 버튼 -->
             <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition flex items-center justify-center" title="이 기록 삭제">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         `;
       }).join('');
+
+      // 최신 기록이 보이도록 스크롤 맨 아래로 이동
+      container.scrollTop = container.scrollHeight;
     }
 
     function renderStatistics() {
