@@ -1902,34 +1902,40 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    function handleTrainDoubleClick(trainId) {
-      const tr = sharedTrains.find(t => t.id === trainId);
-      if (!tr) return;
+    function handleTrainDoubleClick(trainNum) {
+      const train = trainStatusList.find(t => t.num === trainNum);
+      if (!train) return;
 
-      if (tr.status === 'issue') {
-        tr.status = tr.prevStatus || 'depot';
-        tr.issueDetail = '';
+      // 1. 이미 불량 상태인 경우 -> 불량 해제 (정상 복구)
+      if (train.hasIssue || train.status === 'issue') {
+        train.hasIssue = false;
+        train.issueDetail = '';
+        train.issueType = '';
+        // 상태값 원복 (기존에 본선 운행 중이었으면 'main', 기지 대기였으면 'depot')
+        train.status = train.prevStatus || 'main';
 
+        // 특이사항에 복구 기록 자동 등록 (최신순 상단)
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const autoMemoText = `[${timeStr} ${tr.name} 불량 조치완료/복구]`;
-
-        // 열차 불량 등록/해제 시에도 최신이 맨 위로 가도록 동일하게 수정:
+        const recordText = `[${timeStr}] ${trainNum}편성 불량 조치완료/복구`;
+        
         if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
           sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
         } else {
           sharedNoticeMemo = recordText;
         }
 
-        renderTrains25Grid();
-        renderStatistics();
-        renderNoticeMemoList();
-        syncTrainsToCloud();
+        // 클라우드 동기화 및 UI 다시 그리기 (★색상 원복의 핵심★)
+        syncTrainStatusToCloud();
         syncFacilityStatusToCloud();
-        showToast(`${tr.name} 불량 해제 (특이사항 자동기록)`);
-      } else {
-        openTrainIssueModal(trainId);
+        renderTrainStatusBar();      // 상단 열차 바 색상 즉시 재계산 및 갱신
+        renderNoticeMemoList();      // 특이사항 갱신
+        showToast(`${trainNum}편성 불량이 해제되어 정상 복구되었습니다.`);
+        return;
       }
+
+      // 2. 정상 상태인 경우 -> 불량 지정 팝업 띄우기 (기존 로직 유지)
+      openTrainIssueModal(trainNum);
     }
 
     /* 네임택 빌더 (다중 선택 스타일 및 클릭 핸들러 반영) */
