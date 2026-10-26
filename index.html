@@ -196,7 +196,8 @@
       <div class="text-[10px] text-slate-400 text-center py-0.5 bg-slate-100/70 border-b border-slate-200 font-semibold select-none">
         대기 네임택 보관 (좌우 2열)
       </div>
-      <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-slate-100/60"></div>
+      <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-slate-100/60">
+      </div>
     </div>
 
     <!-- [1열 2행]: 탑승기록 -->
@@ -295,9 +296,11 @@
           전체삭제
         </button>
       </div>
+      
       <div id="notice-memo-list" class="custom-scroll flex-1 overflow-y-auto p-1.5 space-y-1 bg-white">
         <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
       </div>
+
       <div class="p-1 border-t border-amber-200 bg-amber-50/60 flex gap-1 shrink-0">
         <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
                class="flex-1 px-2 py-1 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
@@ -386,7 +389,7 @@
       <div class="station-dropzone station-slot-height bg-white"></div>
     </div>
 
-    <!-- 4행: 휴무자(확장) 및 본사(428px) -->
+    <!-- 4행: 휴무자 및 본사 -->
     <div class="col-span-9 flex gap-1 h-full min-h-0">
       <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
         <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
@@ -396,7 +399,8 @@
           </div>
           <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
         </div>
-        <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-slate-50/60 rounded border border-slate-200 flex-1"></div>
+        <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-slate-50/60 rounded border border-slate-200 flex-1">
+        </div>
       </div>
 
       <div class="w-[428px] station-card bg-white border border-purple-300 rounded-md p-1 flex flex-col shadow-xs shrink-0" data-zone-id="본사">
@@ -407,7 +411,8 @@
           </div>
           <span id="badge-hq-count" class="font-black text-xs px-2 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">0명</span>
         </div>
-        <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-purple-50/40 rounded border border-purple-200 flex-1"></div>
+        <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-purple-50/40 rounded border border-purple-200 flex-1">
+        </div>
       </div>
     </div>
 
