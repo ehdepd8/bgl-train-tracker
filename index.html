@@ -149,13 +149,16 @@
       overflow-y: auto !important;
     }
 
-    .unassigned-double-dropzone .nametag {
-      width: calc(50% - 4px) !important;
-      max-width: none !important;
-      flex-shrink: 0 !important;
-      opacity: 0.65 !important;
-      filter: saturate(0.65) !important;
-      box-shadow: none !important;
+    .unassigned-double-dropzone {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+      align-content: flex-start !important;
+      justify-content: space-between !important; /* 2열 좌우 균형 배치 */
+      gap: 6px !important;
+      padding: 6px !important;
+      overflow-y: auto !important;
     }
     .unassigned-double-dropzone .nametag:hover {
       opacity: 0.95 !important;
