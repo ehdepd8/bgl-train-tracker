@@ -442,7 +442,7 @@
             </span>
             <span id="badge-train-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
           </div>
-          <div id="train-riders-list" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
+          <div id="train-riders-list" class="custom-scroll h-[135px] overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
             <span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>
           </div>
         </div>
@@ -542,7 +542,7 @@
             </span>
             <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록 전체 비우기">전체삭제</button>
           </div>
-          <div id="train-ride-logs" class="custom-scroll flex-1 min-h-0 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
+          <div id="train-ride-logs" class="custom-scroll h-[135px] overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
             <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
           </div>
         </div>
@@ -631,7 +631,7 @@
             </button>
           </div>
           
-          <div id="notice-memo-list" class="flex-1 min-h-0 overflow-y-auto p-1.5 space-y-1 bg-white custom-scroll">
+          <div id="notice-memo-list" class="custom-scroll h-[105px] overflow-y-auto p-1.5 space-y-1 bg-white">
             <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
           </div>
 
@@ -1474,7 +1474,7 @@
         const autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
 
         if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-          sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
+          sharedNoticeMemo = autoMemoText + '\n' + sharedNoticeMemo.trim();
         } else {
           sharedNoticeMemo = autoMemoText;
         }
@@ -1627,10 +1627,10 @@
       const recordText = `[${timeStr} ${cleanStationName}역 불량: ${detailText || '점검중'}]`;
 
       if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + recordText;
-      } else {
-        sharedNoticeMemo = recordText;
-      }
+          sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
+        } else {
+          sharedNoticeMemo = recordText;
+        }
 
       renderStaffAndStations();
       renderStatistics();
@@ -1761,11 +1761,12 @@
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const recordText = `[${timeStr} ${tr.name} 불량: ${detailText}]`;
 
-      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + recordText;
-      } else {
-        sharedNoticeMemo = recordText;
-      }
+      // 열차 불량 등록/해제 시에도 최신이 맨 위로 가도록 동일하게 수정:
+        if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
+          sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
+        } else {
+          sharedNoticeMemo = recordText;
+        }
 
       renderTrains25Grid();
       renderStatistics();
@@ -1899,10 +1900,11 @@
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         const autoMemoText = `[${timeStr} ${tr.name} 불량 조치완료/복구]`;
 
+        // 열차 불량 등록/해제 시에도 최신이 맨 위로 가도록 동일하게 수정:
         if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-          sharedNoticeMemo = sharedNoticeMemo.trim() + '\n' + autoMemoText;
+          sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
         } else {
-          sharedNoticeMemo = autoMemoText;
+          sharedNoticeMemo = recordText;
         }
 
         renderTrains25Grid();
