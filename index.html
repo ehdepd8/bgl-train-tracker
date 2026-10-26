@@ -2476,16 +2476,15 @@
         d.setHours(h, m, 0, 0);
         startMs = d.getTime();
       }
-      if (!startMs) return '탑승중';
+      if (!startMs) return '';
 
       const diffMinutes = Math.max(0, Math.floor((Date.now() - startMs) / 60000));
-      if (diffMinutes < 1) return '탑승중 (방금)';
-      if (diffMinutes < 60) return `탑승중 (${diffMinutes}분째)`;
+      if (diffMinutes < 1) return '방금';
+      if (diffMinutes < 60) return `${diffMinutes}분`;
       const hours = Math.floor(diffMinutes / 60);
       const mins = diffMinutes % 60;
-      return `탑승중 (${hours}시간 ${mins}분째)`;
+      return mins > 0 ? `${hours}시간 ${mins}분` : `${hours}시간`;
     }
-
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
@@ -2499,23 +2498,38 @@
 
       container.innerHTML = currentRideLogs.map(l => {
         const isRiding = !l.endTime;
-        const elapsedText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : l.endTime;
+        const durationText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : '';
 
         return `
-          <div class="grid grid-cols-[44px_48px_1fr_16px] items-center gap-1 px-1.5 py-1 rounded text-[11px] font-bold leading-normal border ${
+          <div class="grid grid-cols-[44px_48px_auto_1fr_16px] items-center gap-1.5 px-1.5 py-1 rounded text-[11px] font-bold leading-normal border ${
             isRiding 
               ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
               : 'bg-slate-50 border-slate-200 text-slate-700'
           }">
-            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.5 rounded leading-tight">${l.trainNum}편성</span>
-            <span class="truncate font-black text-slate-900 leading-normal">${l.staffName}</span>
-            <div class="font-mono text-[9px] text-right truncate leading-normal">
+            <!-- 1. 편성 번호 -->
+            <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.5 rounded leading-tight shrink-0">${l.trainNum}편성</span>
+            
+            <!-- 2. 근무자 성명 -->
+            <span class="truncate font-black text-slate-900 leading-normal shrink-0">${l.staffName}</span>
+            
+            <!-- 3. [중간] 경과시간 뱃지 (탑승 중일 때만 표시) -->
+            <div class="flex items-center justify-start shrink-0">
+              ${isRiding && durationText ? `
+                <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full leading-tight animate-pulse">
+                  ${durationText}
+                </span>
+              ` : ''}
+            </div>
+
+            <!-- 4. [우측] 탑승 시간 일관 정렬 -->
+            <div class="font-mono text-[10px] text-right truncate leading-normal">
               <span class="text-indigo-700">${l.startTime}</span> ~ 
-              <span class="${isRiding ? 'text-emerald-600 font-extrabold animate-pulse' : 'text-slate-500'}">
-                ${elapsedText}
+              <span class="${isRiding ? 'text-emerald-600 font-extrabold' : 'text-slate-500'}">
+                ${isRiding ? '탑승중' : l.endTime}
               </span>
             </div>
-            <!-- 개별 삭제 버튼 -->
+
+            <!-- 5. 개별 삭제 버튼 -->
             <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition flex items-center justify-center" title="이 기록 삭제">
               <i class="fa-solid fa-xmark"></i>
             </button>
