@@ -2560,7 +2560,10 @@
       }).join('');
 
       // 최신 내역(최상단)이 바로 보이도록 스크롤 위치 고정
-      container.scrollTop = 0;
+      // 사용자가 스크롤을 내린 상태(과거 기록 확인 중)면 스크롤 위치 유지, 맨 위(15px 이내)에 있을 때만 상단 고정
+      if (container.scrollTop < 15) {
+        container.scrollTop = 0;
+      }
     }
 
     function renderStatistics() {
