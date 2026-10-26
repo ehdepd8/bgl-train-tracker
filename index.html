@@ -1902,40 +1902,38 @@
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
     }
 
-    function handleTrainDoubleClick(trainNum) {
-      const train = trainStatusList.find(t => t.num === trainNum);
+    function handleTrainDoubleClick(trainId) {
+      const train = sharedTrains.find(t => t.id === trainId);
       if (!train) return;
 
-      // 1. 이미 불량 상태인 경우 -> 불량 해제 (정상 복구)
-      if (train.hasIssue || train.status === 'issue') {
-        train.hasIssue = false;
+      // 1. 이미 불량 상태인 경우 -> 불량 해제 (본선 또는 기지로 즉시 복귀)
+      if (train.status === 'issue') {
+        train.status = train.prevStatus || 'active';
         train.issueDetail = '';
-        train.issueType = '';
-        // 상태값 원복 (기존에 본선 운행 중이었으면 'main', 기지 대기였으면 'depot')
-        train.status = train.prevStatus || 'main';
 
-        // 특이사항에 복구 기록 자동 등록 (최신순 상단)
+        // 특이사항에 복구 내역 최신순(맨 위)으로 자동 등록
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const recordText = `[${timeStr}] ${trainNum}편성 불량 조치완료/복구`;
-        
+        const recordText = `[${timeStr} ${train.name} 불량 조치완료/복구]`;
+
         if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
           sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
         } else {
           sharedNoticeMemo = recordText;
         }
 
-        // 클라우드 동기화 및 UI 다시 그리기 (★색상 원복의 핵심★)
-        syncTrainStatusToCloud();
+        // 실제 존재하는 함수들로 UI 갱신 및 클라우드 동기화
+        renderTrains25Grid();
+        renderStatistics();
+        renderNoticeMemoList();
+        syncTrainsToCloud();
         syncFacilityStatusToCloud();
-        renderTrainStatusBar();      // 상단 열차 바 색상 즉시 재계산 및 갱신
-        renderNoticeMemoList();      // 특이사항 갱신
-        showToast(`${trainNum}편성 불량이 해제되어 정상 복구되었습니다.`);
+        showToast(`${train.name} 불량이 해제되어 정상 복구되었습니다.`);
         return;
       }
 
-      // 2. 정상 상태인 경우 -> 불량 지정 팝업 띄우기 (기존 로직 유지)
-      openTrainIssueModal(trainNum);
+      // 2. 정상 상태인 경우 -> 불량 지정 팝업 띄우기
+      openTrainIssueModal(trainId);
     }
 
     /* 네임택 빌더 (다중 선택 스타일 및 클릭 핸들러 반영) */
