@@ -737,17 +737,35 @@
           <div class="station-dropzone station-slot-height bg-white"></div>
         </div>
 
-        <!-- 4행: 휴무자 -->
-        <div class="col-span-9 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="휴무자">
-          <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs">
-            <div class="flex items-center gap-1.5 font-black text-slate-800">
-              <i class="fa-solid fa-bed text-amber-500"></i>
-              <span>휴 무 자</span>
+        <!-- 4행: 휴무자 및 본사 분할 배치 -->
+        <div class="col-span-9 grid grid-cols-12 gap-1.5 h-full min-h-0">
+          
+          <!-- 좌측: 휴무자 (최대 8명 정렬) -->
+          <div class="col-span-9 station-card bg-white border border-slate-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="휴무자">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0">
+              <div class="flex items-center gap-1.5 font-black text-slate-800">
+                <i class="fa-solid fa-bed text-amber-500"></i>
+                <span>휴 무 자</span>
+              </div>
+              <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
             </div>
-            <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
+            <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200 flex-1">
+            </div>
           </div>
-          <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] overflow-y-auto bg-slate-50/60 p-1.5 rounded border border-slate-200 flex-1">
+
+          <!-- 우측 신설: 본사 (최대 3명 정렬) -->
+          <div class="col-span-3 station-card bg-white border border-purple-300 rounded-md p-1.5 flex flex-col shadow-xs" data-zone-id="본사">
+            <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0">
+              <div class="flex items-center gap-1.5 font-black text-purple-900">
+                <i class="fa-solid fa-building text-purple-600"></i>
+                <span>본 사</span>
+              </div>
+              <span id="badge-hq-count" class="font-black text-xs px-2 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">0명</span>
+            </div>
+            <div class="station-dropzone off-duty-dropzone custom-scroll min-h-[64px] overflow-y-auto bg-purple-50/40 p-1.5 rounded border border-purple-200 flex-1">
+            </div>
           </div>
+
         </div>
 
       </main>
@@ -2296,7 +2314,8 @@
           dropzone.classList.add('count-many');
         }
 
-        if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '미배치' && zoneId !== '승무현황') {
+        // 본사에도 '무인' 글씨가 뜨지 않도록 예외 추가
+        if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '본사' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
         }
       });
@@ -2614,18 +2633,32 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
+      // 1. 휴무자 인원 수
       const offStaff = currentStaff.filter(s => s.location === '휴무자');
-      document.getElementById('badge-off-count').textContent = `${offStaff.length}명`;
+      const badgeOff = document.getElementById('badge-off-count');
+      if (badgeOff) {
+        badgeOff.textContent = `${offStaff.length}명`;
+      }
 
+      // 2. 신설 본사 인원 수
+      const hqStaff = currentStaff.filter(s => s.location === '본사');
+      const badgeHq = document.getElementById('badge-hq-count');
+      if (badgeHq) {
+        badgeHq.textContent = `${hqStaff.length}명`;
+      }
+
+      // 3. 미배치 대기함 인원 수
       const unassignedStaff = currentStaff.filter(s => s.location === '미배치');
       const badgeUnassigned = document.getElementById('badge-unassigned-count');
       if (badgeUnassigned) {
         badgeUnassigned.textContent = `${unassignedStaff.length}명`;
       }
 
+      // 4. 실근무 총원 (휴무자와 미배치만 제외, 본사는 실근무 인원에 포함)
       const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
       document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
 
+      // 5. 열차 탑승 현황 뱃지 및 목록 렌더링
       const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
       if (trainBadge) {
@@ -2653,7 +2686,6 @@
         }
       }
     }
-
     function populateLocationOptions() {
       const sel = document.getElementById('input-location');
       if (!sel) return;
