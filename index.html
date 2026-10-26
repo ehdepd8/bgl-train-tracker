@@ -542,7 +542,7 @@
             </span>
             <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록 전체 비우기">전체삭제</button>
           </div>
-          <div id="train-ride-logs" class="custom-scroll flex-1 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto max-h-[145px]">
+          <div id="train-ride-logs" class="custom-scroll flex-1 min-h-0 h-0 p-1 bg-white/95 flex flex-col gap-1 items-stretch overflow-y-auto">
             <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
           </div>
         </div>
@@ -621,7 +621,7 @@
         </div>
 
         <!-- [1열 3행]: 특이사항 (줄별 개별 삭제 지원 및 입력창 하단 밀착) -->
-        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col justify-between shadow-xs">
+        <div class="station-card bg-amber-50/70 border-2 border-amber-400 rounded-md overflow-hidden flex flex-col min-h-0 shadow-xs">
           <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
             <span class="flex items-center gap-1.5">
               <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
@@ -631,7 +631,7 @@
             </button>
           </div>
           
-          <div id="notice-memo-list" class="flex-1 p-1.5 overflow-y-auto space-y-1 bg-white custom-scroll">
+          <div id="notice-memo-list" class="flex-1 min-h-0 h-0 p-1.5 overflow-y-auto space-y-1 bg-white custom-scroll">
             <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
           </div>
 
