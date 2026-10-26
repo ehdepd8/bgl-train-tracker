@@ -2511,6 +2511,9 @@
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
 
+      // 1. HTML을 새로 그리기 전, 현재 사용자의 스크롤 위치를 미리 기억
+      const prevScrollTop = container.scrollTop;
+
       const currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
 
       if (currentRideLogs.length === 0) {
@@ -2559,10 +2562,12 @@
         `;
       }).join('');
 
-      // 최신 내역(최상단)이 바로 보이도록 스크롤 위치 고정
-      // 사용자가 스크롤을 내린 상태(과거 기록 확인 중)면 스크롤 위치 유지, 맨 위(15px 이내)에 있을 때만 상단 고정
-      if (container.scrollTop < 15) {
+      // 2. 맨 위에 있었으면(10px 이내) 정확히 0(맨 꼭대기)으로 고정,
+      //    내려서 보고 있었으면 보던 위치 그대로 완벽 복원
+      if (prevScrollTop <= 10) {
         container.scrollTop = 0;
+      } else {
+        container.scrollTop = prevScrollTop;
       }
     }
 
