@@ -2075,22 +2075,29 @@
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       let pastedCount = 0;
 
-      staffClipboardArray.forEach(sourceStaff => {
+      staffClipboardArray.forEach((sourceStaff, index) => {
+        // 1. 깊은 복사로 원본 객체와 연결 완전히 분리
         const newStaff = JSON.parse(JSON.stringify(sourceStaff));
-        newStaff.id = 'st-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
-        newStaff.location = '미배치';
-        newStaff.isSupport = true;
 
-        const existing = currentStaffList.find(s => s.name === newStaff.name);
-        if (!existing) {
-          currentStaffList.push(newStaff);
-          pastedCount++;
+        // 2. 밀리초 중복 완벽 방지: index와 고유 랜덤값을 섞어 절대 안 겹치는 ID 생성
+        newStaff.id = 'st-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 100000);
+        newStaff.location = '미배치';
+        newStaff.isSupport = true; // ★ 복사된 인원은 무조건 지원자 딱지 강제 부여!
+        
+        // 원본의 스마일 아이콘도 유실되지 않고 무조건 보존
+        if (sourceStaff.icon === 'smile') {
+          newStaff.icon = 'smile';
         }
+
+        // 3. 중복 이름 체크로 버리지 않고, 복사한 인원은 무조건 지원자 카드로 추가!
+        currentStaffList.push(newStaff);
+        pastedCount++;
       });
 
+      teamsData[currentTeamKey].staff = currentStaffList;
       render();
       syncCurrentTeamStaffToCloud();
-      showToast(`${pastedCount}명의 근무자가 현재 팀의 [미배치] 칸으로 복사 완료되었습니다.`);
+      showToast(`${pastedCount}명의 근무자가 [지원자]로 미배치함에 복사되었습니다.`);
     }
 
     window.addEventListener('keydown', (e) => {
