@@ -1969,11 +1969,11 @@
         
         const isNewbie = (staff.icon === 'smile');
         const smile = isNewbie 
-          ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
+          ? `<span class="absolute top-1 right-1.5 text-xs select-none z-30 leading-none pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
         const supportBadge = staff.isSupport 
-          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
+          ? `<span class="absolute top-1 left-1.5 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-30 leading-tight">지원</span>` 
           : '';
         
         el.innerHTML = `
