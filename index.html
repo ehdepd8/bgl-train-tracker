@@ -1145,9 +1145,12 @@
     let sharedNoticeMemo = '';
 
     try {
+      const localTrains = localStorage.getItem('bgl_shared_trains'); // ★ 추가된 줄 1
       const localAway = localStorage.getItem('bgl_away_list');
       const localStationIssues = localStorage.getItem('bgl_station_issues');
       const localMemo = localStorage.getItem('bgl_notice_memo');
+      
+      if (localTrains) sharedTrains = JSON.parse(localTrains); // ★ 추가된 줄 2
       if (localAway) sharedAwayList = JSON.parse(localAway);
       if (localStationIssues) sharedStationIssues = JSON.parse(localStationIssues);
       if (localMemo !== null) sharedNoticeMemo = localMemo;
@@ -1242,6 +1245,9 @@
     }
 
     function syncTrainsToCloud() {
+      try {
+        localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains));
+      } catch(e) {}
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
@@ -1276,6 +1282,9 @@
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
           sharedTrains = cloudTrains;
+          try {
+            localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains));
+          } catch(e) {}
           renderTrains25Grid();
           renderStatistics();
         } else {
