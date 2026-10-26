@@ -1951,12 +1951,14 @@
     }
 
     /* 네임택 빌더 */
-    function buildNametagElement(staff) {
+    function buildNametagElement(staff, uniqueKey) {
       const el = document.createElement('div');
-      el.id = staff.id;
+      // DOM 중복 방지를 위해 uniqueKey가 있으면 조합하여 ID 부여
+      el.id = uniqueKey || staff.id;
+      el.setAttribute('data-staff-id', staff.id);
       el.draggable = true;
 
-      const isOnTrain = staff.location.startsWith('train-');
+      const isOnTrain = staff.location && staff.location.startsWith('train-');
       const isSelected = selectedStaffIds.has(staff.id);
 
       if (isOnTrain) {
@@ -1967,12 +1969,15 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
         
-        const isNewbie = (staff.icon === 'smile');
+        // icon 값이 'smile'이거나 boolean true/문자열 포함 여부 엄격 검사
+        const isNewbie = (staff.icon === 'smile' || staff.icon === true || staff.isNewbie === true);
         const smile = isNewbie 
           ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
-        const supportBadge = staff.isSupport 
+        // isSupport가 true이거나 문자열 'true'인 경우 지원 뱃지 생성
+        const hasSupport = (staff.isSupport === true || staff.isSupport === 'true');
+        const supportBadge = hasSupport 
           ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
           : '';
         
@@ -2267,13 +2272,13 @@
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
 
-      currentStaff.forEach(staff => {
+     currentStaff.forEach((staff, idx) => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
           const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
           if (placeholder) placeholder.remove();
 
-          const tag = buildNametagElement(staff);
+          const tag = buildNametagElement(staff, `${staff.id}_${idx}`);
           targetDropzone.appendChild(tag);
         }
       });
