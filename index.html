@@ -3295,11 +3295,26 @@
       const leaveList = data.leaveList || [];
       let currentStaffList = teamsData[currentTeamKey].staff || [];
 
+      // 시트 휴무란에 적히는 비인명 텍스트 필터 목록
+      const IGNORE_LEAVE_KEYWORDS = ['연차자제', '연차제한', '휴가자제', '휴가제한', '자제', '제한', '-', '공란', '없음'];
+
       const allDutyNamesInSheet = new Set();
       Object.values(stationMap).forEach(list => {
-        if (Array.isArray(list)) list.forEach(name => allDutyNamesInSheet.add(name));
+        if (Array.isArray(list)) {
+          list.forEach(name => {
+            const cleanName = (name || '').trim();
+            if (cleanName && !IGNORE_LEAVE_KEYWORDS.includes(cleanName)) {
+              allDutyNamesInSheet.add(cleanName);
+            }
+          });
+        }
       });
-      leaveList.forEach(name => allDutyNamesInSheet.add(name));
+
+      // 휴무 명단에서도 '연차자제' 등의 문구는 근무자 목록에서 제외
+      const validLeaveList = (leaveList || [])
+        .map(n => (n || '').trim())
+        .filter(n => n && !IGNORE_LEAVE_KEYWORDS.includes(n));
+      validLeaveList.forEach(name => allDutyNamesInSheet.add(name));
 
       currentStaffList = currentStaffList.filter(s => {
         if (s.isSupport && !allDutyNamesInSheet.has(s.name)) {
@@ -3349,16 +3364,14 @@
         }
       }
 
-      let placedLeaveCount = 0;
-      if (Array.isArray(leaveList)) {
-        leaveList.forEach(name => {
-          const staff = currentStaffList.find(s => s.name === name && s.location === '미배치');
-          if (staff) {
-            staff.location = '휴무자';
-            placedLeaveCount++;
-          }
-        });
-      }
+     let placedLeaveCount = 0;
+      validLeaveList.forEach(name => {
+        const staff = currentStaffList.find(s => s.name === name && s.location === '미배치');
+        if (staff) {
+          staff.location = '휴무자';
+          placedLeaveCount++;
+        }
+      });
 
       teamsData[currentTeamKey].staff = currentStaffList;
       selectedStaffIds.clear();
