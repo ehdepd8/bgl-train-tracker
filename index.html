@@ -3111,18 +3111,19 @@
       }
 
       // 뱃지 깜빡임 없이 hidden 클래스만 제어
-    ['1', '2', '3', '4'].forEach(num => {
-      const badgeEl = document.getElementById(`on-badge-team${num}`);
-      if (!badgeEl) return;
+      ['1', '2', '3', '4'].forEach(num => {
+        const badgeEl = document.getElementById(`on-badge-team${num}`);
+        if (!badgeEl) return;
 
-      const shift = getShiftType(y, m, d, num);
+        const shift = getShiftType(y, m, d, num);
 
-      if (shift === activeShiftType) {
-        badgeEl.classList.remove('hidden');
-      } else {
-        badgeEl.classList.add('hidden');
-      }
-    });
+        if (shift === activeShiftType) {
+          badgeEl.classList.remove('hidden');
+        } else {
+          badgeEl.classList.add('hidden');
+        }
+      });
+    } // 👈 빠져있던 이 닫는 괄호를 반드시 채워넣어 줍니다!
 
     function openCalendarDialog() {
       const now = new Date();
