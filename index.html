@@ -2314,24 +2314,60 @@
 
       return el;
     }
+    // ★ [추가] 선택된 인원 일괄 다중 삭제 처리 함수
+    function deleteSelectedStaffsBatch() {
+      const count = selectedStaffIds.size;
+      if (count === 0) return;
+
+      if (!confirm(`선택한 ${count}명의 근무자를 삭제하시겠습니까?`)) return;
+
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      selectedStaffIds.forEach(id => {
+        const staff = currentStaffList.find(s => s.id === id);
+        if (staff && staff.location.startsWith('train-')) {
+          handleRideLogging(staff.name, staff.location, null);
+        }
+      });
+
+      teamsData[currentTeamKey].staff = currentStaffList.filter(s => !selectedStaffIds.has(s.id));
+      selectedStaffIds.clear();
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast(`${count}명의 근무자가 일괄 삭제되었습니다.`);
+    }
+
+    // ★ [수정] 우클릭 메뉴 (다중 선택 상태 감지 및 일괄 삭제 연동)
     function openStaffActionMenu(staff) {
+      // 우클릭한 카드가 이미 다중 선택 목록에 있다면 다중 상태 유지, 아니라면 해당 카드만 단독 선택
+      if (!selectedStaffIds.has(staff.id)) {
+        selectedStaffIds.clear();
+        selectedStaffIds.add(staff.id);
+        renderStaffAndStations();
+      }
+
+      const count = selectedStaffIds.size;
+      const titleText = count > 1 
+        ? `선택한 ${count}명 일괄 관리` 
+        : `'${staff.name}' 근무자 관리 ${staff.isSupport ? '(지원자)' : ''}`;
+
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
       modal.innerHTML = `
         <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
           <div class="font-black text-slate-900 text-sm border-b border-slate-100 pb-2">
-            '${staff.name}' 근무자 관리 ${staff.isSupport ? '(지원자)' : ''}
+            ${titleText}
           </div>
           <p class="text-xs text-slate-600">원하시는 작업을 선택해 주세요.</p>
-          <div class="grid grid-cols-3 gap-1.5 pt-1">
+          <div class="grid ${count > 1 ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 pt-1">
             <button id="act-copy" class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1" title="클립보드에 복사">
-              <i class="fa-solid fa-copy"></i> 복사
+              <i class="fa-solid fa-copy"></i> 복사${count > 1 ? `(${count})` : ''}
             </button>
+            ${count === 1 ? `
             <button id="act-edit" class="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
               <i class="fa-solid fa-pen"></i> 수정
-            </button>
+            </button>` : ''}
             <button id="act-delete" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
-              <i class="fa-solid fa-trash"></i> 삭제
+              <i class="fa-solid fa-trash"></i> 삭제${count > 1 ? `(${count})` : ''}
             </button>
           </div>
           <button id="act-cancel" class="w-full py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded mt-1">닫기</button>
@@ -2341,19 +2377,30 @@
 
       modal.querySelector('#act-cancel').onclick = () => modal.remove();
       modal.querySelector('#act-copy').onclick = () => {
-        selectedStaffIds.clear();
-        selectedStaffIds.add(staff.id);
         copySelectedStaffsToClipboard();
         modal.remove();
       };
-      modal.querySelector('#act-edit').onclick = () => {
-        modal.remove();
-        openEditModal(staff);
-      };
+      if (count === 1) {
+        modal.querySelector('#act-edit').onclick = () => {
+          modal.remove();
+          openEditModal(staff);
+        };
+      }
       modal.querySelector('#act-delete').onclick = () => {
         modal.remove();
-        deleteStaffDirect(staff);
+        deleteSelectedStaffsBatch(); // 👈 여기서 일괄 다중 삭제 호출
       };
+    }
+
+    function deleteStaffDirect(staff) {
+      if (staff.location.startsWith('train-')) {
+        handleRideLogging(staff.name, staff.location, null);
+      }
+      teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
+      selectedStaffIds.delete(staff.id);
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast(`${staff.name} 근무자가 삭제되었습니다.`);
     }
 
     function copySelectedStaffsToClipboard() {
@@ -2413,6 +2460,14 @@
         }
       }
 
+      // ★ [여기에 추가] Delete 및 Backspace 다중 삭제 단축키
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedStaffIds.size > 0) {
+          e.preventDefault();
+          deleteSelectedStaffsBatch();
+        }
+      }
+
       if (e.key === 'Escape') {
         selectedStaffIds.clear();
         renderStaffAndStations();
@@ -2420,10 +2475,13 @@
     });
 
     document.addEventListener('click', (e) => {
-      // Ctrl이나 Meta(Cmd) 키를 누른 상태에서는 선택 해제 방지
+      // Ctrl 또는 Cmd 키를 누르고 있는 도중에는 선택 해제 방지
       if (e.ctrlKey || e.metaKey) return;
 
-      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn') && !e.target.closest('#mobile-action-bar')) {
+      // 팝업 모달이나 툴바를 누를 때도 선택 해제 방지
+      if (e.target.closest('#mobile-action-bar') || e.target.closest('.fixed.inset-0')) return;
+
+      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn')) {
         if (selectedStaffIds.size > 0) {
           selectedStaffIds.clear();
           renderStaffAndStations();
