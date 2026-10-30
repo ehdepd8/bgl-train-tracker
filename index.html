@@ -1309,6 +1309,7 @@
             localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains));
           } catch(e) {}
           renderTrains25Grid();
+          renderStaffAndStations(); // ★ 클라우드 동기화 시에도 탑승자 네임택 유지!
           renderStatistics();
         } else {
           syncTrainsToCloud();
@@ -1815,7 +1816,7 @@
       closeTrainIssueModal(false);
     }
 
-    function applyTrainIssueFinal(trainId, detailText) {
+   function applyTrainIssueFinal(trainId, detailText) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
@@ -1834,6 +1835,7 @@
       }
 
       renderTrains25Grid();
+      renderStaffAndStations(); // ★ 네임택 복원 추가!
       renderStatistics();
       renderNoticeMemoList();
       syncTrainsToCloud();
@@ -1950,6 +1952,7 @@
       tr.prevStatus = tr.status;
 
       renderTrains25Grid();
+      renderStaffAndStations(); // ★ 열차 재배열 후 탑승 중인 네임택 즉시 다시 꽂아주기!
       renderStatistics();
       syncTrainsToCloud();
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
@@ -1974,6 +1977,7 @@
         }
 
         renderTrains25Grid();
+        renderStaffAndStations(); // ★ 네임택 복원 추가!
         renderStatistics();
         renderNoticeMemoList();
         syncTrainsToCloud();
