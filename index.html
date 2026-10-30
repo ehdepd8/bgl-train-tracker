@@ -376,31 +376,31 @@
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
             <i class="fa-solid fa-train-subway"></i>
           </div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900">
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900 mr-1">
               근무자 배치 현황판
             </h1>
             
-            <!-- 1. 1~4팀 탭 바 -->
-            <div class="flex items-center h-7 bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
-              <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn h-full px-2.5 text-xs font-black rounded-md border border-transparent">1팀</button>
-              <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn h-full px-2.5 text-xs font-black rounded-md border border-transparent">2팀</button>
-              <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn h-full px-2.5 text-xs font-black rounded-md border border-transparent">3팀</button>
-              <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn h-full px-2.5 text-xs font-black rounded-md border border-transparent">4팀</button>
+            <!-- 1. 1~4팀 탭 (기존 시원한 파란색 탭) -->
+            <div class="flex items-center bg-slate-100 p-0.5 rounded border border-slate-300">
+              <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">1팀</button>
+              <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">2팀</button>
+              <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">3팀</button>
+              <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">4팀</button>
             </div>
 
-            <!-- 2. 현재 근무팀 바로가기 카드 (탭 바와 높이 h-7 및 rounded-lg 완벽 일치) -->
-            <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 h-7 px-2.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 text-emerald-800 text-[11px] font-black shadow-2xs transition cursor-pointer" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span id="current-duty-badge-text">3팀 근무중 (야간)</span>
+            <!-- 2. 현재 근무팀 카드 (우측 [본선운행] 카드와 완전 동일 규격) -->
+            <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded text-xs transition cursor-pointer" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <strong id="current-duty-badge-text" class="text-emerald-800 font-black">3팀 야간근무</strong>
             </button>
 
-            <!-- 3. 실시간 연동 상태 카드 (h-7, rounded-lg 통일) -->
-            <span id="sync-status" class="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-700 text-[10.5px] font-bold shadow-2xs select-none">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
-            </span>
+            <!-- 3. 실시간 연동 카드 (우측 통계 카드와 완전 동일 규격) -->
+            <div id="sync-status" class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-xs select-none">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-slate-600 font-bold">실시간 연동</span>
+            </div>
           </div>
-        </div>
 
         <div class="flex items-center space-x-2 text-xs">
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
