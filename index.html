@@ -2282,11 +2282,12 @@
       });
 
       // ★ 모바일 터치 및 PC 클릭 통합 선택 처리
+      // ★ 모바일 터치 및 PC 클릭 통합 선택 처리
       el.onclick = (e) => {
         e.stopPropagation();
         if (isLongTouch) return;
 
-        // PC에서 Ctrl/Cmd 키 누르고 클릭하거나, 모바일에서 탭할 때
+        // PC에서 Ctrl 또는 Cmd 키를 누른 채 클릭한 경우 -> 다중 선택 누적/해제
         if (e.ctrlKey || e.metaKey) {
           if (selectedStaffIds.has(staff.id)) {
             selectedStaffIds.delete(staff.id);
@@ -2294,11 +2295,16 @@
             selectedStaffIds.add(staff.id);
           }
         } else {
-          // 모바일 터치나 일반 클릭 시: 선택 토글
-          if (selectedStaffIds.has(staff.id)) {
-            selectedStaffIds.delete(staff.id);
+          // 그냥 클릭했을 때 (단일 선택 토글, 모바일 탭)
+          const wasSelected = selectedStaffIds.has(staff.id);
+          // 모바일 환경이 아니면 기존 선택을 풀고 현재 카드만 단독 선택
+          const isTouchOrMobile = ('ontouchstart' in window) || (window.innerWidth < 1200);
+          if (!isTouchOrMobile) {
+            selectedStaffIds.clear();
+            if (!wasSelected) selectedStaffIds.add(staff.id);
           } else {
-            selectedStaffIds.add(staff.id);
+            if (wasSelected) selectedStaffIds.delete(staff.id);
+            else selectedStaffIds.add(staff.id);
           }
         }
 
@@ -2414,10 +2420,14 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn')) {
+      // Ctrl이나 Meta(Cmd) 키를 누른 상태에서는 선택 해제 방지
+      if (e.ctrlKey || e.metaKey) return;
+
+      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn') && !e.target.closest('#mobile-action-bar')) {
         if (selectedStaffIds.size > 0) {
           selectedStaffIds.clear();
           renderStaffAndStations();
+          updateMobileActionBar();
         }
       }
     });
