@@ -2287,7 +2287,8 @@
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
-          const placeholder = targetDropzone.querySelector('.select-none, .text-slate-300');
+          // ★ 카드 내부의 .select-none(스마일/뱃지)을 지우지 않고, 빈자리 안내 태그만 안전하게 제거
+          const placeholder = targetDropzone.querySelector(':scope > .select-none, :scope > .text-slate-300, :scope > span:not(.nametag span)');
           if (placeholder) placeholder.remove();
 
           const tag = buildNametagElement(staff);
