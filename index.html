@@ -1188,7 +1188,7 @@
     }
 
     function lockScreenManual() {
-      if (confirm("자동 로그인을 해제하고 현황판을 잠그시겠습니까?")) {
+      if (confirm("로그아웃하시겠습니까?  (자동 로그인이 해제됩니다)")) {
         localStorage.removeItem('bgl_pin_authenticated');
         sessionStorage.removeItem('bgl_pin_authenticated');
         
