@@ -442,6 +442,11 @@
             <i class="fa-solid fa-rotate-left text-amber-600"></i> 팀초기화
           </button>
 
+          <!-- ★ [추가] 자동로그인 해제 및 즉시 화면 잠금 버튼 -->
+          <button onclick="lockScreenManual()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded text-xs transition flex items-center gap-1" title="자동 로그인 해제 및 화면 잠금">
+            <i class="fa-solid fa-lock text-slate-500"></i> 잠금
+          </button>
+
           <div id="live-clock" class="font-mono font-bold text-slate-600 px-2 text-xs hidden lg:block">
             00:00:00
           </div>
@@ -1190,6 +1195,29 @@
         }
       } catch (e) {
         alert("브라우저 암호화 모듈 실행 오류가 발생했습니다. HTTPS 연결인지 확인해 주세요.");
+      }
+    }
+
+    /* =========================================================================
+       자동 로그인 해제 및 화면 즉시 잠금 함수
+       ========================================================================= */
+    function lockScreenManual() {
+      if (confirm("자동 로그인을 해제하고 현황판을 잠그시겠습니까?")) {
+        // 1. 브라우저에 저장된 자동 로그인 기록 삭제
+        localStorage.removeItem('bgl_pin_authenticated');
+        sessionStorage.removeItem('bgl_pin_authenticated');
+        
+        // 2. 입력창 초기화 및 체크박스 해제
+        const input = document.getElementById('pin-input');
+        const autoCheckbox = document.getElementById('pin-auto-login');
+        if (input) input.value = '';
+        if (autoCheckbox) autoCheckbox.checked = false; // 다시 열릴 때 기본 체크 해제 상태
+        
+        // 3. 비밀번호 입력 모달 다시 띄우기
+        const modal = document.getElementById('pin-auth-modal');
+        if (modal) modal.style.display = 'flex';
+        
+        showToast('로그아웃되었습니다. 다시 접속하려면 비밀번호를 입력하세요.');
       }
     }
     
