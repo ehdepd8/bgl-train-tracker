@@ -390,13 +390,13 @@
             <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">4팀</button>
           </div>
 
-          <!-- 현재 근무팀 카드 -->
+          <!-- 현재 근무팀 카드 (우측 통계 카드와 규격 일치) -->
           <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded text-xs transition cursor-pointer" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
             <strong id="current-duty-badge-text" class="text-emerald-800 font-black">3팀 야간근무</strong>
           </button>
 
-          <!-- 실시간 연동 카드 -->
+          <!-- 실시간 연동 카드 (우측 통계 카드와 규격 일치) -->
           <div id="sync-status" class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-xs select-none">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="text-slate-600 font-bold">실시간 연동</span>
@@ -3125,10 +3125,10 @@
       const badgeText = document.getElementById('current-duty-badge-text');
 
       if (badgeBtn && badgeText && onDutyTeam) {
-        badgeText.textContent = `${onDutyTeam}팀 근무중 (${shiftLabel})`;
+        badgeText.textContent = `${onDutyTeam}팀 ${shiftLabel}근무`;
         badgeBtn.onclick = () => switchTeam(`team${onDutyTeam}`);
         badgeBtn.classList.remove('hidden');
-        badgeBtn.classList.add('inline-flex');
+        badgeBtn.classList.add('flex');
       }
     }
 
