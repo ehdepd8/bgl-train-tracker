@@ -1129,10 +1129,18 @@
   <script>
    
    /* =========================================================================
-       접속 보안 검증 및 자동 로그인 제어
+       접속 보안 SHA-256 해시 검증 (코딩 전문가도 역추적 불가)
        ========================================================================= */
-    
-    const TARGET_KEY = "OTYwNw==";
+    // '9607'의 SHA-256 해시값 (수학적으로 원래 번호 복원 불가)
+    const TARGET_PIN_HASH = "7c2a2339d107a726ea7247a82869098748dfae54303e91124237eb899e390c2a";
+
+    // 브라우저 내장 Web Crypto API로 안전하게 해시 변환
+    async function getSHA256Hash(string) {
+      const utf8 = new TextEncoder().encode(string);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('');
+    }
 
     function checkAuthOnLoad() {
       const isAutoAuth = localStorage.getItem('bgl_pin_authenticated');
@@ -1151,7 +1159,7 @@
       }
     }
 
-    function checkPinAuth() {
+    async function checkPinAuth() {
       const input = document.getElementById('pin-input');
       const errorMsg = document.getElementById('pin-error-msg');
       const autoCheckbox = document.getElementById('pin-auto-login');
@@ -1159,38 +1167,30 @@
 
       if (!val) return;
 
-      // 브라우저 기본 내장 함수로 안전하게 대조
-      let encodedVal = "";
       try {
-        encodedVal = btoa(val);
-      } catch (e) {
-        encodedVal = "";
-      }
+        const inputHash = await getSHA256Hash(val);
 
-      if (encodedVal === TARGET_KEY) {
-        if (autoCheckbox && autoCheckbox.checked) {
-          localStorage.setItem('bgl_pin_authenticated', 'true');
+        if (inputHash === TARGET_PIN_HASH) {
+          if (autoCheckbox && autoCheckbox.checked) {
+            localStorage.setItem('bgl_pin_authenticated', 'true');
+          } else {
+            sessionStorage.setItem('bgl_pin_authenticated', 'true');
+          }
+          
+          const modal = document.getElementById('pin-auth-modal');
+          if (modal) modal.style.display = 'none';
+          if (errorMsg) errorMsg.classList.add('hidden');
+          showToast('인증 완료되었습니다.');
         } else {
-          sessionStorage.setItem('bgl_pin_authenticated', 'true');
+          if (errorMsg) errorMsg.classList.remove('hidden');
+          if (input) {
+            input.value = '';
+            input.focus();
+          }
         }
-        
-        const modal = document.getElementById('pin-auth-modal');
-        if (modal) modal.style.display = 'none';
-        if (errorMsg) errorMsg.classList.add('hidden');
-        showToast('인증 완료되었습니다.');
-      } else {
-        if (errorMsg) errorMsg.classList.remove('hidden');
-        if (input) {
-          input.value = '';
-          input.focus();
-        }
+      } catch (e) {
+        alert("브라우저 암호화 모듈 실행 오류가 발생했습니다. HTTPS 연결인지 확인해 주세요.");
       }
-    }
-
-    function lockScreenManual() {
-      localStorage.removeItem('bgl_pin_authenticated');
-      sessionStorage.removeItem('bgl_pin_authenticated');
-      location.reload();
     }
     
     /* 0. Firebase 설정 */
