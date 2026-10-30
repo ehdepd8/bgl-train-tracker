@@ -1525,9 +1525,10 @@
           localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
-          renderStaffAndStations();
+         renderStaffAndStations();
           renderStatistics();
           renderNoticeMemoList();
+          resyncStationOverlayAnimations(); // 👈 추가: 클라우드 수신 시 동기화
         } else {
           syncFacilityStatusToCloud();
         }
@@ -1724,6 +1725,7 @@
 
       renderStaffAndStations();
       syncFacilityStatusToCloud();
+      resyncStationOverlayAnimations(); // 👈 추가: 외부 설정 변경 시점으로 깜빡임 동기화
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
@@ -1748,6 +1750,7 @@
         renderStatistics();
         renderNoticeMemoList();
         syncFacilityStatusToCloud();
+        resyncStationOverlayAnimations(); // 👈 추가: 불량 해제 시점 동기화
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
         openIssueModal(zoneId);
@@ -1901,6 +1904,7 @@
       renderStatistics();
       renderNoticeMemoList();
       syncFacilityStatusToCloud();
+      resyncStationOverlayAnimations(); // 👈 추가: 마지막 불량 등록 시점으로 전 역사 깜빡임 동기화
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
@@ -2607,6 +2611,22 @@
 
       attachNametagEvents();
       attachStationStaticEvents();
+    }
+
+    // ★ 여기에 아래 함수를 그대로 붙여넣어 주시면 됩니다!
+    // 모든 역사 장애/외부 오버레이의 깜빡임 타이밍을 '가장 최근 변경 시점' 기준으로 일제히 동기화
+    function resyncStationOverlayAnimations() {
+      const overlays = document.querySelectorAll('.station-status-overlay');
+      overlays.forEach(el => {
+        el.style.animation = 'none'; // 애니메이션 즉시 정지
+      });
+
+      // 브라우저 강제 렌더링 갱신 (리플로우)
+      void document.body.offsetHeight;
+
+      overlays.forEach(el => {
+        el.style.animation = ''; // CSS에 지정된 애니메이션 속성으로 0초부터 일제히 재시작
+      });
     }
 
     let draggedId = null;
