@@ -1925,7 +1925,33 @@
         `;
 
         const dropzone = document.createElement('div');
-        dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden';
+        dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden cursor-pointer';
+
+        // ★ [모바일 열차 탑승 핵심] 선택된 인원이 있을 때 열차 칸 터치 시 즉시 탑승
+        dropzone.onclick = (e) => {
+          if (selectedStaffIds.size > 0 && !e.target.closest('.nametag')) {
+            e.stopPropagation();
+            const currentStaffList = teamsData[currentTeamKey].staff || [];
+            let movedCount = 0;
+
+            selectedStaffIds.forEach(staffId => {
+              const staff = currentStaffList.find(s => s.id === staffId);
+              if (staff && staff.location !== t.id) {
+                const prevLoc = staff.location;
+                handleRideLogging(staff.name, prevLoc, t.id); // 탑승 기록 자동 생성
+                staff.location = t.id;
+                movedCount++;
+              }
+            });
+
+            if (movedCount > 0) {
+              clearSelection();
+              render();
+              syncCurrentTeamStaffToCloud();
+              showToast(`${movedCount}명이 [${t.name}]에 탑승 완료되었습니다.`);
+            }
+          }
+        };
         
         if (ridingStaff.length === 0) {
           dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
@@ -1934,6 +1960,7 @@
         trainBox.appendChild(header);
         trainBox.appendChild(dropzone);
         container.appendChild(trainBox);
+      }); // ★ 빠져있던 sortedTrains.forEach 닫는 괄호 복원!
 
       attachTrainDropEvents();
     }
