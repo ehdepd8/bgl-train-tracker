@@ -1076,6 +1076,27 @@
     </div>
   </div>
 
+  <!-- [모바일 전용 하단 액션 툴바] -->
+  <div id="mobile-action-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-2 z-50 border border-slate-700 transition-all duration-200 opacity-0 pointer-events-none translate-y-6">
+    <span id="mobile-selected-info" class="text-xs font-black text-amber-400 pl-1">1명 선택</span>
+    <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
+    <button onclick="copySelectedStaffsToClipboard()" class="px-2.5 py-1.5 bg-blue-600 active:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
+      <i class="fa-solid fa-copy"></i> 복사
+    </button>
+    <button id="mobile-btn-paste" onclick="pasteStaffsFromClipboard()" class="hidden px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl items-center gap-1 shadow-xs">
+      <i class="fa-solid fa-paste"></i> 붙여넣기
+    </button>
+    <button id="mobile-btn-edit" onclick="handleMobileEdit()" class="px-2.5 py-1.5 bg-amber-600 active:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
+      <i class="fa-solid fa-pen"></i> 수정
+    </button>
+    <button onclick="handleMobileDelete()" class="px-2.5 py-1.5 bg-rose-600 active:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
+      <i class="fa-solid fa-trash"></i> 삭제
+    </button>
+    <button onclick="clearSelection()" class="p-1.5 text-slate-400 active:text-white rounded-lg">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
   <script>
     /* 0. Firebase 설정 */
     const firebaseConfig = {
@@ -2005,13 +2026,35 @@
         `;
       }
 
-      el.oncontextmenu = (e) => {
+    el.oncontextmenu = (e) => {
         e.preventDefault();
         openStaffActionMenu(staff);
       };
 
+      // ★ 롱프레스 제스처 (모바일에서 0.5초 길게 누르면 우클릭 메뉴 열기)
+      let isLongTouch = false;
+      el.addEventListener('touchstart', (e) => {
+        isLongTouch = false;
+        longPressTimer = setTimeout(() => {
+          isLongTouch = true;
+          openStaffActionMenu(staff);
+        }, 500);
+      }, { passive: true });
+
+      el.addEventListener('touchend', () => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+      });
+
+      el.addEventListener('touchmove', () => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+      });
+
+      // ★ 모바일 터치 및 PC 클릭 통합 선택 처리
       el.onclick = (e) => {
         e.stopPropagation();
+        if (isLongTouch) return;
+
+        // PC에서 Ctrl/Cmd 키 누르고 클릭하거나, 모바일에서 탭할 때
         if (e.ctrlKey || e.metaKey) {
           if (selectedStaffIds.has(staff.id)) {
             selectedStaffIds.delete(staff.id);
@@ -2019,22 +2062,20 @@
             selectedStaffIds.add(staff.id);
           }
         } else {
-          if (selectedStaffIds.has(staff.id) && selectedStaffIds.size === 1) {
-            selectedStaffIds.clear();
+          // 모바일 터치나 일반 클릭 시: 선택 토글
+          if (selectedStaffIds.has(staff.id)) {
+            selectedStaffIds.delete(staff.id);
           } else {
-            selectedStaffIds.clear();
             selectedStaffIds.add(staff.id);
           }
         }
+
         renderStaffAndStations();
-        if (selectedStaffIds.size > 0) {
-          showToast(`${selectedStaffIds.size}명 선택됨 (Ctrl+C 복사 가능)`);
-        }
+        updateMobileActionBar();
       };
 
       return el;
     }
-
     function openStaffActionMenu(staff) {
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
@@ -2442,6 +2483,38 @@
       });
 
       dropzones.forEach(dz => {
+        // ★ [모바일 터치 이동 핵심] 선택된 인원이 있을 때 해당 역사 칸을 터치하면 즉시 이동
+        dz.onclick = (e) => {
+          if (selectedStaffIds.size > 0 && !e.target.closest('.nametag')) {
+            e.stopPropagation();
+            const card = dz.closest('.station-card');
+            if (!card) return;
+            const targetZone = card.getAttribute('data-zone-id');
+            if (!targetZone) return;
+
+            const currentStaffList = teamsData[currentTeamKey].staff || [];
+            let movedCount = 0;
+
+            selectedStaffIds.forEach(staffId => {
+              const staff = currentStaffList.find(s => s.id === staffId);
+              if (staff && staff.location !== targetZone) {
+                const prevLoc = staff.location;
+                handleRideLogging(staff.name, prevLoc, targetZone);
+                staff.location = targetZone;
+                movedCount++;
+              }
+            });
+
+            if (movedCount > 0) {
+              clearSelection();
+              render();
+              syncCurrentTeamStaffToCloud();
+              showToast(`${movedCount}명이 [${targetZone}]으로 이동되었습니다.`);
+            }
+          }
+        };
+
+        // (기존 PC 마우스 드래그 앤 드롭 이벤트는 그대로 유지)
         dz.addEventListener('dragover', (e) => {
           e.preventDefault();
           dz.classList.add('drag-hover');
@@ -3062,6 +3135,102 @@
       }, 2500);
     }
 
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const msgSpan = document.getElementById('toast-message');
+      msgSpan.textContent = msg;
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toast.classList.add('show');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // ★★★ 바로 여기에 A 함수들을 붙여넣으세요! ★★★
+    let longPressTimer = null;
+
+    function updateMobileActionBar() {
+      const bar = document.getElementById('mobile-action-bar');
+      const infoText = document.getElementById('mobile-selected-info');
+      const editBtn = document.getElementById('mobile-btn-edit');
+      const pasteBtn = document.getElementById('mobile-btn-paste');
+      if (!bar) return;
+
+      const count = selectedStaffIds.size;
+      const hasClipboard = (staffClipboardArray && staffClipboardArray.length > 0);
+
+      if (count > 0 || hasClipboard) {
+        bar.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6');
+        bar.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+
+        if (count > 0) {
+          infoText.textContent = `${count}명 선택`;
+          infoText.classList.remove('hidden');
+          editBtn.style.display = (count === 1) ? 'flex' : 'none';
+        } else {
+          infoText.classList.add('hidden');
+          editBtn.style.display = 'none';
+        }
+
+        if (hasClipboard) {
+          pasteBtn.classList.remove('hidden');
+          pasteBtn.classList.add('flex');
+          pasteBtn.innerHTML = `<i class="fa-solid fa-paste"></i> 붙여넣기(${staffClipboardArray.length})`;
+        } else {
+          pasteBtn.classList.add('hidden');
+          pasteBtn.classList.remove('flex');
+        }
+      } else {
+        bar.classList.add('opacity-0', 'pointer-events-none', 'translate-y-6');
+        bar.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+      }
+    }
+
+    function clearSelection() {
+      selectedStaffIds.clear();
+      renderStaffAndStations();
+      updateMobileActionBar();
+    }
+
+    function handleMobileEdit() {
+      if (selectedStaffIds.size !== 1) return;
+      const staffId = Array.from(selectedStaffIds)[0];
+      const staff = (teamsData[currentTeamKey].staff || []).find(s => s.id === staffId);
+      if (staff) openEditModal(staff);
+    }
+
+    function handleMobileDelete() {
+      if (selectedStaffIds.size === 0) return;
+      if (!confirm(`선택한 ${selectedStaffIds.size}명의 근무자를 삭제하시겠습니까?`)) return;
+
+      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      selectedStaffIds.forEach(id => {
+        const staff = currentStaffList.find(s => s.id === id);
+        if (staff && staff.location.startsWith('train-')) {
+          handleRideLogging(staff.name, staff.location, null);
+        }
+      });
+
+      teamsData[currentTeamKey].staff = currentStaffList.filter(s => !selectedStaffIds.has(s.id));
+      clearSelection();
+      render();
+      syncCurrentTeamStaffToCloud();
+      showToast('선택한 근무자가 삭제되었습니다.');
+    }
+
+    // (아래는 원래 있던 시계 타이머)
+    setInterval(() => {
+      const now = new Date();
+      const clock = document.getElementById('live-clock');
+      if (clock) {
+        clock.textContent = now.toTimeString().split(' ')[0];
+      }
+      renderRideLogs();
+    }, 1000);
+
     setInterval(() => {
       const now = new Date();
       const clock = document.getElementById('live-clock');
@@ -3125,5 +3294,6 @@
       initRealtimeSync();
     };
   </script>
+  
 </body>
 </html>
