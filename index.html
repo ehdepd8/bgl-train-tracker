@@ -3442,6 +3442,9 @@
     function updateMobileActionBar() {
       const bar = document.getElementById('mobile-action-bar');
       const infoText = document.getElementById('mobile-selected-info');
+      const divider = document.getElementById('mobile-divider');
+      const copyBtn = bar ? bar.querySelector('button[onclick="copySelectedStaffsToClipboard()"]') : null;
+      const deleteBtn = bar ? bar.querySelector('button[onclick="handleMobileDelete()"]') : null;
       const editBtn = document.getElementById('mobile-btn-edit');
       const pasteBtn = document.getElementById('mobile-btn-paste');
       if (!bar) return;
@@ -3449,30 +3452,42 @@
       const count = selectedStaffIds.size;
       const hasClipboard = (staffClipboardArray && staffClipboardArray.length > 0);
 
-      if (count > 0 || hasClipboard) {
-        bar.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6');
-        bar.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
-
-        if (count > 0) {
-          infoText.textContent = `${count}명 선택`;
-          infoText.classList.remove('hidden');
-          editBtn.style.display = (count === 1) ? 'flex' : 'none';
-        } else {
-          infoText.classList.add('hidden');
-          editBtn.style.display = 'none';
-        }
-
-        if (hasClipboard) {
-          pasteBtn.classList.remove('hidden');
-          pasteBtn.classList.add('flex');
-          pasteBtn.innerHTML = `<i class="fa-solid fa-paste"></i> 붙여넣기(${staffClipboardArray.length})`;
-        } else {
-          pasteBtn.classList.add('hidden');
-          pasteBtn.classList.remove('flex');
-        }
-      } else {
+      // 선택된 인원도 없고, 클립보드도 없으면 완전히 숨김
+      if (count === 0 && !hasClipboard) {
         bar.classList.add('opacity-0', 'pointer-events-none', 'translate-y-6');
         bar.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+        return;
+      }
+
+      // 툴바 표시
+      bar.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6');
+      bar.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+
+      if (count > 0) {
+        // [선택 인원이 있을 때]: 인원수, 구분선, 복사, 삭제 버튼 표시
+        infoText.textContent = `${count}명 선택`;
+        infoText.classList.remove('hidden');
+        if (divider) divider.classList.remove('hidden');
+        if (copyBtn) copyBtn.classList.remove('hidden');
+        if (deleteBtn) deleteBtn.classList.remove('hidden');
+        if (editBtn) editBtn.style.display = (count === 1) ? 'flex' : 'none';
+      } else {
+        // [선택 인원 없이 붙여넣기만 대기 중일 때]: 불필요한 요소 숨김
+        infoText.classList.add('hidden');
+        if (divider) divider.classList.add('hidden');
+        if (copyBtn) copyBtn.classList.add('hidden');
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+        if (editBtn) editBtn.style.display = 'none';
+      }
+
+      // 붙여넣기 버튼 제어
+      if (hasClipboard) {
+        pasteBtn.classList.remove('hidden');
+        pasteBtn.classList.add('flex');
+        pasteBtn.innerHTML = `<i class="fa-solid fa-paste text-[11px]"></i> 붙여넣기(${staffClipboardArray.length})`;
+      } else {
+        pasteBtn.classList.add('hidden');
+        pasteBtn.classList.remove('flex');
       }
     }
 
