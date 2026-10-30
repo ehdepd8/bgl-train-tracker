@@ -1161,11 +1161,12 @@
       });
     }
 
-    // 1. 화면 처음 열릴 때: 시트의 인증 버전(B2) 확인 후 다르면 자동 로그아웃
+    // 1. 화면 처음 열릴 때 (깜빡임 완전 제거 버전)
     async function checkAuthOnLoad() {
       const modal = document.getElementById('pin-auth-modal');
       const localVersion = localStorage.getItem('bgl_auth_version');
 
+      // (1) 기기에 저장된 인증 정보가 아예 없는 경우 -> 모달 열기
       if (!localVersion) {
         if (modal) modal.style.display = 'flex';
         setTimeout(() => {
@@ -1175,17 +1176,18 @@
         return;
       }
 
+      // (2) 기기에 인증 정보가 이미 있는 경우 -> 모달은 계속 숨겨두고(none), 백그라운드에서 버전만 검사
       try {
         const data = await callGasJsonp({ action: 'auth', check_version: 'true' });
+        
+        // 시트 C2의 버전이 변경된 경우에만 모달 띄우고 강제 로그아웃
         if (data && data.serverVersion && String(data.serverVersion) !== String(localVersion)) {
           localStorage.removeItem('bgl_auth_version');
           if (modal) modal.style.display = 'flex';
           showToast('보안 설정이 변경되어 다시 로그인이 필요합니다.');
-        } else {
-          if (modal) modal.style.display = 'none';
         }
       } catch (err) {
-        if (modal) modal.style.display = 'none';
+        // 네트워크 지연이나 오류 시에도 사용자 화면 방해 없이 통과 유지
       }
     }
 
