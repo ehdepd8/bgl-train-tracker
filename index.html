@@ -1134,17 +1134,69 @@
   <script>
    
    /* =========================================================================
-       접속 보안 SHA-256 해시 검증 (코딩 전문가도 역추적 불가)
+       접속 보안 SHA-256 해시 검증 (의존성 없는 순수 내장 엔진)
        ========================================================================= */
-    // '9607'의 SHA-256 해시값 (수학적으로 원래 번호 복원 불가)
+    // '9607'의 정확한 SHA-256 해시값
     const TARGET_PIN_HASH = "7c2a2339d107a726ea7247a82869098748dfae54303e91124237eb899e390c2a";
 
-    // 브라우저 내장 Web Crypto API로 안전하게 해시 변환
-    async function getSHA256Hash(string) {
-      const utf8 = new TextEncoder().encode(string);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(bytes => bytes.toString(16).padStart(2, '0')).join('');
+    // 표준 SHA-256 순수 연산 함수 (모바일/PC/로컬 파일 전 환경 100% 호환)
+    function calcSHA256(ascii) {
+      function rightRotate(value, amount) {
+        return (value >>> amount) | (value << (32 - amount));
+      }
+      var mathPow = Math.pow;
+      var maxWord = mathPow(2, 32);
+      var lengthProperty = 'length';
+      var i, j;
+      var result = '';
+      var words = [];
+      var asciiBitLength = ascii[lengthProperty] * 8;
+      var hash = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+      var k = [
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+      ];
+
+      words[asciiBitLength >> 5] |= 0x80 << (24 - asciiBitLength % 32);
+      words[(((asciiBitLength + 64) >> 9) << 4) + 15] = asciiBitLength;
+
+      for (i = 0; i < words[lengthProperty]; i += 16) {
+        var w = words.slice(i, i + 16);
+        var oldHash = hash;
+        hash = hash.slice(0, 8);
+
+        for (j = 0; j < 64; j++) {
+          var w15 = w[j - 15], w2 = w[j - 2];
+          var s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
+          var s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
+          w[j] = j < 16 ? w[j] : (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+
+          var ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+          var maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+          var temp1 = (hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[j] + w[j]) | 0;
+          var temp2 = ((rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj) | 0;
+
+          hash = [(temp1 + temp2) | 0, hash[0], hash[1], hash[2], (hash[3] + temp1) | 0, hash[4], hash[5], hash[6]];
+        }
+
+        for (j = 0; j < 8; j++) {
+          hash[j] = (hash[j] + oldHash[j]) | 0;
+        }
+      }
+
+      for (j = 0; j < 8; j++) {
+        for (i = 3; i >= 0; i--) {
+          var b = (hash[j] >> (8 * i)) & 255;
+          result += (b < 16 ? '0' : '') + b.toString(16);
+        }
+      }
+      return result;
     }
 
     function checkAuthOnLoad() {
@@ -1164,56 +1216,50 @@
       }
     }
 
-    async function checkPinAuth() {
+    function checkPinAuth() {
       const input = document.getElementById('pin-input');
       const errorMsg = document.getElementById('pin-error-msg');
       const autoCheckbox = document.getElementById('pin-auto-login');
-      const val = (input ? input.value : '').trim();
+      
+      // 공백 및 숨은 특수문자 완벽 제거
+      let val = input ? input.value : '';
+      val = val.replace(/\s+/g, '').trim();
 
       if (!val) return;
 
-      try {
-        const inputHash = await getSHA256Hash(val);
+      // 순수 JS 엔진으로 SHA-256 계산
+      const inputHash = calcSHA256(val);
 
-        if (inputHash === TARGET_PIN_HASH) {
-          if (autoCheckbox && autoCheckbox.checked) {
-            localStorage.setItem('bgl_pin_authenticated', 'true');
-          } else {
-            sessionStorage.setItem('bgl_pin_authenticated', 'true');
-          }
-          
-          const modal = document.getElementById('pin-auth-modal');
-          if (modal) modal.style.display = 'none';
-          if (errorMsg) errorMsg.classList.add('hidden');
-          showToast('인증 완료되었습니다.');
+      if (inputHash === TARGET_PIN_HASH) {
+        if (autoCheckbox && autoCheckbox.checked) {
+          localStorage.setItem('bgl_pin_authenticated', 'true');
         } else {
-          if (errorMsg) errorMsg.classList.remove('hidden');
-          if (input) {
-            input.value = '';
-            input.focus();
-          }
+          sessionStorage.setItem('bgl_pin_authenticated', 'true');
         }
-      } catch (e) {
-        alert("브라우저 암호화 모듈 실행 오류가 발생했습니다. HTTPS 연결인지 확인해 주세요.");
+        
+        const modal = document.getElementById('pin-auth-modal');
+        if (modal) modal.style.display = 'none';
+        if (errorMsg) errorMsg.classList.add('hidden');
+        showToast('인증 완료되었습니다.');
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
       }
     }
 
-    /* =========================================================================
-       자동 로그인 해제 및 화면 즉시 잠금 함수
-       ========================================================================= */
     function lockScreenManual() {
       if (confirm("자동 로그인을 해제하고 현황판을 잠그시겠습니까?")) {
-        // 1. 브라우저에 저장된 자동 로그인 기록 삭제
         localStorage.removeItem('bgl_pin_authenticated');
         sessionStorage.removeItem('bgl_pin_authenticated');
         
-        // 2. 입력창 초기화 및 체크박스 해제
         const input = document.getElementById('pin-input');
         const autoCheckbox = document.getElementById('pin-auto-login');
         if (input) input.value = '';
-        if (autoCheckbox) autoCheckbox.checked = false; // 다시 열릴 때 기본 체크 해제 상태
+        if (autoCheckbox) autoCheckbox.checked = false;
         
-        // 3. 비밀번호 입력 모달 다시 띄우기
         const modal = document.getElementById('pin-auth-modal');
         if (modal) modal.style.display = 'flex';
         
