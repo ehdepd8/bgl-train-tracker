@@ -203,12 +203,23 @@
       font-weight: 900;
       letter-spacing: 0.3px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-      animation: blink-overlay 1.6s infinite ease-in-out;
+      /* 주기를 1.6s -> 2.4s로 늘려 시인성 확보 */
+      animation: blink-overlay 2.4s infinite ease-in-out;
     }
 
     @keyframes blink-overlay {
-      0%, 100% { opacity: 0; }
-      45%, 75% { opacity: 0.95; }
+      /* 0% ~ 55% (약 1.3초): 오버레이가 완전히 꺼져 있어 역명이 또렷하게 보임 */
+      0%, 55% { 
+        opacity: 0; 
+      }
+      /* 70% ~ 90% (약 0.7초): 장애 문구(PSD, 통신 등)가 선명하게 표시됨 */
+      70%, 90% { 
+        opacity: 0.95; 
+      }
+      /* 100%: 부드럽게 페이드아웃 되며 다시 역명으로 복귀 */
+      100% { 
+        opacity: 0; 
+      }
     }
 
     .station-card.is-away:not(.is-issue) .station-status-overlay {
