@@ -335,6 +335,36 @@
 </head>
 <body>
 
+  <!-- [보안 접속 PIN 모달] -->
+  <div id="pin-auth-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+    <div class="bg-white border border-slate-300 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl space-y-4">
+      <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-xs">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-black text-slate-900">시스템 접속 보안 인증</h3>
+        <p class="text-xs text-slate-500 mt-1">접속 비밀번호 4자리를 입력하세요.</p>
+      </div>
+      
+      <div class="space-y-3">
+        <input type="password" id="pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="● ● ● ●" 
+               class="w-full text-center text-2xl tracking-widest font-black py-2.5 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-none"
+               onkeydown="if(event.key==='Enter') checkPinAuth()">
+        
+        <label class="flex items-center justify-center gap-2 cursor-pointer text-xs font-bold text-slate-700 py-1">
+          <input type="checkbox" id="pin-auto-login" checked class="w-4 h-4 accent-blue-600 rounded cursor-pointer">
+          <span>이 기기에서 자동 로그인 유지</span>
+        </label>
+        
+        <p id="pin-error-msg" class="text-xs font-bold text-rose-600 hidden">비밀번호가 올바르지 않습니다.</p>
+      </div>
+
+      <button onclick="checkPinAuth()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-sm rounded-xl shadow-xs transition">
+        확인 및 접속
+      </button>
+    </div>
+  </div>
+  
   <div id="zoom-container">
     <div class="app-viewport-container">
 
@@ -1098,6 +1128,74 @@
   </div>
 
   <script>
+   
+   /* =========================================================================
+       접속 보안 SHA-256 해시 검증 및 자동 로그인 제어
+       ========================================================================= */
+    // 기본값: '1234'의 SHA-256 해시값 (실제 사용할 번호의 해시값으로 변경 가능)
+    const TARGET_PIN_HASH = "7c2a2339d107a726ea7247a82869098748dfae54303e91124237eb899e390c2a";
+
+    // 브라우저 내장 웹 암호화 모듈(SubtleCrypto)을 이용한 SHA-256 변환 함수
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function checkAuthOnLoad() {
+      const isAutoAuth = localStorage.getItem('bgl_pin_authenticated');
+      const isSessionAuth = sessionStorage.getItem('bgl_pin_authenticated');
+
+      if (isAutoAuth === 'true' || isSessionAuth === 'true') {
+        const modal = document.getElementById('pin-auth-modal');
+        if (modal) modal.style.display = 'none';
+      } else {
+        const modal = document.getElementById('pin-auth-modal');
+        if (modal) modal.style.display = 'flex';
+        setTimeout(() => {
+          const input = document.getElementById('pin-input');
+          if (input) input.focus();
+        }, 300);
+      }
+    }
+
+    async function checkPinAuth() {
+      const input = document.getElementById('pin-input');
+      const errorMsg = document.getElementById('pin-error-msg');
+      const autoCheckbox = document.getElementById('pin-auto-login');
+      const val = (input ? input.value : '').trim();
+
+      if (!val) return;
+
+      // 사용자가 친 번호를 즉시 암호화
+      const inputHash = await sha256(val);
+
+      if (inputHash === TARGET_PIN_HASH) {
+        if (autoCheckbox && autoCheckbox.checked) {
+          localStorage.setItem('bgl_pin_authenticated', 'true');
+        } else {
+          sessionStorage.setItem('bgl_pin_authenticated', 'true');
+        }
+        
+        document.getElementById('pin-auth-modal').style.display = 'none';
+        showToast('인증 완료되었습니다.');
+      } else {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      }
+    }
+
+    // 언제든 다시 잠글 수 있는 함수 (필요 시 활용)
+    function lockScreenManual() {
+      localStorage.removeItem('bgl_pin_authenticated');
+      sessionStorage.removeItem('bgl_pin_authenticated');
+      location.reload();
+    } 
+    
     /* 0. Firebase 설정 */
     const firebaseConfig = {
       apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
@@ -3296,6 +3394,7 @@
     });
 
     window.onload = function() {
+      checkAuthOnLoad(); // ★ 첫 시작 시 인증 검사
       render();
       initRealtimeSync();
     };
