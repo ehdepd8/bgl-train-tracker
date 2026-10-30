@@ -2943,9 +2943,9 @@
             name: candidate.name,
             phone: candidate.phone,
             color: candidate.color || 'team1',
-            icon: candidate.icon === 'smile' ? 'smile' : null,
+            icon: (candidate.icon === 'smile' || candidate.icon === true) ? 'smile' : null, // ★ 신입 스마일 확실히 계승
             location: '미배치',
-            isSupport: true
+            isSupport: true // ★ 지원자 뱃지 명시
           };
         }
       }
@@ -2956,7 +2956,7 @@
         color: 'purple',
         icon: null,
         location: '미배치',
-        isSupport: true
+        isSupport: true // ★ 지원자 뱃지 명시
       };
     }
 
