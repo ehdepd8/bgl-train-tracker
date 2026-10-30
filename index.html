@@ -3463,6 +3463,10 @@
         clock.textContent = now.toTimeString().split(' ')[0];
       }
       renderRideLogs();
+      // [추가] 매 분 0초가 될 때마다 교대 여부 갱신 (또는 시간 변화 감지)
+      if (now.getSeconds() === 0) {
+        updateCurrentWorkingTeamBadge();
+      }
     }, 1000);
 
     let currentZoom = 1.0;
@@ -3515,9 +3519,10 @@
     });
 
     window.onload = function() {
-      checkAuthOnLoad(); // ★ 첫 시작 시 인증 검사
+      checkAuthOnLoad();
       render();
       initRealtimeSync();
+      updateCurrentWorkingTeamBadge(); // ★ 이 한 줄 추가!
     };
   </script>
    
