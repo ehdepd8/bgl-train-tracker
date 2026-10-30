@@ -273,12 +273,13 @@
 
     .team-tab-btn {
       transition: all 0.15s ease;
+      color: #64748b;
     }
     .team-tab-btn.active {
-      background-color: #0284c7;
-      color: #ffffff;
-      border-color: #0284c7;
-      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35);
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+      border-color: #cbd5e1 !important;
     }
 
     .badge-common {
@@ -380,25 +381,19 @@
               근무자 배치 현황판
             </h1>
             
-            <!-- index.html 상단 탭 (250번 줄 부근) -->
-<div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
-  <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
-    1팀
-    <span id="on-badge-team1" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
-  </button>
-  <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
-    2팀
-    <span id="on-badge-team2" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
-  </button>
-  <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
-    3팀
-    <span id="on-badge-team3" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
-  </button>
-  <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
-    4팀
-    <span id="on-badge-team4" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
-  </button>
-</div>
+           <!-- 1~4팀 모던 세그먼트 탭 -->
+            <div class="flex items-center bg-slate-200/80 p-0.5 rounded-lg border border-slate-300 ml-1">
+              <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-3 py-1 text-xs font-black rounded-md border border-transparent">1팀</button>
+              <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-3 py-1 text-xs font-black rounded-md border border-transparent">2팀</button>
+              <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-3 py-1 text-xs font-black rounded-md border border-transparent">3팀</button>
+              <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-3 py-1 text-xs font-black rounded-md border border-transparent">4팀</button>
+            </div>
+
+            <!-- ★ 4팀 바로 우측: 현재 근무팀 뱃지 (클릭 시 해당 팀으로 즉시 전환) -->
+            <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 text-emerald-800 text-[11px] font-black shadow-2xs transition cursor-pointer ml-1" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span id="current-duty-badge-text">3팀 근무중 (야간)</span>
+            </button>
 
             <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
@@ -3089,7 +3084,7 @@
       return `<span class="badge-common badge-ju">${shift}</span>`;
     }
 
-    // 실시간 교대 기준에 맞춘 [근무중] 뱃지 표시
+    // 실시간 교대 기준에 맞춘 현재 근무팀 독립 뱃지 업데이트 (옵션 A)
     function updateCurrentWorkingTeamBadge() {
       const now = new Date();
       const hour = now.getHours();
@@ -3097,33 +3092,43 @@
       const m = now.getMonth();
       const d = now.getDate();
 
-      // 시간대별 현재 현장 근무 상태 판별
+      // 시간대별 근무 형태 및 라벨 설정
       let activeShiftType = '';
+      let shiftLabel = '';
+
       if (hour >= 9 && hour < 18) {
-        // 09:00 ~ 18:00 : 주간 근무조
+        // 09:00 ~ 18:00 : 주간
         activeShiftType = '주';
+        shiftLabel = '주간';
       } else if (hour >= 18) {
-        // 18:00 ~ 24:00 : 오늘 저녁 출근한 야간 근무조
+        // 18:00 ~ 24:00 : 오늘 저녁 출근한 야간
         activeShiftType = '야';
+        shiftLabel = '야간';
       } else {
-        // 00:00 ~ 09:00 : 어제 야간 출근하여 아침까지 근무 중인 조 (오늘 기준 비번)
+        // 00:00 ~ 09:00 : 어제 야간 출근하여 근무 중인 조 (비번일) -> 일관되게 '야간'으로 표기
         activeShiftType = '비';
+        shiftLabel = '야간';
       }
 
-      // 뱃지 깜빡임 없이 hidden 클래스만 제어
-      ['1', '2', '3', '4'].forEach(num => {
-        const badgeEl = document.getElementById(`on-badge-team${num}`);
-        if (!badgeEl) return;
-
-        const shift = getShiftType(y, m, d, num);
-
-        if (shift === activeShiftType) {
-          badgeEl.classList.remove('hidden');
-        } else {
-          badgeEl.classList.add('hidden');
+      // 현재 현장에서 일하고 있는 팀 탐색
+      let onDutyTeam = '';
+      for (const num of ['1', '2', '3', '4']) {
+        if (getShiftType(y, m, d, num) === activeShiftType) {
+          onDutyTeam = num;
+          break;
         }
-      });
-    } // 👈 빠져있던 이 닫는 괄호를 반드시 채워넣어 줍니다!
+      }
+
+      const badgeBtn = document.getElementById('current-duty-badge');
+      const badgeText = document.getElementById('current-duty-badge-text');
+
+      if (badgeBtn && badgeText && onDutyTeam) {
+        badgeText.textContent = `${onDutyTeam}팀 근무중 (${shiftLabel})`;
+        badgeBtn.onclick = () => switchTeam(`team${onDutyTeam}`);
+        badgeBtn.classList.remove('hidden');
+        badgeBtn.classList.add('inline-flex');
+      }
+    }
 
     function openCalendarDialog() {
       const now = new Date();
