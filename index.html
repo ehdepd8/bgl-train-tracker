@@ -1250,8 +1250,22 @@
 
     function syncCurrentTeamStaffToCloud() {
       isSavingToCloud = true;
-      const currentStaffList = teamsData[currentTeamKey].staff || [];
+      const rawList = teamsData[currentTeamKey].staff || [];
+
+      // ★ Firebase 및 로컬스토리지 저장 시 icon과 isSupport 속성이 날아가지 않도록 안전하게 정제
+      const currentStaffList = rawList.map(s => ({
+        id: s.id,
+        name: s.name,
+        phone: s.phone || '010-0000-0000',
+        location: s.location || '미배치',
+        color: s.color || 'team1',
+        icon: s.icon === 'smile' ? 'smile' : null,
+        isSupport: (s.isSupport === true || s.isSupport === 'true') ? true : false
+      }));
+
+      teamsData[currentTeamKey].staff = currentStaffList;
       localStorage.setItem(`bgl_staff_${currentTeamKey}`, JSON.stringify(currentStaffList));
+
       rootDbRef.child(currentTeamKey).child('staff').set(currentStaffList).then(() => {
         setTimeout(() => { isSavingToCloud = false; }, 300);
       });
@@ -1967,12 +1981,15 @@
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
         
-        const isNewbie = (staff.icon === 'smile');
+        // ★ icon 검사 보강
+        const isNewbie = (staff.icon === 'smile' || staff.icon === true);
         const smile = isNewbie 
           ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
           : '';
 
-        const supportBadge = staff.isSupport 
+        // ★ isSupport 검사 보강
+        const isSupportStaff = (staff.isSupport === true || staff.isSupport === 'true');
+        const supportBadge = isSupportStaff 
           ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
           : '';
         
