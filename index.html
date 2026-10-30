@@ -347,8 +347,8 @@
       
       <div class="space-y-3">
         <input type="password" id="pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="● ● ● ●" 
-               class="w-full text-center text-2xl tracking-widest font-black py-2.5 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-none"
-               onkeydown="if(event.key==='Enter') checkPinAuth()">
+       class="w-full text-center text-2xl tracking-widest font-black py-2.5 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-none"
+       onkeydown="if(event.key==='Enter') { event.preventDefault(); checkPinAuth(); }">
         
         <p id="pin-error-msg" class="text-xs font-bold text-rose-600 hidden">비밀번호가 올바르지 않습니다.</p>
       </div>
@@ -1192,17 +1192,38 @@
       }
     }
 
-    // 2. 키패드 확인 버튼 클릭 시: 구글 시트로 비번 대조
+    // [추가] 중복 검증 방지 플래그
+    let isCheckingAuth = false;
+
+    // 2. 키패드 확인 버튼 / Enter 입력 시: 구글 시트로 비번 대조
     async function checkPinAuth() {
+      if (isCheckingAuth) return; // 이미 확인 중이면 중복 요청 차단
+
       const input = document.getElementById('pin-input');
       const errorMsg = document.getElementById('pin-error-msg');
+      const modal = document.getElementById('pin-auth-modal');
+      const btn = modal ? modal.querySelector('button') : null;
       const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
 
-      if (!val) return;
+      if (val.length !== 4) {
+        if (errorMsg) {
+          errorMsg.innerText = "비밀번호 4자리를 모두 입력해 주세요.";
+          errorMsg.className = "text-xs font-bold text-rose-600 block";
+        }
+        if (input) input.focus();
+        return;
+      }
 
-      const btn = event && event.target ? event.target : document.querySelector('#pin-auth-modal button');
-      const originalText = btn ? btn.innerText : '확인';
-      if (btn) btn.innerText = "확인 중...";
+      // [핵심] 엔터나 버튼을 누르자마자 즉시 "확인 중..." 시각적 피드백 제공
+      isCheckingAuth = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 확인 중...`;
+      }
+      if (errorMsg) {
+        errorMsg.innerText = "서버 보안 인증 확인 중...";
+        errorMsg.className = "text-xs font-bold text-amber-600 block";
+      }
 
       try {
         const data = await callGasJsonp({ action: 'auth', pin: val });
@@ -1210,14 +1231,13 @@
         if (data && data.success) {
           localStorage.setItem('bgl_auth_version', data.authVersion);
 
-          const modal = document.getElementById('pin-auth-modal');
           if (modal) modal.style.display = 'none';
-          if (errorMsg) errorMsg.classList.add('hidden');
+          if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
           showToast('인증 완료되었습니다.');
         } else {
           if (errorMsg) {
             errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
-            errorMsg.classList.remove('hidden');
+            errorMsg.className = "text-xs font-bold text-rose-600 block";
           }
           if (input) {
             input.value = '';
@@ -1225,9 +1245,16 @@
           }
         }
       } catch (err) {
-        alert("인증 서버 통신 실패: 네트워크 상태를 확인해 주세요.");
+        if (errorMsg) {
+          errorMsg.innerText = "인증 서버 통신 실패: 다시 시도해 주세요.";
+          errorMsg.className = "text-xs font-bold text-rose-600 block";
+        }
       } finally {
-        if (btn) btn.innerText = originalText;
+        isCheckingAuth = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = "확인 및 접속";
+        }
       }
     }
 
