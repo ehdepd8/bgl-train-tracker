@@ -3135,21 +3135,7 @@
       }, 2500);
     }
 
-    let toastTimeout = null;
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      const msgSpan = document.getElementById('toast-message');
-      msgSpan.textContent = msg;
-
-      if (toastTimeout) clearTimeout(toastTimeout);
-      toast.classList.add('show');
-
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
-    }
-
-    // ★★★ 바로 여기에 A 함수들을 붙여넣으세요! ★★★
+    // 모바일 툴바 제어 및 롱프레스 관련 함수
     let longPressTimer = null;
 
     function updateMobileActionBar() {
@@ -3220,16 +3206,6 @@
       syncCurrentTeamStaffToCloud();
       showToast('선택한 근무자가 삭제되었습니다.');
     }
-
-    // (아래는 원래 있던 시계 타이머)
-    setInterval(() => {
-      const now = new Date();
-      const clock = document.getElementById('live-clock');
-      if (clock) {
-        clock.textContent = now.toTimeString().split(' ')[0];
-      }
-      renderRideLogs();
-    }, 1000);
 
     setInterval(() => {
       const now = new Date();
