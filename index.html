@@ -1128,24 +1128,24 @@
     </div>
   </div>
 
-  <!-- [모바일 전용 하단 액션 툴바] -->
-  <div id="mobile-action-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-2 z-50 border border-slate-700 transition-all duration-200 opacity-0 pointer-events-none translate-y-6">
-    <span id="mobile-selected-info" class="text-xs font-black text-amber-400 pl-1">1명 선택</span>
-    <div class="h-4 w-px bg-slate-700 mx-0.5"></div>
-    <button onclick="copySelectedStaffsToClipboard()" class="px-2.5 py-1.5 bg-blue-600 active:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
-      <i class="fa-solid fa-copy"></i> 복사
+  <!-- [모바일 전용 하단 액션 툴바: PC에서는 md:hidden으로 완전 숨김] -->
+  <div id="mobile-action-bar" class="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-2 z-50 border border-slate-700 transition-all duration-200 opacity-0 pointer-events-none translate-y-6">
+    <span id="mobile-selected-info" class="text-xs font-black text-amber-400 pl-1 shrink-0 whitespace-nowrap">1명 선택</span>
+    <div id="mobile-divider" class="h-4 w-px bg-slate-700 mx-0.5 shrink-0"></div>
+    <button onclick="copySelectedStaffsToClipboard()" class="px-2.5 py-1.5 bg-blue-600 active:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
+      <i class="fa-solid fa-copy text-[11px]"></i> 복사
     </button>
-    <button id="mobile-btn-paste" onclick="pasteStaffsFromClipboard()" class="hidden px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl items-center gap-1 shadow-xs">
-      <i class="fa-solid fa-paste"></i> 붙여넣기
+    <button id="mobile-btn-paste" onclick="pasteStaffsFromClipboard()" class="hidden px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
+      <i class="fa-solid fa-paste text-[11px]"></i> 붙여넣기
     </button>
-    <button id="mobile-btn-edit" onclick="handleMobileEdit()" class="px-2.5 py-1.5 bg-amber-600 active:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
-      <i class="fa-solid fa-pen"></i> 수정
+    <button id="mobile-btn-edit" onclick="handleMobileEdit()" class="px-2.5 py-1.5 bg-amber-600 active:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
+      <i class="fa-solid fa-pen text-[11px]"></i> 수정
     </button>
-    <button onclick="handleMobileDelete()" class="px-2.5 py-1.5 bg-rose-600 active:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-xs">
-      <i class="fa-solid fa-trash"></i> 삭제
+    <button onclick="handleMobileDelete()" class="px-2.5 py-1.5 bg-rose-600 active:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
+      <i class="fa-solid fa-trash text-[11px]"></i> 삭제
     </button>
-    <button onclick="clearSelection()" class="p-1.5 text-slate-400 active:text-white rounded-lg">
-      <i class="fa-solid fa-xmark"></i>
+    <button onclick="clearSelection()" class="p-1.5 text-slate-400 hover:text-white active:text-white rounded-lg shrink-0 ml-0.5" title="선택 해제">
+      <i class="fa-solid fa-xmark text-sm"></i>
     </button>
   </div>
 
