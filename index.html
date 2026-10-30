@@ -380,18 +380,23 @@
               근무자 배치 현황판
             </h1>
             
-            <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
-  <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
-    1팀 <span id="on-badge-team1"></span>
+            <!-- index.html 상단 탭 (250번 줄 부근) -->
+<div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
+  <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
+    1팀
+    <span id="on-badge-team1" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
   </button>
-  <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
-    2팀 <span id="on-badge-team2"></span>
+  <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
+    2팀
+    <span id="on-badge-team2" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
   </button>
-  <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
-    3팀 <span id="on-badge-team3"></span>
+  <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
+    3팀
+    <span id="on-badge-team3" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
   </button>
-  <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
-    4팀 <span id="on-badge-team4"></span>
+  <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn relative px-3 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">
+    4팀
+    <span id="on-badge-team4" class="absolute -top-1 -right-1 hidden w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs"></span>
   </button>
 </div>
 
@@ -3105,24 +3110,19 @@
         activeShiftType = '비';
       }
 
-      // 1팀~4팀 탭 검사 및 뱃지 부착
-      ['1', '2', '3', '4'].forEach(num => {
-        const badgeEl = document.getElementById(`on-badge-team${num}`);
-        if (!badgeEl) return;
+      // 뱃지 깜빡임 없이 hidden 클래스만 제어
+    ['1', '2', '3', '4'].forEach(num => {
+      const badgeEl = document.getElementById(`on-badge-team${num}`);
+      if (!badgeEl) return;
 
-        const shift = getShiftType(y, m, d, num);
+      const shift = getShiftType(y, m, d, num);
 
-        if (shift === activeShiftType) {
-          badgeEl.innerHTML = `
-            <span class="inline-flex items-center ml-1 px-1.5 py-0.2 text-[9px] font-black bg-emerald-500 text-white rounded-full shadow-xs animate-pulse">
-              <span class="w-1.5 h-1.5 rounded-full bg-white mr-0.5"></span>근무중
-            </span>
-          `;
-        } else {
-          badgeEl.innerHTML = '';
-        }
-      });
-    }
+      if (shift === activeShiftType) {
+        badgeEl.classList.remove('hidden');
+      } else {
+        badgeEl.classList.add('hidden');
+      }
+    });
 
     function openCalendarDialog() {
       const now = new Date();
