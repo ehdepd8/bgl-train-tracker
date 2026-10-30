@@ -1133,6 +1133,7 @@
        ========================================================================= */
     // ★ 복사하신 구글 웹앱 URL을 아래 따옴표 안에 넣어주세요!
     const GAS_AUTH_URL = "https://script.google.com/macros/s/AKfycbx0aNwrGPIT5fb4CJnl2J6I2dZvYHdWVJ7H9NHPX3w15A0fC_h68DcclLMwzYswn2nJ/exec";
+    const GAS_DUTY_URL = "https://script.google.com/macros/s/AKfycbz9DsugBS_GpCJ7gVQU4pLwweK-scbvl9gaLZ871PBuifKpMmuJ6pu8fHr6oFVsZKH2BQ/exec";
 
     // JSONP 호출 도우미 함수 (모바일/PC 통신 에러 방지)
     function callGasJsonp(params) {
@@ -3149,21 +3150,15 @@
         return;
       }
 
-      if (!SHEET_WEB_APP_URL) {
-        const inputUrl = prompt(
-          "구글 시트 연동용 Apps Script 웹앱 URL을 입력해 주세요.\n(한 번 입력하시면 브라우저에 영구 저장됩니다):"
-        );
-        if (!inputUrl) return;
-        SHEET_WEB_APP_URL = inputUrl.trim();
-        localStorage.setItem('bgl_sheet_web_app_url', SHEET_WEB_APP_URL);
-      }
+      // [수정됨] prompt 팝업 제거 -> 상수로 박아둔 GAS_DUTY_URL 직접 사용
+      const targetUrl = GAS_DUTY_URL;
 
       const btn = document.getElementById('btnSubmitAutoArrange');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 배치중...`;
 
       try {
-        const fetchUrl = `${SHEET_WEB_APP_URL}?team=${teamNum}&date=${calSelectedDateStr}`;
+        const fetchUrl = `${targetUrl}?team=${teamNum}&date=${calSelectedDateStr}`;
         const res = await fetch(fetchUrl);
         const data = await res.json();
 
