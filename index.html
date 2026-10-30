@@ -1129,63 +1129,109 @@
   <script>
    
   /* =========================================================================
-       접속 보안 검증 및 자동 로그인 제어
+       구글 시트 연동 실시간 보안 인증 및 원격 로그아웃 제어 (JSONP 방식)
        ========================================================================= */
-    // ★ 비밀번호를 변경할 때 이 버전 숫자(v1 -> v2 -> v3)만 하나 올려주면
-    // 기존에 로그인되어 있던 모든 직원 기기들이 자동으로 로그아웃됩니다!
-    const AUTH_KEY = 'bgl_auth_v2'; 
+    // ★ 복사하신 구글 웹앱 URL을 아래 따옴표 안에 넣어주세요!
+    const GAS_AUTH_URL = "https://script.google.com/macros/s/AKfycbx0aNwrGPIT5fb4CJnl2J6I2dZvYHdWVJ7H9NHPX3w15A0fC_h68DcclLMwzYswn2nJ/exec";
 
-    function checkAuthOnLoad() {
-      const isAuth = localStorage.getItem(AUTH_KEY);
+    // JSONP 호출 도우미 함수 (모바일/PC 통신 에러 방지)
+    function callGasJsonp(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'gas_callback_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+          delete window[callbackName];
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+          resolve(data);
+        };
 
-      if (isAuth === 'true') {
-        const modal = document.getElementById('pin-auth-modal');
-        if (modal) modal.style.display = 'none';
-      } else {
-        const modal = document.getElementById('pin-auth-modal');
+        const queryArr = [];
+        for (const key in params) {
+          queryArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+        }
+        queryArr.push('callback=' + callbackName);
+
+        const script = document.createElement('script');
+        script.src = GAS_AUTH_URL + '?' + queryArr.join('&');
+        script.onerror = function() {
+          delete window[callbackName];
+          if (script && script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error("통신 오류"));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    // 1. 화면 처음 열릴 때: 시트의 인증 버전(B2) 확인 후 다르면 자동 로그아웃
+    async function checkAuthOnLoad() {
+      const modal = document.getElementById('pin-auth-modal');
+      const localVersion = localStorage.getItem('bgl_auth_version');
+
+      if (!localVersion) {
         if (modal) modal.style.display = 'flex';
         setTimeout(() => {
           const input = document.getElementById('pin-input');
           if (input) input.focus();
         }, 300);
+        return;
+      }
+
+      try {
+        const data = await callGasJsonp({ action: 'auth', check_version: 'true' });
+        if (data && data.serverVersion && String(data.serverVersion) !== String(localVersion)) {
+          localStorage.removeItem('bgl_auth_version');
+          if (modal) modal.style.display = 'flex';
+          showToast('보안 설정이 변경되어 다시 로그인이 필요합니다.');
+        } else {
+          if (modal) modal.style.display = 'none';
+        }
+      } catch (err) {
+        if (modal) modal.style.display = 'none';
       }
     }
 
-    function checkPinAuth() {
+    // 2. 키패드 확인 버튼 클릭 시: 구글 시트로 비번 대조
+    async function checkPinAuth() {
       const input = document.getElementById('pin-input');
       const errorMsg = document.getElementById('pin-error-msg');
-      let val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
+      const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
 
       if (!val) return;
 
-      // 비밀번호 검증 로직
-      const isValid = (
-        val.length === 4 &&
-        val.charCodeAt(0) === (50 + 7) &&  
-        val.charCodeAt(1) === (60 - 6) &&  
-        val.charCodeAt(2) === (40 + 8) &&  
-        val.charCodeAt(3) === (50 + 5)     
-      );
+      const btn = event && event.target ? event.target : document.querySelector('#pin-auth-modal button');
+      const originalText = btn ? btn.innerText : '확인';
+      if (btn) btn.innerText = "확인 중...";
 
-      if (isValid) {
-        localStorage.setItem(AUTH_KEY, 'true');
-        
-        const modal = document.getElementById('pin-auth-modal');
-        if (modal) modal.style.display = 'none';
-        if (errorMsg) errorMsg.classList.add('hidden');
-        showToast('인증 완료되었습니다.');
-      } else {
-        if (errorMsg) errorMsg.classList.remove('hidden');
-        if (input) {
-          input.value = '';
-          input.focus();
+      try {
+        const data = await callGasJsonp({ action: 'auth', pin: val });
+
+        if (data && data.success) {
+          localStorage.setItem('bgl_auth_version', data.authVersion);
+
+          const modal = document.getElementById('pin-auth-modal');
+          if (modal) modal.style.display = 'none';
+          if (errorMsg) errorMsg.classList.add('hidden');
+          showToast('인증 완료되었습니다.');
+        } else {
+          if (errorMsg) {
+            errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
+            errorMsg.classList.remove('hidden');
+          }
+          if (input) {
+            input.value = '';
+            input.focus();
+          }
         }
+      } catch (err) {
+        alert("인증 서버 통신 실패: 네트워크 상태를 확인해 주세요.");
+      } finally {
+        if (btn) btn.innerText = originalText;
       }
     }
 
+    // 3. 로그아웃 버튼 클릭 시
     function lockScreenManual() {
       if (confirm("로그아웃하시겠습니까? (자동 로그인이 해제됩니다)")) {
-        localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem('bgl_auth_version');
         
         const input = document.getElementById('pin-input');
         if (input) input.value = '';
