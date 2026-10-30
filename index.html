@@ -381,11 +381,19 @@
             </h1>
             
             <div class="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-300 ml-1">
-              <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">1팀</button>
-              <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">2팀</button>
-              <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">3팀</button>
-              <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent">4팀</button>
-            </div>
+  <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
+    1팀 <span id="on-badge-team1"></span>
+  </button>
+  <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
+    2팀 <span id="on-badge-team2"></span>
+  </button>
+  <button onclick="switchTeam('team3')" id="tab-team3" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
+    3팀 <span id="on-badge-team3"></span>
+  </button>
+  <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded-md text-slate-600 hover:text-slate-900 border border-transparent flex items-center">
+    4팀 <span id="on-badge-team4"></span>
+  </button>
+</div>
 
             <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
@@ -3074,6 +3082,46 @@
       if (shift === '비') return '<span class="badge-common badge-bi">비</span>';
       if (shift === '휴') return '<span class="badge-common badge-hyu">휴</span>';
       return `<span class="badge-common badge-ju">${shift}</span>`;
+    }
+
+    // 실시간 교대 기준에 맞춘 [근무중] 뱃지 표시
+    function updateCurrentWorkingTeamBadge() {
+      const now = new Date();
+      const hour = now.getHours();
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const d = now.getDate();
+
+      // 시간대별 현재 현장 근무 상태 판별
+      let activeShiftType = '';
+      if (hour >= 9 && hour < 18) {
+        // 09:00 ~ 18:00 : 주간 근무조
+        activeShiftType = '주';
+      } else if (hour >= 18) {
+        // 18:00 ~ 24:00 : 오늘 저녁 출근한 야간 근무조
+        activeShiftType = '야';
+      } else {
+        // 00:00 ~ 09:00 : 어제 야간 출근하여 아침까지 근무 중인 조 (오늘 기준 비번)
+        activeShiftType = '비';
+      }
+
+      // 1팀~4팀 탭 검사 및 뱃지 부착
+      ['1', '2', '3', '4'].forEach(num => {
+        const badgeEl = document.getElementById(`on-badge-team${num}`);
+        if (!badgeEl) return;
+
+        const shift = getShiftType(y, m, d, num);
+
+        if (shift === activeShiftType) {
+          badgeEl.innerHTML = `
+            <span class="inline-flex items-center ml-1 px-1.5 py-0.2 text-[9px] font-black bg-emerald-500 text-white rounded-full shadow-xs animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full bg-white mr-0.5"></span>근무중
+            </span>
+          `;
+        } else {
+          badgeEl.innerHTML = '';
+        }
+      });
     }
 
     function openCalendarDialog() {
