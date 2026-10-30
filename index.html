@@ -389,11 +389,11 @@
               <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-3 py-1 text-xs font-black rounded-md border border-transparent">4팀</button>
             </div>
 
-            <!-- ★ 4팀 바로 우측: 현재 근무팀 뱃지 (클릭 시 해당 팀으로 즉시 전환) -->
-            <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 text-emerald-800 text-[11px] font-black shadow-2xs transition cursor-pointer ml-1" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span id="current-duty-badge-text">3팀 근무중 (야간)</span>
-            </button>
+            <!-- ★ 탭 바와 높이·라운딩을 완벽히 맞춘 알약 뱃지 -->
+<button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 text-emerald-800 text-[11px] font-black shadow-2xs transition cursor-pointer ml-1.5 self-center" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
+  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+  <span id="current-duty-badge-text">3팀 근무중 (야간)</span>
+</button>
 
             <span id="sync-status" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 실시간 연동
