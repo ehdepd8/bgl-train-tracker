@@ -337,9 +337,11 @@
   <!-- [보안 접속 PIN 모달] -->
   <div id="pin-auth-modal" style="display: none;" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
     <div class="bg-white border border-slate-300 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl space-y-4">
-      <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-xs">
-        <i class="fa-solid fa-lock"></i>
-      </div>
+      <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
+  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+  </svg>
+</div>
       <div>
         <h3 class="text-base font-black text-slate-900">시스템 접속 보안 인증</h3>
         <p class="text-xs text-slate-500 mt-1">접속 비밀번호 4자리를 입력하세요.</p>
