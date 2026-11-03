@@ -387,6 +387,49 @@
     const GAS_AUTH_URL = "https://script.google.com/macros/s/AKfycbxc49MbcjtuiID2yqM0cIny4IYw-27zLxRQNvS0zFumLQYJqOSY3vGlo30KK2dL0u6J/exec";
     const GAS_DUTY_URL = "https://script.google.com/macros/s/AKfycbz9DsugBS_GpCJ7gVQU4pLwweK-scbvl9gaLZ871PBuifKpMmuJ6pu8fHr6oFVsZKH2BQ/exec";
 
+    // -------------------------------------------------------------
+    // [보안 잠금 설정] 5회 실패 시 5분간 입력 잠금
+    // -------------------------------------------------------------
+    const MAX_FAIL_COUNT = 5;       // 최대 허용 실패 횟수
+    const LOCK_MINUTES = 5;         // 잠금 시간 (5분)
+
+    function checkLockStatus() {
+      const lockUntil = localStorage.getItem('bgl_pin_lock_until');
+      const errorMsg = document.getElementById('pin-error-msg');
+      const input = document.getElementById('pin-input');
+      const btn = document.querySelector('#pin-auth-modal button');
+
+      if (lockUntil) {
+        const remainSec = Math.ceil((parseInt(lockUntil, 10) - Date.now()) / 1000);
+        if (remainSec > 0) {
+          const min = Math.floor(remainSec / 60);
+          const sec = remainSec % 60;
+          if (errorMsg) {
+            errorMsg.innerText = `비밀번호를 연속 실패하여 잠겼습니다.\n${min}분 ${sec}초 후 다시 시도하세요.`;
+            errorMsg.className = "text-xs font-bold text-rose-600 block text-center leading-relaxed whitespace-pre-line";
+          }
+          if (input) { input.disabled = true; input.value = ''; }
+          if (btn) btn.disabled = true;
+          return true;
+        } else {
+          localStorage.removeItem('bgl_pin_lock_until');
+          localStorage.setItem('bgl_pin_fail_count', '0');
+          if (input) input.disabled = false;
+          if (btn) btn.disabled = false;
+          if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
+        }
+      }
+      return false;
+    }
+
+    setInterval(() => {
+      const modal = document.getElementById('pin-auth-modal');
+      if (modal && modal.style.display !== 'none') {
+        checkLockStatus();
+      }
+    }, 1000);
+    // -------------------------------------------------------------
+
     function callGasJsonp(params) {
   return new Promise((resolve, reject) => {
     // 구글 스크립트 특수문자 충돌 방지를 위해 알파벳+숫자만 사용
@@ -691,9 +734,10 @@
       }
     }
 
-    // 2. 키패드 확인 버튼 / Enter 입력 시
+    // 2. 키패드 확인 버튼 / Enter 입력 시 (연속 실패 방어 적용)
 async function checkPinAuth() {
   if (isCheckingAuth) return;
+  if (checkLockStatus()) return; // 잠김 상태면 즉시 중단
 
   const input = document.getElementById('pin-input');
   const errorMsg = document.getElementById('pin-error-msg');
@@ -723,38 +767,49 @@ async function checkPinAuth() {
   try {
     // 1) 구글 시트 PIN 검증
     const authData = await callGasJsonp({ action: 'auth', pin: val });
+
+    // 비밀번호가 틀린 경우 처리
     if (!authData || !authData.success) {
-      if (errorMsg) {
-        errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
-        errorMsg.className = "text-xs font-bold text-rose-600 block";
+      let currentFail = parseInt(localStorage.getItem('bgl_pin_fail_count') || '0', 10) + 1;
+      localStorage.setItem('bgl_pin_fail_count', currentFail.toString());
+
+      if (currentFail >= MAX_FAIL_COUNT) {
+        // 5회 채움 -> 5분 잠금 발동
+        const lockTime = Date.now() + (LOCK_MINUTES * 60 * 1000);
+        localStorage.setItem('bgl_pin_lock_until', lockTime.toString());
+        checkLockStatus();
+      } else {
+        const remainChance = MAX_FAIL_COUNT - currentFail;
+        if (errorMsg) {
+          errorMsg.innerText = `비밀번호가 올바르지 않습니다. (${remainChance}회 남음)`;
+          errorMsg.className = "text-xs font-bold text-rose-600 block";
+        }
       }
+
       if (input) { input.value = ''; input.focus(); }
       isCheckingAuth = false;
       if (btn) { btn.disabled = false; btn.innerHTML = "확인 및 접속"; }
       return;
     }
 
-    // 2) 성공 시 로컬 캐싱 및 역사 화면 번들(레이아웃) 로드
+    // 2) 성공 시 실패 횟수 및 잠금 즉시 초기화
+    localStorage.removeItem('bgl_pin_fail_count');
+    localStorage.removeItem('bgl_pin_lock_until');
+
+    // 세션 저장 및 화면 구성
     localStorage.setItem('bgl_auth_version', authData.authVersion);
     localStorage.setItem('bgl_cached_pin', val);
 
     const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
     if (!bundle || !bundle.success) throw new Error("화면 레이아웃 수신 실패");
 
-    // 3) 역사 그리드(칸) 동적 생성
     buildDynamicGrid(bundle.layoutConfig);
-
-    // 4) ★ Firebase 익명 인증을 먼저 '완전히 완료'할 때까지 대기
     await firebase.auth().signInAnonymously();
-
-    // 5) 인증 완료 후 Firebase 실시간 동기화 가동 (기존 DB 데이터 즉시 수신)
     initRealtimeSync();
 
-    // 6) 모달 닫기 및 초기 화면 표시
     if (modal) modal.style.display = 'none';
     if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
-    
-    // 만약 DB 로딩이 살짝 지연될 경우를 대비해 현재 탭 렌더링 강제 실행
+
     setTimeout(() => {
       render();
       updateCurrentWorkingTeamBadge();
@@ -770,7 +825,7 @@ async function checkPinAuth() {
     }
   } finally {
     isCheckingAuth = false;
-    if (btn) {
+    if (btn && !checkLockStatus()) {
       btn.disabled = false;
       btn.innerHTML = "확인 및 접속";
     }
