@@ -66,7 +66,7 @@
 <body>
 
   <!-- [보안 접속 PIN 모달] -->
-  <div id="pin-auth-modal" style="display: flex;" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+  <div id="pin-auth-modal" style="display: none;" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
     <div class="bg-white border border-slate-300 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl space-y-4">
       <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
@@ -647,21 +647,23 @@
       document.getElementById('zoom-container').classList.remove('hidden');
     }
 
-    // 화면 첫 로딩 검증
+    // 화면 첫 로딩 검증 (깜빡임 완전 방지)
     async function checkAuthOnLoad() {
       const modal = document.getElementById('pin-auth-modal');
       const localVersion = localStorage.getItem('bgl_auth_version');
       const savedPin = localStorage.getItem('bgl_cached_pin');
 
+      // 저장된 로그인 정보가 없는 경우 -> 모달 표시
       if (!localVersion || !savedPin) {
         if (modal) modal.style.display = 'flex';
         setTimeout(() => {
           const input = document.getElementById('pin-input');
           if (input) input.focus();
-        }, 300);
+        }, 150);
         return;
       }
 
+      // 저장된 정보가 있는 경우 -> 모달은 숨겨둔 상태로 백그라운드 로드
       try {
         await firebase.auth().signInAnonymously();
 
@@ -672,17 +674,19 @@
           initRealtimeSync();
           render();
           updateCurrentWorkingTeamBadge();
-          if (modal) modal.style.display = 'none';
+          if (modal) modal.style.display = 'none'; // 안전하게 숨김 유지
         } else {
           throw new Error("번들 획득 실패");
         }
 
+        // 백그라운드에서 보안 버전 체크
         const data = await callGasJsonp({ action: 'auth', check_version: 'true' });
         if (data && data.serverVersion && String(data.serverVersion) !== String(localVersion)) {
           lockScreenManual();
           showToast('보안 설정이 변경되어 다시 로그인이 필요합니다.');
         }
       } catch (err) {
+        console.warn("자동 인증 실패 (수동 로그인 전환):", err);
         lockScreenManual();
       }
     }
