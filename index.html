@@ -687,85 +687,116 @@
       }
     }
 
-    // 키패드 확인 버튼 / Enter 입력 시 PIN 검증
-    async function checkPinAuth() {
-      if (isCheckingAuth) return;
+    // 2. 키패드 확인 버튼 / Enter 입력 시: 구글 시트로 비번 대조
+async function checkPinAuth() {
+  if (isCheckingAuth) return;
 
-      const input = document.getElementById('pin-input');
-      const errorMsg = document.getElementById('pin-error-msg');
-      const modal = document.getElementById('pin-auth-modal');
-      const btn = modal ? modal.querySelector('button') : null;
-      const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
+  const input = document.getElementById('pin-input');
+  const errorMsg = document.getElementById('pin-error-msg');
+  const modal = document.getElementById('pin-auth-modal');
+  const btn = modal ? modal.querySelector('button') : null;
+  const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
 
-      if (val.length !== 4) {
-        if (errorMsg) {
-          errorMsg.innerText = "비밀번호 4자리를 모두 입력해 주세요.";
-          errorMsg.className = "text-xs font-bold text-rose-600 block";
-        }
-        if (input) input.focus();
-        return;
-      }
-
-      isCheckingAuth = true;
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 확인 중...`;
-      }
-      if (errorMsg) {
-        errorMsg.innerText = "서버 보안 인증 확인 중...";
-        errorMsg.className = "text-xs font-bold text-amber-600 block";
-      }
-
-      try {
-        const data = await callGasJsonp({ action: 'auth', pin: val });
-
-        if (data && data.success) {
-          localStorage.setItem('bgl_auth_version', data.authVersion);
-          localStorage.setItem('bgl_cached_pin', val);
-
-          await firebase.auth().signInAnonymously();
-
-          // 서버로부터 사내 역사 레이아웃 및 마스터 명단 획득
-          const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
-          if (!bundle || !bundle.success) throw new Error("데이터 수신 오류");
-
-          // 화면 역사 카드 동적 조립
-          buildDynamicGrid(bundle.layoutConfig);
-
-          // Firebase 초기 명단 세팅 (최초 1회)
-          const snapshot = await rootDbRef.child('team1').child('staff').once('value');
-          if (!snapshot.exists() || !snapshot.val() || snapshot.val().length === 0) {
-            teamsData.team1.staff = bundle.initialStaffTeam1;
-            rootDbRef.child('team1').child('staff').set(bundle.initialStaffTeam1);
-          }
-
-          initRealtimeSync();
-          render();
-          updateCurrentWorkingTeamBadge();
-
-          if (modal) modal.style.display = 'none';
-          if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
-          showToast('인증 완료되었습니다.');
-        } else {
-          if (errorMsg) {
-            errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
-            errorMsg.className = "text-xs font-bold text-rose-600 block";
-          }
-          if (input) { input.value = ''; input.focus(); }
-        }
-      } catch (err) {
-        if (errorMsg) {
-          errorMsg.innerText = "인증 서버 통신 실패: 다시 시도해 주세요.";
-          errorMsg.className = "text-xs font-bold text-rose-600 block";
-        }
-      } finally {
-        isCheckingAuth = false;
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = "확인 및 접속";
-        }
-      }
+  if (val.length !== 4) {
+    if (errorMsg) {
+      errorMsg.innerText = "비밀번호 4자리를 모두 입력해 주세요.";
+      errorMsg.className = "text-xs font-bold text-rose-600 block";
     }
+    if (input) input.focus();
+    return;
+  }
+
+  isCheckingAuth = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 확인 중...`;
+  }
+  if (errorMsg) {
+    errorMsg.innerText = "서버 보안 인증 확인 중...";
+    errorMsg.className = "text-xs font-bold text-amber-600 block";
+  }
+
+  let authData = null;
+
+  // [1단계: 구글 Apps Script PIN 검증]
+  try {
+    authData = await callGasJsonp({ action: 'auth', pin: val });
+  } catch (err) {
+    console.error("구글 Apps Script 통신 에러:", err);
+    if (errorMsg) {
+      errorMsg.innerText = "인증 서버 통신 실패: 인터넷 연결 또는 스크립트 상태를 확인하세요.";
+      errorMsg.className = "text-xs font-bold text-rose-600 block";
+    }
+    isCheckingAuth = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = "확인 및 접속"; }
+    return;
+  }
+
+  // 비밀번호 불일치 시
+  if (!authData || !authData.success) {
+    if (errorMsg) {
+      errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
+      errorMsg.className = "text-xs font-bold text-rose-600 block";
+    }
+    if (input) { input.value = ''; input.focus(); }
+    isCheckingAuth = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = "확인 및 접속"; }
+    return;
+  }
+
+  // [2단계: PIN 일치 확인 완료 -> 역사 화면 번들 로드 및 Firebase 연결]
+  try {
+    localStorage.setItem('bgl_auth_version', authData.authVersion);
+    localStorage.setItem('bgl_cached_pin', val);
+
+    // 서버에서 역사 구조 및 초기 명단 다운로드
+    const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
+    if (!bundle || !bundle.success) throw new Error("화면 레이아웃 수신 실패");
+
+    // 화면 역사 카드 동적 조립
+    buildDynamicGrid(bundle.layoutConfig);
+
+    // 파이어베이스 익명 로그인 시도 (Firebase Auth)
+    try {
+      await firebase.auth().signInAnonymously();
+    } catch (fbAuthErr) {
+      console.warn("Firebase 익명인증 경고:", fbAuthErr);
+    }
+
+    // Firebase에 아직 팀 데이터가 없으면 서버에서 받아온 초기 명단 주입
+    try {
+      const snapshot = await rootDbRef.child('team1').child('staff').once('value');
+      if (!snapshot.exists() || !snapshot.val() || snapshot.val().length === 0) {
+        teamsData.team1.staff = bundle.initialStaffTeam1;
+        rootDbRef.child('team1').child('staff').set(bundle.initialStaffTeam1);
+      }
+    } catch (dbErr) {
+      console.warn("Firebase DB 초기 쓰기 경고:", dbErr);
+    }
+
+    // 실시간 연동 및 렌더링 개시
+    initRealtimeSync();
+    render();
+    updateCurrentWorkingTeamBadge();
+
+    if (modal) modal.style.display = 'none';
+    if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
+    showToast('인증 완료되었습니다.');
+
+  } catch (appErr) {
+    console.error("앱 구동 에러:", appErr);
+    if (errorMsg) {
+      errorMsg.innerText = "시스템 초기화 오류: " + appErr.message;
+      errorMsg.className = "text-xs font-bold text-rose-600 block";
+    }
+  } finally {
+    isCheckingAuth = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = "확인 및 접속";
+    }
+  }
+}
 
     // 로그아웃
     function lockScreenManual() {
