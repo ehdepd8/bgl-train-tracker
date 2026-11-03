@@ -6,374 +6,88 @@
   <title>근무자 배치 현황판</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Firebase 실시간 연동 SDK -->
+  
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;800;900&display=swap');
-    
-    * {
-      box-sizing: border-box;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background-color: #f1f5f9;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-x pan-y pinch-zoom;
-    }
-
-    #zoom-container {
-      transform-origin: 0 0;
-      transition: transform 0.05s ease-out;
-      width: max-content;
-      height: max-content;
-    }
-
-    .app-viewport-container {
-      width: 1860px;
-      min-height: 920px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 8px;
-    }
-
-    .grid-cols-25 {
-      display: grid;
-      grid-template-columns: repeat(25, minmax(0, 1fr));
-      gap: 3px;
-    }
-
-    .matrix-layout-grid {
-      display: grid;
-      grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 285px;
-      grid-template-rows: repeat(3, minmax(0, 1fr)) 95px;
-      gap: 5px;
-    }
-
-    .nametag {
-      cursor: grab;
-      transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, opacity 0.2s ease, filter 0.2s ease;
-      touch-action: none;
-      position: relative;
-    }
-    .nametag:active {
-      cursor: grabbing;
-      transform: scale(0.97);
-    }
-    .nametag.dragging {
-      opacity: 0.35 !important;
-    }
-
-    .nametag.multi-selected {
-      outline: 3px solid #f97316 !important;
-      outline-offset: 1px;
-      box-shadow: 0 0 10px rgba(249, 115, 22, 0.75) !important;
-      transform: scale(1.02);
-      z-index: 30 !important;
-    }
-
-    .nametag.drag-insert-before {
-      border-top: 3px solid #0284c7 !important;
-    }
-    .nametag.drag-insert-after {
-      border-bottom: 3px solid #0284c7 !important;
-    }
-
-    .station-slot-height {
-      min-height: 138px;
-      height: 100%;
-    }
-
-    .station-dropzone {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 3px 2px;
-      gap: 4px;
-    }
-    .station-dropzone.count-1 {
-      justify-content: center;
-      align-items: center;
-      gap: 0;
-    }
-    .station-dropzone.count-2 {
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-    }
-    .station-dropzone.count-3 {
-      justify-content: space-evenly;
-      align-items: center;
-      gap: 2px;
-      padding: 2px 1px;
-    }
-    .station-dropzone.count-many {
-      justify-content: flex-start;
-      align-items: center;
-      overflow-y: auto;
-      gap: 2px;
-    }
-
-    .off-duty-dropzone {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: wrap !important;
-      align-items: flex-start !important;
-      align-content: flex-start !important;
-      justify-content: flex-start !important;
-      gap: 8px !important;
-      padding: 6px !important;
-    }
-
-    .unassigned-double-dropzone {
-      display: grid !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      align-content: flex-start !important;
-      gap: 6px !important;
-      padding: 6px !important;
-      overflow-y: auto !important;
-    }
-
-    .unassigned-double-dropzone .nametag {
-      width: 100% !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      opacity: 0.9 !important;
-      filter: saturate(0.9) !important;
-      box-shadow: none !important;
-      isolation: isolate !important; /* ★ 각 카드의 뱃지가 다른 카드에 가려지지 않도록 독립 레이어 격리 */
-      overflow: hidden !important;   /* ★ 카드가 스크롤바에 밀려도 내용물이 밖으로 튕겨나가지 않음 */
-    }
-
-    .unassigned-double-dropzone .nametag:hover {
-      opacity: 1 !important;
-      filter: saturate(1) !important;
-      z-index: 10 !important;
-    }
-    .unassigned-box-muted {
-      background-color: #f1f5f9 !important;
-      border: 2px dashed #cbd5e1 !important;
-      transition: border-color 0.2s ease;
-    }
-    .unassigned-box-muted:hover {
-      border-color: #94a3b8 !important;
-    }
-
-    .drag-hover {
-      background-color: #e0f2fe !important;
-      outline: 2px dashed #0284c7 !important;
-      outline-offset: -2px;
-    }
-
-    .station-card {
-      position: relative;
-    }
-
-    .station-header {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 6px;
-      user-select: none;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    .station-status-overlay {
-      position: absolute;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      pointer-events: none;
-      font-weight: 900;
-      letter-spacing: 0.3px;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-      /* 주기를 1.6s -> 2.4s로 늘려 시인성 확보 */
-      animation: blink-overlay 2.4s infinite ease-in-out;
-    }
-
-    @keyframes blink-overlay {
-      /* 0% ~ 55% (약 1.3초): 오버레이가 완전히 꺼져 있어 역명이 또렷하게 보임 */
-      0%, 55% { 
-        opacity: 0; 
-      }
-      /* 70% ~ 90% (약 0.7초): 장애 문구(PSD, 통신 등)가 선명하게 표시됨 */
-      70%, 90% { 
-        opacity: 0.95; 
-      }
-      /* 100%: 부드럽게 페이드아웃 되며 다시 역명으로 복귀 */
-      100% { 
-        opacity: 0; 
-      }
-    }
-
-    .station-card.is-away:not(.is-issue) .station-status-overlay {
-      display: flex;
-      background-color: #1e293b;
-      color: #f8fafc;
-      font-size: 13px;
-    }
-
-    .station-card.is-issue:not(.is-away) .station-status-overlay {
-      display: flex;
-      background-color: #dc2626;
-      color: #fef08a;
-      font-size: 11px;
-      padding: 0 4px;
-    }
-
-    .station-card.is-away.is-issue .station-status-overlay {
-      display: flex;
-      background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%);
-      color: #ffffff;
-      font-size: 10.5px;
-      padding: 0 2px;
-    }
-
-    .station-card.is-away .station-dropzone {
-      filter: grayscale(85%) contrast(80%) opacity(0.45);
-      background: repeating-linear-gradient(
-        -45deg,
-        rgba(203, 213, 225, 0.35),
-        rgba(203, 213, 225, 0.35) 6px,
-        transparent 6px,
-        transparent 12px
-      ) !important;
-    }
-
-    .train-issue-card {
-      border: 2px solid #ef4444 !important;
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important;
-      animation: pulse-issue 1.4s infinite ease-in-out;
-    }
-
-    .station-card.is-issue {
-      border: 2.5px solid #ef4444 !important;
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important;
-      animation: pulse-issue 1.4s infinite ease-in-out;
-    }
-
-    @keyframes pulse-issue {
-      0%, 100% { border-color: #ef4444; }
-      50% { border-color: #b91c1c; }
-    }
-
-    .custom-scroll::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #94a3b8;
-      border-radius: 4px;
-    }
-
-    .team-tab-btn {
-      transition: all 0.15s ease;
-      color: #475569;
-    }
-    .team-tab-btn.active {
-      background-color: #0284c7 !important;
-      color: #ffffff !important;
-      border-color: #0284c7 !important;
-      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35) !important;
-    }
-
-    .badge-common {
-      font-size: 9.5px;
-      padding: 0px 4px;
-      border-radius: 3px;
-      line-height: 14px;
-      height: 14px;
-      display: inline-block;
-      font-weight: 700;
-      transform: scale(0.95);
-    }
+    * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom; }
+    #zoom-container { transform-origin: 0 0; transition: transform 0.05s ease-out; width: max-content; height: max-content; }
+    .app-viewport-container { width: 1860px; min-height: 920px; display: flex; flex-direction: column; justify-content: space-between; padding: 8px; }
+    .grid-cols-25 { display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); gap: 3px; }
+    .matrix-layout-grid { display: grid; grid-template-columns: 295px repeat(8, minmax(0, 1fr)) 285px; grid-template-rows: repeat(3, minmax(0, 1fr)) 95px; gap: 5px; }
+    .nametag { cursor: grab; transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.15s ease, opacity 0.2s ease, filter 0.2s ease; touch-action: none; position: relative; }
+    .nametag:active { cursor: grabbing; transform: scale(0.97); }
+    .nametag.dragging { opacity: 0.35 !important; }
+    .nametag.multi-selected { outline: 3px solid #f97316 !important; outline-offset: 1px; box-shadow: 0 0 10px rgba(249, 115, 22, 0.75) !important; transform: scale(1.02); z-index: 30 !important; }
+    .nametag.drag-insert-before { border-top: 3px solid #0284c7 !important; }
+    .nametag.drag-insert-after { border-bottom: 3px solid #0284c7 !important; }
+    .station-slot-height { min-height: 138px; height: 100%; }
+    .station-dropzone { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3px 2px; gap: 4px; }
+    .station-dropzone.count-1 { justify-content: center; align-items: center; gap: 0; }
+    .station-dropzone.count-2 { justify-content: center; align-items: center; gap: 6px; }
+    .station-dropzone.count-3 { justify-content: space-evenly; align-items: center; gap: 2px; padding: 2px 1px; }
+    .station-dropzone.count-many { justify-content: flex-start; align-items: center; overflow-y: auto; gap: 2px; }
+    .off-duty-dropzone { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: flex-start !important; align-content: flex-start !important; justify-content: flex-start !important; gap: 8px !important; padding: 6px !important; }
+    .unassigned-double-dropzone { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; align-content: flex-start !important; gap: 6px !important; padding: 6px !important; overflow-y: auto !important; }
+    .unassigned-double-dropzone .nametag { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; opacity: 0.9 !important; filter: saturate(0.9) !important; box-shadow: none !important; isolation: isolate !important; overflow: hidden !important; }
+    .unassigned-double-dropzone .nametag:hover { opacity: 1 !important; filter: saturate(1) !important; z-index: 10 !important; }
+    .unassigned-box-muted { background-color: #f1f5f9 !important; border: 2px dashed #cbd5e1 !important; transition: border-color 0.2s ease; }
+    .unassigned-box-muted:hover { border-color: #94a3b8 !important; }
+    .drag-hover { background-color: #e0f2fe !important; outline: 2px dashed #0284c7 !important; outline-offset: -2px; }
+    .station-card { position: relative; }
+    .station-header { position: relative; display: flex; align-items: center; justify-content: center; padding: 4px 6px; user-select: none; overflow: hidden; cursor: pointer; }
+    .station-status-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; z-index: 10; pointer-events: none; font-weight: 900; letter-spacing: 0.3px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); animation: blink-overlay 2.4s infinite ease-in-out; }
+    @keyframes blink-overlay { 0%, 55% { opacity: 0; } 70%, 90% { opacity: 0.95; } 100% { opacity: 0; } }
+    .station-card.is-away:not(.is-issue) .station-status-overlay { display: flex; background-color: #1e293b; color: #f8fafc; font-size: 13px; }
+    .station-card.is-issue:not(.is-away) .station-status-overlay { display: flex; background-color: #dc2626; color: #fef08a; font-size: 11px; padding: 0 4px; }
+    .station-card.is-away.is-issue .station-status-overlay { display: flex; background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%); color: #ffffff; font-size: 10.5px; padding: 0 2px; }
+    .station-card.is-away .station-dropzone { filter: grayscale(85%) contrast(80%) opacity(0.45); background: repeating-linear-gradient(-45deg, rgba(203, 213, 225, 0.35), rgba(203, 213, 225, 0.35) 6px, transparent 6px, transparent 12px) !important; }
+    .train-issue-card { border: 2px solid #ef4444 !important; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5) !important; animation: pulse-issue 1.4s infinite ease-in-out; }
+    .station-card.is-issue { border: 2.5px solid #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.45) !important; animation: pulse-issue 1.4s infinite ease-in-out; }
+    @keyframes pulse-issue { 0%, 100% { border-color: #ef4444; } 50% { border-color: #b91c1c; } }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+    .team-tab-btn { transition: all 0.15s ease; color: #475569; }
+    .team-tab-btn.active { background-color: #0284c7 !important; color: #ffffff !important; border-color: #0284c7 !important; box-shadow: 0 1px 3px rgba(2, 132, 199, 0.35) !important; }
+    .badge-common { font-size: 9.5px; padding: 0px 4px; border-radius: 3px; line-height: 14px; height: 14px; display: inline-block; font-weight: 700; transform: scale(0.95); }
     .badge-ju { background-color: #fef3c7; color: #92400e; }
     .badge-ya { background-color: #e0e7ff; color: #3730a3; }
     .badge-bi { background-color: #e2e8f0; color: #475569; }
     .badge-hyu { background-color: #ffe4e6; color: #be123c; }
-
-    #toast {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-30px);
-      background-color: #0f172a;
-      color: #ffffff;
-      padding: 6px 16px;
-      border-radius: 9999px;
-      font-size: 11.5px;
-      font-weight: 700;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 9999;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      border: 1px solid #334155;
-    }
-    #toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-    
-    .sidebar-fixed-card {
-      height: 210px !important;
-      max-height: 210px !important;
-      min-height: 210px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      overflow: hidden !important;
-    }
+    #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px); background-color: #0f172a; color: #ffffff; padding: 6px 16px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; border: 1px solid #334155; }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .sidebar-fixed-card { height: 210px !important; max-height: 210px !important; min-height: 210px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
   </style>
 </head>
 <body>
 
   <!-- [보안 접속 PIN 모달] -->
-  <div id="pin-auth-modal" style="display: none;" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
+  <div id="pin-auth-modal" style="display: flex;" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[99999] p-4">
     <div class="bg-white border border-slate-300 rounded-2xl max-w-xs w-full p-6 text-center shadow-2xl space-y-4">
       <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto shadow-xs">
-  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-  </svg>
-</div>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+      </div>
       <div>
         <h3 class="text-base font-black text-slate-900">시스템 접속 보안 인증</h3>
         <p class="text-xs text-slate-500 mt-1">접속 비밀번호 4자리를 입력하세요.</p>
       </div>
-      
       <div class="space-y-3">
         <input type="password" id="pin-input" maxlength="4" pattern="[0-9]*" inputmode="numeric" placeholder="● ● ● ●" 
-       class="w-full text-center text-2xl tracking-widest font-black py-2.5 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-none"
-       onkeydown="if(event.key==='Enter') { event.preventDefault(); checkPinAuth(); }">
-        
+               class="w-full text-center text-2xl tracking-widest font-black py-2.5 border-2 border-slate-300 rounded-xl focus:border-blue-600 focus:outline-none"
+               onkeydown="if(event.key==='Enter') { event.preventDefault(); checkPinAuth(); }">
         <p id="pin-error-msg" class="text-xs font-bold text-rose-600 hidden">비밀번호가 올바르지 않습니다.</p>
       </div>
-
       <button onclick="checkPinAuth()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-sm rounded-xl shadow-xs transition">
         확인 및 접속
       </button>
     </div>
   </div>
   
-  <div id="zoom-container">
+  <div id="zoom-container" class="hidden">
     <div class="app-viewport-container">
 
       <div id="toast">
@@ -383,17 +97,12 @@
 
       <!-- 헤더 바 -->
       <header class="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between shadow-xs shrink-0 mb-1">
-        
-        <!-- [좌측 영역]: 타이틀, 1~4팀 탭, 근무팀 바로가기, 실시간 연동 -->
         <div class="flex items-center gap-1.5">
           <div class="bg-blue-600 text-white w-7 h-7 rounded flex items-center justify-center font-black text-sm shadow-xs">
             <i class="fa-solid fa-train-subway"></i>
           </div>
-          <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900 mr-1">
-            근무자 배치 현황판
-          </h1>
+          <h1 class="text-sm md:text-base font-black tracking-tight text-slate-900 mr-1">근무자 배치 현황판</h1>
           
-          <!-- 1~4팀 탭 -->
           <div class="flex items-center bg-slate-100 p-0.5 rounded border border-slate-300 ml-1">
             <button onclick="switchTeam('team1')" id="tab-team1" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">1팀</button>
             <button onclick="switchTeam('team2')" id="tab-team2" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">2팀</button>
@@ -401,20 +110,17 @@
             <button onclick="switchTeam('team4')" id="tab-team4" class="team-tab-btn px-2.5 py-0.5 text-xs font-black rounded text-slate-600 hover:text-slate-900 border border-transparent">4팀</button>
           </div>
 
-          <!-- 현재 근무팀 카드 (우측 통계 카드와 규격 일치) -->
-          <button id="current-duty-badge" onclick="" class="hidden items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded text-xs transition cursor-pointer" title="클릭 시 현재 근무 중인 팀으로 화면 이동">
+          <button id="current-duty-badge" class="hidden items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 px-2 py-0.5 rounded text-xs transition cursor-pointer">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <strong id="current-duty-badge-text" class="text-emerald-800 font-black">3팀 야간근무</strong>
+            <strong id="current-duty-badge-text" class="text-emerald-800 font-black"></strong>
           </button>
 
-          <!-- 실시간 연동 카드 (우측 통계 카드와 규격 일치) -->
           <div id="sync-status" class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-xs select-none">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="text-slate-600 font-bold">실시간 연동</span>
           </div>
         </div>
 
-        <!-- [우측 영역]: 본선운행부터 시계까지 오른쪽 끝으로 밀착 정렬 -->
         <div class="flex items-center space-x-2 text-xs">
           <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -442,36 +148,29 @@
             <strong id="stat-total" class="text-sky-800 font-black">0명</strong>
           </div>
 
-          <button onclick="resetZoomScale()" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded border border-slate-300 text-xs flex items-center gap-1" title="화면 배율 100% 원복">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span id="zoom-percent-text">100%</span>
+          <button onclick="resetZoomScale()" class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded border border-slate-300 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-magnifying-glass"></i> <span id="zoom-percent-text">100%</span>
           </button>
-
           <div class="h-4 w-px bg-slate-300 mx-1"></div>
-
-          <button onclick="openCalendarDialog()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1.5" title="구글 스프레드시트 근무표 기준 자동배치">
+          <button onclick="openCalendarDialog()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1.5">
             <i class="fa-solid fa-calendar-days text-emerald-200"></i> 팀별 자동배치
           </button>
-
           <button onclick="openAddModal()" class="px-2.5 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded shadow-xs text-xs transition flex items-center gap-1">
             <i class="fa-solid fa-plus"></i> 근무자 등록
           </button>
-          
-          <button onclick="resetCurrentTeamOnly()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold rounded text-xs transition flex items-center gap-1" title="현재 팀 근무자 전원을 미배치함으로 이동">
+          <button onclick="resetCurrentTeamOnly()" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold rounded text-xs transition flex items-center gap-1">
             <i class="fa-solid fa-rotate-left text-amber-600"></i> 팀초기화
           </button>
-
-          <button onclick="lockScreenManual()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded text-xs transition flex items-center gap-1" title="자동 로그인 해제 및 화면 잠금">
+          <button onclick="lockScreenManual()" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded text-xs transition flex items-center gap-1">
             <span class="text-xs">🔒</span> 로그아웃
           </button>
-
-         <div id="live-clock" class="font-mono font-black text-slate-900 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded text-sm tracking-wider shadow-2xs hidden lg:flex items-center justify-center">
-  00:00:00
-</div>
+          <div id="live-clock" class="font-mono font-black text-slate-900 bg-slate-100 border border-slate-300 px-2.5 py-0.5 rounded text-sm tracking-wider shadow-2xs hidden lg:flex items-center justify-center">
+            00:00:00
+          </div>
         </div>
       </header>
 
-      <!-- 1. 상단 25편성 한 줄 배치 -->
+      <!-- 1. 상단 25편성 -->
       <section class="bg-white border border-slate-300 rounded-lg p-1.5 shadow-xs shrink-0 mb-1">
         <div class="flex items-center justify-between text-[11px] mb-1 px-1">
           <div class="font-black text-slate-800 flex items-center gap-1.5">
@@ -485,387 +184,47 @@
             <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-slate-300"></span> 기지대기</span>
           </div>
         </div>
-
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 10열 4행 통합 그리드 -->
-      <main class="flex-1 matrix-layout-grid min-h-0 w-full">
-
-        <!-- [1열 1행]: 열차 탑승 현황 -->
-        <div class="station-card sidebar-fixed-card bg-sky-50/60 border-2 border-sky-400 rounded-md shadow-xs" data-zone-id="승무현황">
-          <div class="bg-sky-500 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-train-tram text-sky-100"></i> 열차 탑승 현황
-            </span>
-            <span id="badge-train-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
-          </div>
-          <div id="train-riders-list" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
-            <span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>
-          </div>
-        </div>
-
-        <!-- 1행 2~9열: 1관리역 -->
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="기지입환">
-          <div class="station-header bg-slate-200 hover:bg-slate-300 text-slate-900 border-b border-rose-200">
-            <span class="font-black text-base">기지입환</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="가야대 [9621]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">가야대</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9621]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="장신대 [9620]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">장신대</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9620]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="연지공원 [9619]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">연지공원</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9619]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="박물관 [9618]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">박물관</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9618]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="수로왕릉 [9617]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">수로왕릉</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9617]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="봉황 [9616]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">봉황</span>
-            <span class="font-mono text-rose-700 ml-1 font-semibold">[9616]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-rose-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="부원 [9615]">
-          <div class="station-header bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200">
-            <span class="font-black text-base tracking-tight">부원</span>
-            <span class="font-mono text-xs font-semibold text-rose-700 ml-1">[9615]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <!-- 10열 1~4행 병합: 미배치 -->
-        <div class="row-span-4 station-card unassigned-box-muted rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
-          <div class="bg-slate-400 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-slate-300 shrink-0">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-boxes-stacked text-slate-200"></i> 미배치 (대기함)
-            </span>
-            <span id="badge-unassigned-count" class="bg-slate-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0명</span>
-          </div>
-          <div class="text-[10px] text-slate-400 text-center py-0.5 bg-slate-100/70 border-b border-slate-200 font-semibold select-none">
-            대기 네임택 보관 (좌우 2열)
-          </div>
-          <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-slate-100/60">
-          </div>
-        </div>
-
-        <!-- [1열 2행]: 탑승기록 -->
-        <div class="station-card sidebar-fixed-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md shadow-xs">
-          <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> <span id="team-ride-log-title">1팀</span> 탑승기록
-            </span>
-            <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition" title="현재 팀 탑승기록 전체 비우기">전체삭제</button>
-          </div>
-          <div id="train-ride-logs" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
-            <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
-          </div>
-        </div>
-
-        <!-- 2행 2~9열: 2관리역 -->
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해시청 [9614]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">김해시청</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9614]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="인제대 [9613]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">인제대</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9613]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해대학 [9612]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">김해대학</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9612]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="지내 [9611]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">지내</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9611]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="불암 [9610]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">불암</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9610]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대사 [9609]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">대사</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9609]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="평강 [9608]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">평강</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9608]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-emerald-300 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="대저 [9607]">
-          <div class="station-header bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">대저</span>
-            <span class="font-mono text-xs font-semibold text-emerald-700 ml-1">[9607]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <!-- [1열 3행]: 특이사항 -->
-        <div class="station-card sidebar-fixed-card bg-amber-50/70 border-2 border-amber-400 rounded-md shadow-xs">
-          <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항
-            </span>
-            <button onclick="clearNoticeMemo()" class="text-[9.5px] bg-amber-600 hover:bg-amber-700 px-1.5 py-0.2 rounded font-bold text-white transition shadow-2xs" title="특이사항 전체 내용 비우기">
-              전체삭제
-            </button>
-          </div>
-          <div id="notice-memo-list" class="custom-scroll flex-1 overflow-y-auto p-1.5 space-y-1 bg-white">
-            <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
-          </div>
-          <div class="p-1 border-t border-amber-200 bg-amber-50/60 flex gap-1 shrink-0">
-            <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
-                   class="flex-1 px-2 py-1 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
-                   onkeydown="if(event.key==='Enter') addNoticeMemoDirect()">
-            <button onclick="addNoticeMemoDirect()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded transition shrink-0">
-              추가
-            </button>
-          </div>
-        </div>
-
-        <!-- 3행 2~3열: 사전점검 -->
-        <div class="col-span-2 border-2 border-amber-400 rounded-md overflow-hidden shadow-xs flex flex-col bg-white">
-          <div class="bg-amber-400 text-slate-900 text-base font-black py-0.5 px-2 text-center border-b border-amber-500 shrink-0">
-            사 전 점 검
-          </div>
-          <div class="grid grid-cols-2 divide-x divide-amber-200 flex-1">
-            <div class="station-card flex flex-col" data-zone-id="사전점검-가야대">
-              <div class="station-header text-sm font-black text-amber-950 bg-amber-100/90 py-1 border-b border-amber-200">
-                <span>가야대</span>
-                <div class="station-status-overlay"></div>
-              </div>
-              <div class="station-dropzone station-slot-height bg-white"></div>
-            </div>
-            <div class="station-card flex flex-col" data-zone-id="사전점검-사상">
-              <div class="station-header text-sm font-black text-amber-950 bg-amber-100/90 py-1 border-b border-amber-200">
-                <span>사상</span>
-                <div class="station-status-overlay"></div>
-              </div>
-              <div class="station-dropzone station-slot-height bg-white"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3행 4~9열: 3관리역 -->
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="등구 [9606]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
-            <span class="font-black text-base tracking-tight">등구</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9606]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="덕두 [9605]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
-            <span class="font-black text-base tracking-tight">덕두</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9605]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="김해공항 [9604]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
-            <span class="font-black text-base tracking-tight">김해공항</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9604]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="서부산 [9603]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
-            <span class="font-black text-base tracking-tight">서부산</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9603]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="괘법 [9602]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-emerald-200">
-            <span class="font-black text-base tracking-tight">괘법</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9602]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <div class="station-card bg-white border border-indigo-200 rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="사상 [9601]">
-          <div class="station-header bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200">
-            <span class="font-black text-base tracking-tight">사상</span>
-            <span class="font-mono text-xs font-semibold text-indigo-700 ml-1">[9601]</span>
-            <div class="station-status-overlay"></div>
-          </div>
-          <div class="station-dropzone station-slot-height bg-white"></div>
-        </div>
-
-        <!-- 4행: 휴무자 및 본사 -->
-        <div class="col-span-9 flex gap-1 h-full min-h-0">
-          
-          <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
-            <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
-              <div class="flex items-center gap-1.5 font-black text-slate-800">
-                <i class="fa-solid fa-bed text-amber-500"></i>
-                <span>휴 무 자</span>
-              </div>
-              <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
-            </div>
-            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-slate-50/60 rounded border border-slate-200 flex-1">
-            </div>
-          </div>
-
-          <div class="w-[428px] station-card bg-white border border-purple-300 rounded-md p-1 flex flex-col shadow-xs shrink-0" data-zone-id="본사">
-            <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
-              <div class="flex items-center gap-1.5 font-black text-purple-900">
-                <i class="fa-solid fa-building text-purple-600"></i>
-                <span>본 사</span>
-              </div>
-              <span id="badge-hq-count" class="font-black text-xs px-2 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">0명</span>
-            </div>
-            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-purple-50/40 rounded border border-purple-200 flex-1">
-            </div>
-          </div>
-
-        </div>
-      </main>
+      <!-- 2. 중앙 메인: 동적으로 서버에서 생성되는 텅 빈 박스 (역사 코드 완전 삭제) -->
+      <main id="main-grid" class="flex-1 matrix-layout-grid min-h-0 w-full"></main>
 
     </div>
   </div>
 
-  <!-- [시트 자동배치 날짜/교번 선택 캘린더 모달] -->
+  <!-- 모달들 (역사 정보 없는 순수 입력 UI) -->
   <div id="calendar-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex justify-between items-center bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-        <div class="font-black text-sm text-slate-800">
-          📍 <span id="cal-team-label">1팀</span> 근무 달력
-        </div>
-        <div class="flex gap-1 font-black text-[10px]">
-          <span class="badge-common badge-ju">주</span>
-          <span class="badge-common badge-ya">야</span>
-          <span class="badge-common badge-bi">비</span>
-          <span class="badge-common badge-hyu">휴</span>
-        </div>
+        <div class="font-black text-sm text-slate-800">📍 <span id="cal-team-label">1팀</span> 근무 달력</div>
+        <div class="flex gap-1 font-black text-[10px]"><span class="badge-common badge-ju">주</span><span class="badge-common badge-ya">야</span><span class="badge-common badge-bi">비</span><span class="badge-common badge-hyu">휴</span></div>
       </div>
-
       <div class="bg-white border border-slate-200 rounded-xl p-3">
         <div class="flex justify-between items-center mb-2 px-1">
           <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-xs font-black text-slate-600" onclick="changeCalMonth(-1)">◀</button>
           <div class="font-black text-sm text-slate-800" id="calMonthTitle">2026년 10월</div>
           <button type="button" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-xs font-black text-slate-600" onclick="changeCalMonth(1)">▶</button>
         </div>
-
-        <div class="grid grid-cols-7 gap-1 text-center font-black text-xs text-slate-400 mb-1">
-          <div class="text-rose-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-500">토</div>
-        </div>
+        <div class="grid grid-cols-7 gap-1 text-center font-black text-xs text-slate-400 mb-1"><div class="text-rose-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-500">토</div></div>
         <div class="grid grid-cols-7 gap-1 text-center" id="calendarDays"></div>
       </div>
-
       <div class="flex justify-between items-center pt-2 border-t border-slate-100">
-        <div class="text-xs font-bold text-slate-700">
-          선택: <span id="displaySelectedDate" class="text-blue-600 font-mono font-black">2026-10-26</span>
-          <span id="displaySelectedDuty" class="ml-1"></span>
-        </div>
+        <div class="text-xs font-bold text-slate-700">선택: <span id="displaySelectedDate" class="text-blue-600 font-mono font-black">2026-10-26</span><span id="displaySelectedDuty" class="ml-1"></span></div>
         <div class="flex gap-1.5">
           <button type="button" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg" onclick="closeCalendarDialog()">취소</button>
-          <button type="button" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1" id="btnSubmitAutoArrange" onclick="executeAutoArrangeFromCalendar()">
-            <i class="fa-solid fa-bolt"></i> 자동배치 실행
-          </button>
+          <button type="button" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1" id="btnSubmitAutoArrange" onclick="executeAutoArrangeFromCalendar()"><i class="fa-solid fa-bolt"></i> 자동배치 실행</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- [역사 불량 세부 선택 모달] -->
   <div id="issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
-          <span id="issue-modal-station-name" class="text-rose-700">역명</span> 불량 유형 선택
-        </h3>
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i><span id="issue-modal-station-name" class="text-rose-700">역명</span> 불량 유형 선택</h3>
         <button onclick="closeIssueModal(true)" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="space-y-3 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
@@ -875,7 +234,6 @@
             <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">기타</button>
           </div>
         </div>
-
         <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
           <div>
             <label class="block font-black text-rose-950 mb-1">선로 구분</label>
@@ -898,7 +256,6 @@
           </div>
         </div>
       </div>
-
       <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
         <button onclick="closeIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
         <button id="btn-confirm-issue-detail" onclick="confirmIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">확정 등록</button>
@@ -906,17 +263,12 @@
     </div>
   </div>
 
-  <!-- [열차 불량 세부 선택 모달] -->
   <div id="train-issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
-          <span id="train-issue-modal-title" class="text-rose-700">0편성</span> 열차 불량 선택
-        </h3>
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i><span id="train-issue-modal-title" class="text-rose-700">0편성</span> 열차 불량 선택</h3>
         <button onclick="closeTrainIssueModal(true)" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="space-y-3 text-xs">
         <div>
           <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
@@ -926,7 +278,6 @@
             <button type="button" onclick="selectTrainIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">기타</button>
           </div>
         </div>
-
         <div id="train-door-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
           <div class="flex items-center justify-between mb-1">
             <label class="font-black text-rose-950">출입문 번호 (복수 선택 가능)</label>
@@ -944,7 +295,6 @@
           </div>
         </div>
       </div>
-
       <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
         <button onclick="closeTrainIssueModal(true)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
         <button id="btn-confirm-train-issue-detail" onclick="confirmTrainIssueWithDetail()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded hidden">확정 등록</button>
@@ -952,87 +302,34 @@
     </div>
   </div>
 
-  <!-- 인원 등록 모달 -->
   <div id="add-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-user-plus text-sky-600"></i> 근무자 등록 (<span id="modal-team-title">1팀</span>)
-        </h3>
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-user-plus text-sky-600"></i> 근무자 등록 (<span id="modal-team-title">1팀</span>)</h3>
         <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="space-y-2.5 text-xs">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">성명</label>
-          <input type="text" id="input-name" placeholder="예: 홍길동" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-sky-500">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">연락처</label>
-          <input type="text" id="input-phone" placeholder="예: 010-2840-6195" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:border-sky-500">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">초기 배치</label>
-          <select id="input-location" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-sky-500"></select>
-        </div>
-
+        <div><label class="block font-bold text-slate-700 mb-1">성명</label><input type="text" id="input-name" placeholder="예: 홍길동" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-sky-500"></div>
+        <div><label class="block font-bold text-slate-700 mb-1">연락처</label><input type="text" id="input-phone" placeholder="예: 010-0000-0000" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:border-sky-500"></div>
+        <div><label class="block font-bold text-slate-700 mb-1">초기 배치</label><select id="input-location" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-sky-500"></select></div>
         <div class="pt-1 border-t border-slate-100">
           <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-800 bg-amber-50/70 p-2 rounded border border-amber-200">
             <input type="checkbox" id="input-is-newbie" class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
-            <span class="flex items-center gap-1">
-              신입 사원 <span class="text-sm">😊</span> <span class="text-[10px] text-amber-700 font-normal">(체크 시 네임택에 스마일 표시)</span>
-            </span>
+            <span class="flex items-center gap-1">신입 사원 <span class="text-sm">😊</span> <span class="text-[10px] text-amber-700 font-normal">(체크 시 네임택에 스마일 표시)</span></span>
           </label>
         </div>
-
         <div>
           <label class="block font-bold text-slate-700 mb-1">직무 및 팀 구분</label>
           <div class="grid grid-cols-2 gap-1.5">
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="team1" checked class="accent-emerald-600"> 1팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="team2" class="accent-orange-600"> 2팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="team3" class="accent-lime-600"> 3팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="team4" class="accent-blue-600"> 4팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="purple" class="accent-purple-700"> 일근자
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>
-            </label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="team1" checked class="accent-emerald-600"> 1팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="team2" class="accent-orange-600"> 2팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="team3" class="accent-lime-600"> 3팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="team4" class="accent-blue-600"> 4팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="purple" class="accent-purple-700"> 일근자</span><span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원</span><span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span></label>
           </div>
         </div>
       </div>
-
       <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
         <button onclick="closeAddModal()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
         <button onclick="confirmAddStaff()" class="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded">등록 완료</button>
@@ -1040,87 +337,34 @@
     </div>
   </div>
 
-  <!-- [근무자 정보 수정 모달] -->
   <div id="edit-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-          <i class="fa-solid fa-user-pen text-amber-600"></i> 근무자 정보 수정
-        </h3>
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-user-pen text-amber-600"></i> 근무자 정보 수정</h3>
         <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
-
       <div class="space-y-2.5 text-xs">
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">성명</label>
-          <input type="text" id="edit-name" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-amber-500">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">연락처</label>
-          <input type="text" id="edit-phone" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:border-amber-500">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">배치 위치</label>
-          <select id="edit-location" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500"></select>
-        </div>
-
+        <div><label class="block font-bold text-slate-700 mb-1">성명</label><input type="text" id="edit-name" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold focus:outline-none focus:border-amber-500"></div>
+        <div><label class="block font-bold text-slate-700 mb-1">연락처</label><input type="text" id="edit-phone" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono focus:outline-none focus:border-amber-500"></div>
+        <div><label class="block font-bold text-slate-700 mb-1">배치 위치</label><select id="edit-location" class="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:border-amber-500"></select></div>
         <div class="pt-1 border-t border-slate-100">
           <label class="flex items-center gap-2 cursor-pointer font-bold text-slate-800 bg-amber-50/70 p-2 rounded border border-amber-200">
             <input type="checkbox" id="edit-is-newbie" class="w-4 h-4 accent-amber-500 rounded cursor-pointer">
-            <span class="flex items-center gap-1">
-              신입 사원 <span class="text-sm">😊</span> <span class="text-[10px] text-amber-700 font-normal">(체크 시 네임택에 스마일 표시)</span>
-            </span>
+            <span class="flex items-center gap-1">신입 사원 <span class="text-sm">😊</span> <span class="text-[10px] text-amber-700 font-normal">(체크 시 네임택에 스마일 표시)</span></span>
           </label>
         </div>
-
         <div>
           <label class="block font-bold text-slate-700 mb-1">직무 및 팀 구분</label>
           <div class="grid grid-cols-2 gap-1.5">
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="team1" class="accent-emerald-600"> 1팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="team2" class="accent-orange-600"> 2팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="team3" class="accent-lime-600"> 3팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="team4" class="accent-blue-600"> 4팀
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="purple" class="accent-purple-700"> 일근자
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span>
-            </label>
-
-            <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer">
-              <span class="flex items-center gap-1.5">
-                <input type="radio" name="edit-color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원
-              </span>
-              <span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>
-            </label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#a7f3d0] border border-[#34d399] font-bold text-[#065f46] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="team1" class="accent-emerald-600"> 1팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fed7aa] border border-[#fb923c] font-bold text-[#9a3412] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="team2" class="accent-orange-600"> 2팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#f97316]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#d9f99d] border border-[#84cc16] font-bold text-[#3f6212] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="team3" class="accent-lime-600"> 3팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#84cc16]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#bfdbfe] border border-[#60a5fa] font-bold text-[#1e40af] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="team4" class="accent-blue-600"> 4팀</span><span class="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#f5d0fe] border border-[#c084fc] font-bold text-[#581c87] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="purple" class="accent-purple-700"> 일근자</span><span class="w-2.5 h-2.5 rounded-full bg-[#a855f7]"></span></label>
+            <label class="flex items-center justify-between p-1.5 rounded bg-[#fef08a] border border-[#facc15] font-bold text-[#854d0e] cursor-pointer"><span class="flex items-center gap-1.5"><input type="radio" name="edit-color-choice" value="safe_guard" class="accent-yellow-500"> 고객안전원</span><span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span></label>
           </div>
         </div>
       </div>
-
       <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-200">
         <button onclick="closeEditModal()" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded">취소</button>
         <button onclick="confirmEditStaff()" class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded">수정 완료</button>
@@ -1128,37 +372,21 @@
     </div>
   </div>
 
-  <!-- [모바일 전용 하단 액션 툴바: PC에서는 md:hidden으로 완전 숨김] -->
   <div id="mobile-action-bar" class="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white backdrop-blur-md px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-2 z-50 border border-slate-700 transition-all duration-200 opacity-0 pointer-events-none translate-y-6">
     <span id="mobile-selected-info" class="text-xs font-black text-amber-400 pl-1 shrink-0 whitespace-nowrap">1명 선택</span>
     <div id="mobile-divider" class="h-4 w-px bg-slate-700 mx-0.5 shrink-0"></div>
-    <button onclick="copySelectedStaffsToClipboard()" class="px-2.5 py-1.5 bg-blue-600 active:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
-      <i class="fa-solid fa-copy text-[11px]"></i> 복사
-    </button>
-    <button id="mobile-btn-paste" onclick="pasteStaffsFromClipboard()" class="hidden px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
-      <i class="fa-solid fa-paste text-[11px]"></i> 붙여넣기
-    </button>
-    <button id="mobile-btn-edit" onclick="handleMobileEdit()" class="px-2.5 py-1.5 bg-amber-600 active:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
-      <i class="fa-solid fa-pen text-[11px]"></i> 수정
-    </button>
-    <button onclick="handleMobileDelete()" class="px-2.5 py-1.5 bg-rose-600 active:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap">
-      <i class="fa-solid fa-trash text-[11px]"></i> 삭제
-    </button>
-    <button onclick="clearSelection()" class="p-1.5 text-slate-400 hover:text-white active:text-white rounded-lg shrink-0 ml-0.5" title="선택 해제">
-      <i class="fa-solid fa-xmark text-sm"></i>
-    </button>
+    <button onclick="copySelectedStaffsToClipboard()" class="px-2.5 py-1.5 bg-blue-600 active:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"><i class="fa-solid fa-copy text-[11px]"></i> 복사</button>
+    <button id="mobile-btn-paste" onclick="pasteStaffsFromClipboard()" class="hidden px-2.5 py-1.5 bg-emerald-600 active:bg-emerald-700 text-white font-bold text-xs rounded-xl items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"><i class="fa-solid fa-paste text-[11px]"></i> 붙여넣기</button>
+    <button id="mobile-btn-edit" onclick="handleMobileEdit()" class="px-2.5 py-1.5 bg-amber-600 active:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"><i class="fa-solid fa-pen text-[11px]"></i> 수정</button>
+    <button onclick="handleMobileDelete()" class="px-2.5 py-1.5 bg-rose-600 active:bg-rose-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-xs shrink-0 whitespace-nowrap"><i class="fa-solid fa-trash text-[11px]"></i> 삭제</button>
+    <button onclick="clearSelection()" class="p-1.5 text-slate-400 hover:text-white active:text-white rounded-lg shrink-0 ml-0.5"><i class="fa-solid fa-xmark text-sm"></i></button>
   </div>
 
   <script>
-   
-  /* =========================================================================
-       구글 시트 연동 실시간 보안 인증 및 원격 로그아웃 제어 (JSONP 방식)
-       ========================================================================= */
-    // ★ 복사하신 구글 웹앱 URL을 아래 따옴표 안에 넣어주세요!
-    const GAS_AUTH_URL = "https://script.google.com/macros/s/AKfycbx0aNwrGPIT5fb4CJnl2J6I2dZvYHdWVJ7H9NHPX3w15A0fC_h68DcclLMwzYswn2nJ/exec";
+    // ★ 1단계에서 복사하신 Apps Script 웹앱 URL을 입력하세요!
+    const GAS_AUTH_URL = "여기에_새_웹앱_URL_붙여넣기";
     const GAS_DUTY_URL = "https://script.google.com/macros/s/AKfycbz9DsugBS_GpCJ7gVQU4pLwweK-scbvl9gaLZ871PBuifKpMmuJ6pu8fHr6oFVsZKH2BQ/exec";
 
-    // JSONP 호출 도우미 함수 (모바일/PC 통신 에러 방지)
     function callGasJsonp(params) {
       return new Promise((resolve, reject) => {
         const callbackName = 'gas_callback_' + Math.round(100000 * Math.random());
@@ -1167,13 +395,11 @@
           if (script && script.parentNode) script.parentNode.removeChild(script);
           resolve(data);
         };
-
         const queryArr = [];
         for (const key in params) {
           queryArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
         }
         queryArr.push('callback=' + callbackName);
-
         const script = document.createElement('script');
         script.src = GAS_AUTH_URL + '?' + queryArr.join('&');
         script.onerror = function() {
@@ -1185,13 +411,224 @@
       });
     }
 
-    // 1. 화면 처음 열릴 때 (깜빡임 완전 제거 버전)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
+      authDomain: "bgl-train-tracker-e32b6.firebaseapp.com",
+      databaseURL: "https://bgl-train-tracker-e32b6-default-rtdb.firebaseio.com",
+      projectId: "bgl-train-tracker-e32b6",
+      storageBucket: "bgl-train-tracker-e32b6.firebasestorage.app",
+      messagingSenderId: "551417141815",
+      appId: "1:551417141815:web:7ab03c5840cc28bc5f3db2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
+
+    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
+      id: `train-${i + 1}`, num: i + 1, name: `${i + 1}편성`,
+      status: i + 1 <= 16 ? 'active' : 'depot',
+      prevStatus: i + 1 <= 16 ? 'active' : 'depot',
+      issueDetail: ''
+    }));
+
+    let currentTeamKey = 'team1';
+    let sharedTrains = DEFAULT_FLEET;
+    let sharedAwayList = [];
+    let sharedStationIssues = []; 
+    let sharedNoticeMemo = '';
+    let isSavingToCloud = false;
+
+    let teamsData = {
+      team1: { staff: [], rideLogs: [] },
+      team2: { staff: [], rideLogs: [] },
+      team3: { staff: [], rideLogs: [] },
+      team4: { staff: [], rideLogs: [] }
+    };
+
+    let selectedStaffIds = new Set();
+    let staffClipboardArray = [];
+    let isCheckingAuth = false;
+
+    // ★ [핵심] 서버에서 받은 역사 목록으로 텅 빈 DOM에 카드를 조립하는 동적 렌더링 함수
+    function buildDynamicGrid(layout) {
+      const main = document.getElementById('main-grid');
+      if (!main || main.children.length > 0) return; // 이미 조립되어 있으면 중복 방지
+
+      function getHeaderClass(theme) {
+        if (theme === 'slate') return 'bg-slate-200 hover:bg-slate-300 text-slate-900 border-b border-rose-200';
+        if (theme === 'rose') return 'bg-rose-100/70 hover:bg-rose-100 text-rose-950 border-b border-rose-200';
+        if (theme === 'emerald') return 'bg-emerald-100/70 hover:bg-emerald-100 text-emerald-950 border-b border-emerald-200';
+        if (theme === 'indigo') return 'bg-indigo-100/70 hover:bg-indigo-100 text-indigo-950 border-b border-indigo-200';
+        return 'bg-slate-100 text-slate-900 border-b';
+      }
+
+      function getBorderClass(theme) {
+        if (theme === 'rose') return 'border-rose-200';
+        if (theme === 'emerald') return 'border-emerald-300';
+        if (theme === 'indigo') return 'border-indigo-200';
+        return 'border-slate-300';
+      }
+
+      function getCodeClass(theme) {
+        if (theme === 'rose') return 'text-rose-700';
+        if (theme === 'emerald') return 'text-emerald-700';
+        if (theme === 'indigo') return 'text-indigo-700';
+        return 'text-slate-600';
+      }
+
+      let html = '';
+
+      // [1열 1행]: 열차 탑승 현황
+      html += `
+        <div class="station-card sidebar-fixed-card bg-sky-50/60 border-2 border-sky-400 rounded-md shadow-xs" data-zone-id="승무현황">
+          <div class="bg-sky-500 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-sky-600 shrink-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-train-tram text-sky-100"></i> 열차 탑승 현황</span>
+            <span id="badge-train-count" class="bg-sky-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">0명</span>
+          </div>
+          <div id="train-riders-list" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
+            <span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>
+          </div>
+        </div>
+      `;
+
+      // 1행 2~9열: 1관리역
+      layout.section1.forEach(st => {
+        html += `
+          <div class="station-card bg-white border ${getBorderClass(st.theme)} rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="${st.id}">
+            <div class="station-header ${getHeaderClass(st.theme)}">
+              <span class="font-black text-base tracking-tight">${st.name}</span>
+              ${st.code ? `<span class="font-mono text-xs font-semibold ${getCodeClass(st.theme)} ml-1">${st.code}</span>` : ''}
+              <div class="station-status-overlay"></div>
+            </div>
+            <div class="station-dropzone station-slot-height bg-white"></div>
+          </div>
+        `;
+      });
+
+      // 10열 1~4행 병합: 미배치
+      html += `
+        <div class="row-span-4 station-card unassigned-box-muted rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="미배치">
+          <div class="bg-slate-400 text-white text-xs font-black py-1.5 px-2.5 flex items-center justify-between border-b border-slate-300 shrink-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-boxes-stacked text-slate-200"></i> 미배치 (대기함)</span>
+            <span id="badge-unassigned-count" class="bg-slate-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">0명</span>
+          </div>
+          <div class="text-[10px] text-slate-400 text-center py-0.5 bg-slate-100/70 border-b border-slate-200 font-semibold select-none">대기 네임택 보관 (좌우 2열)</div>
+          <div class="station-dropzone unassigned-double-dropzone custom-scroll flex-1 bg-slate-100/60"></div>
+        </div>
+      `;
+
+      // [1열 2행]: 탑승기록
+      html += `
+        <div class="station-card sidebar-fixed-card bg-indigo-50/60 border-2 border-indigo-400 rounded-md shadow-xs">
+          <div class="bg-indigo-600 text-white text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-indigo-700 shrink-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-indigo-200"></i> <span id="team-ride-log-title">1팀</span> 탑승기록</span>
+            <button onclick="clearCurrentTeamRideLogs()" class="text-[9.5px] bg-indigo-800 hover:bg-indigo-900 px-1.5 py-0.2 rounded font-normal text-indigo-100 transition">전체삭제</button>
+          </div>
+          <div id="train-ride-logs" class="custom-scroll flex-1 overflow-y-auto p-1 bg-white/95 flex flex-col gap-1 items-stretch">
+            <span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>
+          </div>
+        </div>
+      `;
+
+      // 2행 2~9열: 2관리역
+      layout.section2.forEach(st => {
+        html += `
+          <div class="station-card bg-white border ${getBorderClass(st.theme)} rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="${st.id}">
+            <div class="station-header ${getHeaderClass(st.theme)}">
+              <span class="font-black text-base tracking-tight">${st.name}</span>
+              ${st.code ? `<span class="font-mono text-xs font-semibold ${getCodeClass(st.theme)} ml-1">${st.code}</span>` : ''}
+              <div class="station-status-overlay"></div>
+            </div>
+            <div class="station-dropzone station-slot-height bg-white"></div>
+          </div>
+        `;
+      });
+
+      // [1열 3행]: 특이사항
+      html += `
+        <div class="station-card sidebar-fixed-card bg-amber-50/70 border-2 border-amber-400 rounded-md shadow-xs">
+          <div class="bg-amber-400 text-slate-900 text-xs font-black py-1 px-2.5 flex items-center justify-between border-b border-amber-500 shrink-0">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-amber-800"></i> 특이사항</span>
+            <button onclick="clearNoticeMemo()" class="text-[9.5px] bg-amber-600 hover:bg-amber-700 px-1.5 py-0.2 rounded font-bold text-white transition shadow-2xs">전체삭제</button>
+          </div>
+          <div id="notice-memo-list" class="custom-scroll flex-1 overflow-y-auto p-1.5 space-y-1 bg-white">
+            <span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>
+          </div>
+          <div class="p-1 border-t border-amber-200 bg-amber-50/60 flex gap-1 shrink-0">
+            <input type="text" id="notice-memo-direct-input" placeholder="특이사항 입력 후 Enter" 
+                   class="flex-1 px-2 py-1 text-xs border border-amber-300 rounded focus:outline-none focus:border-amber-500 font-semibold"
+                   onkeydown="if(event.key==='Enter') addNoticeMemoDirect()">
+            <button onclick="addNoticeMemoDirect()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-black text-xs rounded transition shrink-0">추가</button>
+          </div>
+        </div>
+      `;
+
+      // 3행 2~3열: 사전점검
+      html += `
+        <div class="col-span-2 border-2 border-amber-400 rounded-md overflow-hidden shadow-xs flex flex-col bg-white">
+          <div class="bg-amber-400 text-slate-900 text-base font-black py-0.5 px-2 text-center border-b border-amber-500 shrink-0">사 전 점 검</div>
+          <div class="grid grid-cols-2 divide-x divide-amber-200 flex-1">
+            <div class="station-card flex flex-col" data-zone-id="${layout.preCheck[0].id}">
+              <div class="station-header text-sm font-black text-amber-950 bg-amber-100/90 py-1 border-b border-amber-200">
+                <span>${layout.preCheck[0].name}</span><div class="station-status-overlay"></div>
+              </div>
+              <div class="station-dropzone station-slot-height bg-white"></div>
+            </div>
+            <div class="station-card flex flex-col" data-zone-id="${layout.preCheck[1].id}">
+              <div class="station-header text-sm font-black text-amber-950 bg-amber-100/90 py-1 border-b border-amber-200">
+                <span>${layout.preCheck[1].name}</span><div class="station-status-overlay"></div>
+              </div>
+              <div class="station-dropzone station-slot-height bg-white"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 3행 4~9열: 3관리역
+      layout.section3.forEach(st => {
+        html += `
+          <div class="station-card bg-white border ${getBorderClass(st.theme)} rounded-md overflow-hidden flex flex-col shadow-xs" data-zone-id="${st.id}">
+            <div class="station-header ${getHeaderClass(st.theme)}">
+              <span class="font-black text-base tracking-tight">${st.name}</span>
+              ${st.code ? `<span class="font-mono text-xs font-semibold ${getCodeClass(st.theme)} ml-1">${st.code}</span>` : ''}
+              <div class="station-status-overlay"></div>
+            </div>
+            <div class="station-dropzone station-slot-height bg-white"></div>
+          </div>
+        `;
+      });
+
+      // 4행: 휴무자 및 본사
+      html += `
+        <div class="col-span-9 flex gap-1 h-full min-h-0">
+          <div class="flex-1 station-card bg-white border border-slate-300 rounded-md p-1 flex flex-col shadow-xs min-w-0" data-zone-id="휴무자">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
+              <div class="flex items-center gap-1.5 font-black text-slate-800"><i class="fa-solid fa-bed text-amber-500"></i><span>휴 무 자</span></div>
+              <span id="badge-off-count" class="font-black text-xs px-2 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300">0명</span>
+            </div>
+            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-slate-50/60 rounded border border-slate-200 flex-1"></div>
+          </div>
+          <div class="w-[428px] station-card bg-white border border-purple-300 rounded-md p-1 flex flex-col shadow-xs shrink-0" data-zone-id="본사">
+            <div class="flex items-center justify-between border-b border-purple-200 pb-0.5 mb-1 text-xs shrink-0 px-0.5">
+              <div class="flex items-center gap-1.5 font-black text-purple-900"><i class="fa-solid fa-building text-purple-600"></i><span>본 사</span></div>
+              <span id="badge-hq-count" class="font-black text-xs px-2 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">0명</span>
+            </div>
+            <div class="station-dropzone off-duty-dropzone custom-scroll !gap-1.5 !p-1 min-h-[64px] overflow-y-auto bg-purple-50/40 rounded border border-purple-200 flex-1"></div>
+          </div>
+        </div>
+      `;
+
+      main.innerHTML = html;
+      document.getElementById('zoom-container').classList.remove('hidden');
+    }
+
+    // 화면 첫 로딩 검증
     async function checkAuthOnLoad() {
       const modal = document.getElementById('pin-auth-modal');
       const localVersion = localStorage.getItem('bgl_auth_version');
+      const savedPin = localStorage.getItem('bgl_cached_pin');
 
-      // (1) 기기에 저장된 인증 정보가 아예 없는 경우 -> 모달 열기
-      if (!localVersion) {
+      if (!localVersion || !savedPin) {
         if (modal) modal.style.display = 'flex';
         setTimeout(() => {
           const input = document.getElementById('pin-input');
@@ -1200,27 +637,34 @@
         return;
       }
 
-      // (2) 기기에 인증 정보가 이미 있는 경우 -> 모달은 계속 숨겨두고(none), 백그라운드에서 버전만 검사
       try {
+        await firebase.auth().signInAnonymously();
+
+        // 캐시된 PIN으로 서버에서 역사 구조 다운로드
+        const bundle = await callGasJsonp({ action: 'getAppBundle', pin: savedPin });
+        if (bundle && bundle.success && bundle.layoutConfig) {
+          buildDynamicGrid(bundle.layoutConfig);
+          initRealtimeSync();
+          render();
+          updateCurrentWorkingTeamBadge();
+          if (modal) modal.style.display = 'none';
+        } else {
+          throw new Error("번들 획득 실패");
+        }
+
         const data = await callGasJsonp({ action: 'auth', check_version: 'true' });
-        
-        // 시트 C2의 버전이 변경된 경우에만 모달 띄우고 강제 로그아웃
         if (data && data.serverVersion && String(data.serverVersion) !== String(localVersion)) {
-          localStorage.removeItem('bgl_auth_version');
-          if (modal) modal.style.display = 'flex';
+          lockScreenManual();
           showToast('보안 설정이 변경되어 다시 로그인이 필요합니다.');
         }
       } catch (err) {
-        // 네트워크 지연이나 오류 시에도 사용자 화면 방해 없이 통과 유지
+        lockScreenManual();
       }
     }
 
-    // [추가] 중복 검증 방지 플래그
-    let isCheckingAuth = false;
-
-    // 2. 키패드 확인 버튼 / Enter 입력 시: 구글 시트로 비번 대조
+    // 키패드 확인 버튼 / Enter 입력 시 PIN 검증
     async function checkPinAuth() {
-      if (isCheckingAuth) return; // 이미 확인 중이면 중복 요청 차단
+      if (isCheckingAuth) return;
 
       const input = document.getElementById('pin-input');
       const errorMsg = document.getElementById('pin-error-msg');
@@ -1237,7 +681,6 @@
         return;
       }
 
-      // [핵심] 엔터나 버튼을 누르자마자 즉시 "확인 중..." 시각적 피드백 제공
       isCheckingAuth = true;
       if (btn) {
         btn.disabled = true;
@@ -1253,6 +696,27 @@
 
         if (data && data.success) {
           localStorage.setItem('bgl_auth_version', data.authVersion);
+          localStorage.setItem('bgl_cached_pin', val);
+
+          await firebase.auth().signInAnonymously();
+
+          // 서버로부터 사내 역사 레이아웃 및 마스터 명단 획득
+          const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
+          if (!bundle || !bundle.success) throw new Error("데이터 수신 오류");
+
+          // 화면 역사 카드 동적 조립
+          buildDynamicGrid(bundle.layoutConfig);
+
+          // Firebase 초기 명단 세팅 (최초 1회)
+          const snapshot = await rootDbRef.child('team1').child('staff').once('value');
+          if (!snapshot.exists() || !snapshot.val() || snapshot.val().length === 0) {
+            teamsData.team1.staff = bundle.initialStaffTeam1;
+            rootDbRef.child('team1').child('staff').set(bundle.initialStaffTeam1);
+          }
+
+          initRealtimeSync();
+          render();
+          updateCurrentWorkingTeamBadge();
 
           if (modal) modal.style.display = 'none';
           if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
@@ -1262,10 +726,7 @@
             errorMsg.innerText = "비밀번호가 올바르지 않습니다.";
             errorMsg.className = "text-xs font-bold text-rose-600 block";
           }
-          if (input) {
-            input.value = '';
-            input.focus();
-          }
+          if (input) { input.value = ''; input.focus(); }
         }
       } catch (err) {
         if (errorMsg) {
@@ -1281,135 +742,39 @@
       }
     }
 
-    // 3. 로그아웃 버튼 클릭 시
+    // 로그아웃
     function lockScreenManual() {
-      if (confirm("로그아웃하시겠습니까? (자동 로그인이 해제됩니다)")) {
-        localStorage.removeItem('bgl_auth_version');
-        
-        const input = document.getElementById('pin-input');
-        if (input) input.value = '';
-        
-        const modal = document.getElementById('pin-auth-modal');
-        if (modal) modal.style.display = 'flex';
-        
-        showToast('로그아웃되었습니다.');
-      }
-    }
-    
-    /* 0. Firebase 설정 */
-    const firebaseConfig = {
-      apiKey: "AIzaSyAAwqYosNUTYmda3UCrEwDMJFxKK-m9Wew",
-      authDomain: "bgl-train-tracker-e32b6.firebaseapp.com",
-      databaseURL: "https://bgl-train-tracker-e32b6-default-rtdb.firebaseio.com",
-      projectId: "bgl-train-tracker-e32b6",
-      storageBucket: "bgl-train-tracker-e32b6.firebasestorage.app",
-      messagingSenderId: "551417141815",
-      appId: "1:551417141815:web:7ab03c5840cc28bc5f3db2"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const rootDbRef = firebase.database().ref('bgl_dispatch_board_multi_team_v1');
-
-    /* 1. 기본 열차 및 인원 데이터 */
-    const DEFAULT_FLEET = Array.from({ length: 25 }, (_, i) => ({
-      id: `train-${i + 1}`,
-      num: i + 1,
-      name: `${i + 1}편성`,
-      status: i + 1 <= 16 ? 'active' : 'depot',
-      prevStatus: i + 1 <= 16 ? 'active' : 'depot',
-      issueDetail: ''
-    }));
-
-    const INITIAL_STAFF_TEAM1 = [
-      { id: 'st-1', name: '정호진', phone: '010-2425-1167', location: 'train-1', color: 'team1' },
-      { id: 'st-2', name: '김한솔', phone: '010-2869-1992', location: '가야대 [9621]', color: 'team1' },
-      { id: 'st-3', name: '양건영', phone: '010-2940-1766', location: '연지공원 [9619]', color: 'team1' },
-      { id: 'st-4', name: '장인석', phone: '010-4909-2225', location: '박물관 [9618]', color: 'purple' },
-      { id: 'st-5', name: '조대희', phone: '010-4021-8946', location: '수로왕릉 [9617]', color: 'team1' },
-      { id: 'st-6', name: '문동혁', phone: '010-7704-7853', location: '봉황 [9616]', color: 'team1', icon: 'smile' },
-      { id: 'st-7', name: '김경훈', phone: '010-7767-7962', location: '부원 [9615]', color: 'team1' },
-      { id: 'st-8', name: '이상준', phone: '010-3015-2960', location: '인제대 [9613]', color: 'team1' },
-      { id: 'st-9', name: '윤영진', phone: '010-9305-0587', location: '지내 [9611]', color: 'team1' },
-      { id: 'st-10', name: '윤형중', phone: '010-4179-7465', location: '대사 [9609]', color: 'team1' },
-      { id: 'st-11', name: '유재만', phone: '010-7457-0413', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-12', name: '김태욱', phone: '010-3839-4662', location: '대저 [9607]', color: 'purple' },
-      { id: 'st-13', name: '정재성', phone: '010-4607-3400', location: '대저 [9607]', color: 'team1' },
-      { id: 'st-14', name: '김세명', phone: '010-3832-7976', location: '등구 [9606]', color: 'team1', icon: 'smile' },
-      { id: 'st-15', name: '이우진', phone: '010-9303-0702', location: '김해공항 [9604]', color: 'team1' },
-      { id: 'st-16', name: '김태현', phone: '010-3558-3085', location: '서부산 [9603]', color: 'team1' },
-      { id: 'st-17', name: '남찬우', phone: '010-5352-9542', location: '괘법 [9602]', color: 'team1', icon: 'smile' },
-      { id: 'st-18', name: '김동관', phone: '010-9688-3906', location: '휴무자', color: 'safe_guard' },
-      { id: 'st-19', name: '유재호', phone: '010-4949-4589', location: '미배치', color: 'team1' },
-      { id: 'st-20', name: '김주연', phone: '010-2840-6195', location: '미배치', color: 'purple' }
-    ];
-
-    let currentTeamKey = 'team1';
-    let sharedTrains = DEFAULT_FLEET;
-    let sharedAwayList = [];
-    let sharedStationIssues = []; 
-    let sharedNoticeMemo = '';
-    let isSavingToCloud = false; // 동기화 충돌 방지 플래그
-
-    try {
-      const localTrains = localStorage.getItem('bgl_shared_trains');
-      const localAway = localStorage.getItem('bgl_away_list');
-      const localStationIssues = localStorage.getItem('bgl_station_issues');
-      const localMemo = localStorage.getItem('bgl_notice_memo');
+      localStorage.removeItem('bgl_auth_version');
+      localStorage.removeItem('bgl_cached_pin');
+      firebase.auth().signOut();
       
-      if (localTrains) sharedTrains = JSON.parse(localTrains);
-      if (localAway) sharedAwayList = JSON.parse(localAway);
-      if (localStationIssues) sharedStationIssues = JSON.parse(localStationIssues);
-      if (localMemo !== null) sharedNoticeMemo = localMemo;
-    } catch(e) {}
+      const input = document.getElementById('pin-input');
+      if (input) input.value = '';
+      
+      const main = document.getElementById('main-grid');
+      if (main) main.innerHTML = ''; // 화면 알맹이 즉시 파괴
+      
+      const zoom = document.getElementById('zoom-container');
+      if (zoom) zoom.classList.add('hidden');
 
-    let teamsData = {
-      team1: { staff: [], rideLogs: [] },
-      team2: { staff: [], rideLogs: [] },
-      team3: { staff: [], rideLogs: [] },
-      team4: { staff: [], rideLogs: [] }
-    };
-
-    ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
-      try {
-        const localStaff = localStorage.getItem(`bgl_staff_${tKey}`);
-        const localRideLogs = localStorage.getItem(`bgl_ride_logs_${tKey}`);
-        
-        if (localStaff) {
-          teamsData[tKey].staff = JSON.parse(localStaff);
-        } else if (tKey === 'team1') {
-          teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
-        }
-
-        if (localRideLogs) {
-          teamsData[tKey].rideLogs = JSON.parse(localRideLogs);
-        }
-      } catch(e) {
-        if (tKey === 'team1') teamsData.team1.staff = JSON.parse(JSON.stringify(INITIAL_STAFF_TEAM1));
-      }
-    });
-
-    let selectedStaffIds = new Set();
-    let staffClipboardArray = [];
+      const modal = document.getElementById('pin-auth-modal');
+      if (modal) modal.style.display = 'flex';
+      
+      showToast('로그아웃되었습니다.');
+    }
 
     function getColorTheme(color) {
       switch (color) {
-        case 'purple':
-          return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
+        case 'purple': return 'bg-[#f5d0fe] border-[#c084fc] ring-1 ring-[#e879f9]/50';
         case 'safe_guard':
-        case 'amber':
-          return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
+        case 'amber': return 'bg-[#fef08a] border-[#facc15] ring-1 ring-[#eab308]/50';
         case 'team1':
-        case 'cyan':
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
-        case 'team2':
-          return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
-        case 'team3':
-          return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
+        case 'cyan': return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
+        case 'team2': return 'bg-[#fed7aa] border-[#fb923c] ring-1 ring-[#f97316]/50';
+        case 'team3': return 'bg-[#d9f99d] border-[#84cc16] ring-1 ring-[#65a30d]/50';
         case 'team4':
-        case 'blue':
-          return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
-        default:
-          return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
+        case 'blue': return 'bg-[#bfdbfe] border-[#60a5fa] ring-1 ring-[#3b82f6]/50';
+        default: return 'bg-[#a7f3d0] border-[#34d399] ring-1 ring-[#10b981]/50';
       }
     }
 
@@ -1449,9 +814,7 @@
     }
 
     function syncTrainsToCloud() {
-      try {
-        localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains));
-      } catch(e) {}
+      try { localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains)); } catch(e) {}
       rootDbRef.child('shared_trains').set(sharedTrains);
     }
 
@@ -1470,14 +833,9 @@
     function syncCurrentTeamStaffToCloud() {
       isSavingToCloud = true;
       const rawList = teamsData[currentTeamKey].staff || [];
-
-      // ★ Firebase 및 로컬스토리지 저장 시 icon과 isSupport 속성이 날아가지 않도록 안전하게 정제
       const currentStaffList = rawList.map(s => ({
-        id: s.id,
-        name: s.name,
-        phone: s.phone || '010-0000-0000',
-        location: s.location || '미배치',
-        color: s.color || 'team1',
+        id: s.id, name: s.name, phone: s.phone || '010-0000-0000',
+        location: s.location || '미배치', color: s.color || 'team1',
         icon: s.icon === 'smile' ? 'smile' : null,
         isSupport: (s.isSupport === true || s.isSupport === 'true') ? true : false
       }));
@@ -1503,11 +861,9 @@
         const cloudTrains = snapshot.val();
         if (cloudTrains) {
           sharedTrains = cloudTrains;
-          try {
-            localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains));
-          } catch(e) {}
+          try { localStorage.setItem('bgl_shared_trains', JSON.stringify(sharedTrains)); } catch(e) {}
           renderTrains25Grid();
-          renderStaffAndStations(); // ★ 클라우드 동기화 시에도 탑승자 네임택 유지!
+          renderStaffAndStations();
           renderStatistics();
         } else {
           syncTrainsToCloud();
@@ -1525,10 +881,10 @@
           localStorage.setItem('bgl_station_issues', JSON.stringify(sharedStationIssues));
           localStorage.setItem('bgl_notice_memo', sharedNoticeMemo);
 
-         renderStaffAndStations();
+          renderStaffAndStations();
           renderStatistics();
           renderNoticeMemoList();
-          resyncStationOverlayAnimations(); // 👈 추가: 클라우드 수신 시 동기화
+          resyncStationOverlayAnimations();
         } else {
           syncFacilityStatusToCloud();
         }
@@ -1536,16 +892,12 @@
 
       ['team1', 'team2', 'team3', 'team4'].forEach(tKey => {
         rootDbRef.child(tKey).child('staff').on('value', (snapshot) => {
-          // 내가 방금 로컬에서 저장 중인 상태라면 리시브 덮어쓰기 무시
           if (isSavingToCloud && currentTeamKey === tKey) return;
-
           const cloudStaff = snapshot.val();
           if (cloudStaff && Array.isArray(cloudStaff)) {
             teamsData[tKey].staff = cloudStaff;
             localStorage.setItem(`bgl_staff_${tKey}`, JSON.stringify(cloudStaff));
-            if (currentTeamKey === tKey) {
-              render();
-            }
+            if (currentTeamKey === tKey) render();
           }
         });
 
@@ -1554,9 +906,7 @@
           if (cloudLogs && Array.isArray(cloudLogs)) {
             teamsData[tKey].rideLogs = cloudLogs;
             localStorage.setItem(`bgl_ride_logs_${tKey}`, JSON.stringify(cloudLogs));
-            if (currentTeamKey === tKey) {
-              renderRideLogs();
-            }
+            if (currentTeamKey === tKey) renderRideLogs();
           }
         });
       });
@@ -1568,37 +918,26 @@
       const teamNum = currentTeamKey.replace('team', '');
       const modalTitle = document.getElementById('modal-team-title');
       if (modalTitle) modalTitle.textContent = `${teamNum}팀`;
-
       const logTitle = document.getElementById('team-ride-log-title');
       if (logTitle) logTitle.textContent = `${teamNum}팀`;
-
       const calLabel = document.getElementById('cal-team-label');
       if (calLabel) calLabel.textContent = `${teamNum}팀`;
     }
 
-    // =========================================================================
-    // 특이사항 관련 로직
-    // =========================================================================
     function renderNoticeMemoList() {
       const container = document.getElementById('notice-memo-list');
       if (!container) return;
-
       const lines = (sharedNoticeMemo || '').split('\n').filter(l => l.trim().length > 0);
-
       if (lines.length === 0) {
         container.innerHTML = `<span class="text-[11px] text-slate-400 italic text-center block py-2">등록된 특이사항이 없습니다.</span>`;
         return;
       }
-
       container.innerHTML = lines.map((line, idx) => `
         <div class="flex items-center justify-between gap-1.5 px-2 py-1 bg-amber-50/70 border border-amber-200 rounded text-[11px] font-semibold text-slate-800 leading-tight">
           <span class="break-all flex-1">${escapeHtml(line)}</span>
-          <button onclick="deleteNoticeMemoLine(${idx})" class="text-slate-400 hover:text-rose-600 font-bold px-1 transition shrink-0" title="이 항목 삭제">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+          <button onclick="deleteNoticeMemoLine(${idx})" class="text-slate-400 hover:text-rose-600 font-bold px-1 transition shrink-0" title="이 항목 삭제"><i class="fa-solid fa-xmark"></i></button>
         </div>
       `).join('');
-
       container.scrollTop = 0;
     }
 
@@ -1606,17 +945,10 @@
       const input = document.getElementById('notice-memo-direct-input');
       const val = input.value.trim();
       if (!val) return;
-
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const lineWithTime = `[${timeStr}] ${val}`;
-
-      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = lineWithTime + '\n' + sharedNoticeMemo.trim();
-      } else {
-        sharedNoticeMemo = lineWithTime;
-      }
-
+      sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (lineWithTime + '\n' + sharedNoticeMemo.trim()) : lineWithTime;
       input.value = '';
       syncFacilityStatusToCloud();
       renderNoticeMemoList();
@@ -1645,25 +977,17 @@
 
     function resetCurrentTeamOnly() {
       const teamNum = currentTeamKey.replace('team', '');
-      if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치 및 탑승기록은 유지됩니다.\n- 공통 열차/역사 시설 상태는 그대로 유지됩니다.`)) {
-        return;
-      }
+      if (!confirm(`현재 [${teamNum}팀] 근무자 전원을 [미배치 (대기함)]으로 이동시키겠습니까?\n\n- 다른 팀의 근무자 배치 및 탑승기록은 유지됩니다.\n- 공통 열차/역사 시설 상태는 그대로 유지됩니다.`)) return;
 
       if (teamsData[currentTeamKey] && Array.isArray(teamsData[currentTeamKey].staff)) {
-        teamsData[currentTeamKey].staff.forEach(s => {
-          s.location = '미배치';
-        });
+        teamsData[currentTeamKey].staff.forEach(s => s.location = '미배치');
         syncCurrentTeamStaffToCloud();
       }
-
       selectedStaffIds.clear();
       render();
       showToast(`${teamNum}팀 근무자 전원이 미배치함으로 이동되었습니다.`);
     }
 
-    // =========================================================================
-    // 탑승기록 관련 로직
-    // =========================================================================
     function deleteRideLogItem(logId) {
       let currentRideLogs = teamsData[currentTeamKey].rideLogs || [];
       teamsData[currentTeamKey].rideLogs = currentRideLogs.filter(l => l.id !== logId);
@@ -1682,7 +1006,6 @@
       }
     }
 
-    /* 역사 클릭 이벤트 처리 (원클릭 외부, 더블클릭 불량) */
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
 
@@ -1701,9 +1024,7 @@
         return;
       }
 
-      if (stationClickTimerMap[zoneId]) {
-        clearTimeout(stationClickTimerMap[zoneId]);
-      }
+      if (stationClickTimerMap[zoneId]) clearTimeout(stationClickTimerMap[zoneId]);
 
       stationClickTimerMap[zoneId] = setTimeout(() => {
         delete stationClickTimerMap[zoneId];
@@ -1714,7 +1035,6 @@
     function toggleStationAwayOnly(zoneId) {
       const idx = sharedAwayList.indexOf(zoneId);
       let isAwayNow = false;
-
       if (idx > -1) {
         sharedAwayList.splice(idx, 1);
         isAwayNow = false;
@@ -1722,35 +1042,28 @@
         sharedAwayList.push(zoneId);
         isAwayNow = true;
       }
-
       renderStaffAndStations();
       syncFacilityStatusToCloud();
-      resyncStationOverlayAnimations(); // 👈 추가: 외부 설정 변경 시점으로 깜빡임 동기화
+      resyncStationOverlayAnimations();
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
     function toggleStationIssueOnly(zoneId) {
       const existingIdx = sharedStationIssues.findIndex(item => item.station === zoneId);
-
       if (existingIdx > -1) {
         sharedStationIssues.splice(existingIdx, 1);
-
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         const cleanStationName = zoneId.split(' ')[0] || zoneId;
         const autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
 
-        if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-          sharedNoticeMemo = autoMemoText + '\n' + sharedNoticeMemo.trim();
-        } else {
-          sharedNoticeMemo = autoMemoText;
-        }
+        sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (autoMemoText + '\n' + sharedNoticeMemo.trim()) : autoMemoText;
 
         renderStaffAndStations();
         renderStatistics();
         renderNoticeMemoList();
         syncFacilityStatusToCloud();
-        resyncStationOverlayAnimations(); // 👈 추가: 불량 해제 시점 동기화
+        resyncStationOverlayAnimations();
         showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
       } else {
         openIssueModal(zoneId);
@@ -1818,23 +1131,15 @@
 
     function togglePsdDoorAll() {
       isPsdAll = !isPsdAll;
-      if (isPsdAll) {
-        selectedPsdDoors = ['1번', '2번', '3번', '4번'];
-      } else {
-        selectedPsdDoors = [];
-      }
+      selectedPsdDoors = isPsdAll ? ['1번', '2번', '3번', '4번'] : [];
       refreshPsdSubUI();
     }
 
     function togglePsdDoor(door) {
       isPsdAll = false;
       const idx = selectedPsdDoors.indexOf(door);
-      if (idx > -1) {
-        selectedPsdDoors.splice(idx, 1);
-      } else {
-        selectedPsdDoors.push(door);
-        selectedPsdDoors.sort();
-      }
+      if (idx > -1) selectedPsdDoors.splice(idx, 1);
+      else { selectedPsdDoors.push(door); selectedPsdDoors.sort(); }
       if (selectedPsdDoors.length === 4) isPsdAll = true;
       refreshPsdSubUI();
     }
@@ -1855,8 +1160,7 @@
       ['1번', '2번', '3번', '4번'].forEach((d, i) => {
         const btn = document.getElementById(`btn-door-${i+1}`);
         if (btn) {
-          const isSelected = selectedPsdDoors.includes(d);
-          btn.className = isSelected ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
+          btn.className = selectedPsdDoors.includes(d) ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
         }
       });
     }
@@ -1866,14 +1170,7 @@
       let detailDesc = selectedIssueType;
       if (selectedIssueType === 'PSD') {
         const line = selectedPsdLine || '상선';
-        let doorsText = '';
-        if (isPsdAll || selectedPsdDoors.length === 4) {
-          doorsText = '전체';
-        } else if (selectedPsdDoors.length > 0) {
-          doorsText = selectedPsdDoors.join(', ');
-        } else {
-          doorsText = '전체';
-        }
+        let doorsText = (isPsdAll || selectedPsdDoors.length === 4) ? '전체' : (selectedPsdDoors.length > 0 ? selectedPsdDoors.join(', ') : '전체');
         detailDesc = `PSD ${line} ${doorsText}`;
       }
       applyIssueFinal(currentModalZoneId, detailDesc);
@@ -1891,20 +1188,15 @@
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const cleanStationName = zoneId.split(' ')[0] || zoneId;
-
       const recordText = `[${timeStr} ${cleanStationName}역 불량: ${detailText || '점검중'}]`;
 
-      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
-      } else {
-        sharedNoticeMemo = recordText;
-      }
+      sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (recordText + '\n' + sharedNoticeMemo.trim()) : recordText;
 
       renderStaffAndStations();
       renderStatistics();
       renderNoticeMemoList();
       syncFacilityStatusToCloud();
-      resyncStationOverlayAnimations(); // 👈 추가: 마지막 불량 등록 시점으로 전 역사 깜빡임 동기화
+      resyncStationOverlayAnimations();
       showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
     }
 
@@ -1920,9 +1212,7 @@
       isTrainDoorAll = false;
 
       const tr = sharedTrains.find(t => t.id === trainId);
-      const trainName = tr ? tr.name : trainId;
-
-      document.getElementById('train-issue-modal-title').textContent = trainName;
+      document.getElementById('train-issue-modal-title').textContent = tr ? tr.name : trainId;
       document.getElementById('train-door-sub-options').classList.add('hidden');
       document.getElementById('btn-confirm-train-issue-detail').classList.add('hidden');
 
@@ -1964,23 +1254,15 @@
 
     function toggleTrainDoorAll() {
       isTrainDoorAll = !isTrainDoorAll;
-      if (isTrainDoorAll) {
-        selectedTrainDoors = ['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번'];
-      } else {
-        selectedTrainDoors = [];
-      }
+      selectedTrainDoors = isTrainDoorAll ? ['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번'] : [];
       refreshTrainDoorSubUI();
     }
 
     function toggleTrainDoor(door) {
       isTrainDoorAll = false;
       const idx = selectedTrainDoors.indexOf(door);
-      if (idx > -1) {
-        selectedTrainDoors.splice(idx, 1);
-      } else {
-        selectedTrainDoors.push(door);
-        selectedTrainDoors.sort((a,b) => parseInt(a)-parseInt(b));
-      }
+      if (idx > -1) selectedTrainDoors.splice(idx, 1);
+      else { selectedTrainDoors.push(door); selectedTrainDoors.sort((a,b) => parseInt(a)-parseInt(b)); }
       if (selectedTrainDoors.length === 8) isTrainDoorAll = true;
       refreshTrainDoorSubUI();
     }
@@ -1990,12 +1272,10 @@
       if (btnAll) {
         btnAll.className = isTrainDoorAll ? "px-2 py-0.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-bold text-[11px]" : "px-2 py-0.5 border rounded font-bold text-[11px] bg-white text-slate-700 hover:bg-rose-200";
       }
-
       ['1번', '2번', '3번', '4번', '5번', '6번', '7번', '8번'].forEach((d, i) => {
         const btn = document.getElementById(`btn-tdoor-${i+1}`);
         if (btn) {
-          const isSelected = selectedTrainDoors.includes(d);
-          btn.className = isSelected ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
+          btn.className = selectedTrainDoors.includes(d) ? "py-1.5 border-2 border-rose-600 bg-rose-600 text-white rounded font-black text-xs" : "py-1.5 border rounded font-black text-xs bg-white text-slate-700 hover:bg-rose-100";
         }
       });
     }
@@ -2004,21 +1284,14 @@
       if (!selectedTrainIssueType) return;
       let detailDesc = selectedTrainIssueType;
       if (selectedTrainIssueType === '출입문 불량') {
-        let doorsText = '';
-        if (isTrainDoorAll || selectedTrainDoors.length === 8) {
-          doorsText = '전체';
-        } else if (selectedTrainDoors.length > 0) {
-          doorsText = selectedTrainDoors.join(', ');
-        } else {
-          doorsText = '전체';
-        }
+        let doorsText = (isTrainDoorAll || selectedTrainDoors.length === 8) ? '전체' : (selectedTrainDoors.length > 0 ? selectedTrainDoors.join(', ') : '전체');
         detailDesc = `출입문 ${doorsText}`;
       }
       applyTrainIssueFinal(currentModalTrainId, detailDesc);
       closeTrainIssueModal(false);
     }
 
-   function applyTrainIssueFinal(trainId, detailText) {
+    function applyTrainIssueFinal(trainId, detailText) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
 
@@ -2030,14 +1303,10 @@
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
       const recordText = `[${timeStr} ${tr.name} 불량: ${detailText}]`;
 
-      if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-        sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
-      } else {
-        sharedNoticeMemo = recordText;
-      }
+      sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (recordText + '\n' + sharedNoticeMemo.trim()) : recordText;
 
       renderTrains25Grid();
-      renderStaffAndStations(); // ★ 네임택 복원 추가!
+      renderStaffAndStations();
       renderStatistics();
       renderNoticeMemoList();
       syncTrainsToCloud();
@@ -2045,7 +1314,6 @@
       showToast(`⚠️ ${tr.name} 불량 등록 완료 (${detailText})`);
     }
 
-    /* 통합 렌더링 */
     function render() {
       renderTrains25Grid();
       renderStaffAndStations();
@@ -2059,19 +1327,9 @@
 
     function getSortedTrains() {
       return [...sharedTrains].sort((a, b) => {
-        const getPriority = (status) => {
-          if (status === 'active') return 1;
-          if (status === 'issue') return 2;
-          return 3;
-        };
-
-        const priorityA = getPriority(a.status);
-        const priorityB = getPriority(b.status);
-
-        if (priorityA !== priorityB) {
-          return priorityA - priorityB;
-        }
-        return a.num - b.num;
+        const getPriority = (status) => (status === 'active' ? 1 : (status === 'issue' ? 2 : 3));
+        const pA = getPriority(a.status), pB = getPriority(b.status);
+        return (pA !== pB) ? (pA - pB) : (a.num - b.num);
       });
     }
 
@@ -2090,26 +1348,19 @@
 
         const trainBox = document.createElement('div');
         trainBox.className = `station-card border rounded flex flex-col justify-between text-center overflow-hidden transition-colors ${
-          isIssue 
-            ? 'train-issue-card bg-rose-50' 
-            : (isActive ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-100 border-slate-300')
+          isIssue ? 'train-issue-card bg-rose-50' : (isActive ? 'bg-emerald-50 border-emerald-400' : 'bg-slate-100 border-slate-300')
         }`;
         trainBox.style.height = '66px';
         trainBox.setAttribute('data-zone-id', t.id);
 
         const header = document.createElement('div');
         header.className = `cursor-pointer py-1 border-b select-none flex flex-col items-center justify-center ${
-          isIssue 
-            ? 'bg-rose-600 text-white border-rose-700' 
-            : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
+          isIssue ? 'bg-rose-600 text-white border-rose-700' : (isActive ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-200 text-slate-600 border-slate-300')
         }`;
-        header.title = '클릭: 본선↔기지 전환 | 더블클릭: 불량(⚠️) 세부지정/해제';
-
         header.onclick = (e) => {
           e.stopPropagation();
           if (trainClickTimer) {
-            clearTimeout(trainClickTimer);
-            trainClickTimer = null;
+            clearTimeout(trainClickTimer); trainClickTimer = null;
             handleTrainDoubleClick(t.id);
           } else {
             trainClickTimer = setTimeout(() => {
@@ -2120,7 +1371,6 @@
         };
 
         const statusLabel = isIssue ? '불량 ⚠️' : (isActive ? '본선' : '기지');
-
         header.innerHTML = `
           <span class="leading-none text-[13.5px] font-black tracking-tight">${t.num}편성</span>
           <span class="text-[9px] font-extrabold mt-0.5 opacity-90 truncate max-w-[55px]">${isIssue && t.issueDetail ? t.issueDetail : statusLabel}</span>
@@ -2129,27 +1379,22 @@
         const dropzone = document.createElement('div');
         dropzone.className = 'station-dropzone flex-1 flex flex-col items-center justify-center p-0.5 overflow-hidden cursor-pointer';
 
-        // ★ [모바일 열차 탑승 핵심] 선택된 인원이 있을 때 열차 칸 터치 시 즉시 탑승
         dropzone.onclick = (e) => {
           if (selectedStaffIds.size > 0 && !e.target.closest('.nametag')) {
             e.stopPropagation();
             const currentStaffList = teamsData[currentTeamKey].staff || [];
             let movedCount = 0;
-
             selectedStaffIds.forEach(staffId => {
               const staff = currentStaffList.find(s => s.id === staffId);
               if (staff && staff.location !== t.id) {
                 const prevLoc = staff.location;
-                handleRideLogging(staff.name, prevLoc, t.id); // 탑승 기록 자동 생성
+                handleRideLogging(staff.name, prevLoc, t.id);
                 staff.location = t.id;
                 movedCount++;
               }
             });
-
             if (movedCount > 0) {
-              clearSelection();
-              render();
-              syncCurrentTeamStaffToCloud();
+              clearSelection(); render(); syncCurrentTeamStaffToCloud();
               showToast(`${movedCount}명이 [${t.name}]에 탑승 완료되었습니다.`);
             }
           }
@@ -2158,11 +1403,10 @@
         if (ridingStaff.length === 0) {
           dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
         }
-
         trainBox.appendChild(header);
         trainBox.appendChild(dropzone);
         container.appendChild(trainBox);
-      }); // ★ 빠져있던 sortedTrains.forEach 닫는 괄호 복원!
+      });
 
       attachTrainDropEvents();
     }
@@ -2170,17 +1414,14 @@
     function toggleTrainActiveDepot(trainId) {
       const tr = sharedTrains.find(t => t.id === trainId);
       if (!tr) return;
-
       if (tr.status === 'issue') {
-        showToast(`${tr.num}편성은 현재 [불량⚠️] 상태입니다. (해제하려면 더블클릭)`);
+        showToast(`${tr.num}편성은 현재 [불량⚠️] 상태입니다. (더블클릭하여 해제)`);
         return;
       }
-
       tr.status = (tr.status === 'active') ? 'depot' : 'active';
       tr.prevStatus = tr.status;
-
       renderTrains25Grid();
-      renderStaffAndStations(); // ★ 열차 재배열 후 탑승 중인 네임택 즉시 다시 꽂아주기!
+      renderStaffAndStations();
       renderStatistics();
       syncTrainsToCloud();
       showToast(`${tr.num}편성 [${tr.status === 'active' ? '본선운행' : '기지대기'}] 상태로 전환`);
@@ -2189,23 +1430,16 @@
     function handleTrainDoubleClick(trainId) {
       const train = sharedTrains.find(t => t.id === trainId);
       if (!train) return;
-
       if (train.status === 'issue') {
         train.status = train.prevStatus || 'active';
         train.issueDetail = '';
-
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         const recordText = `[${timeStr} ${train.name} 불량 조치완료/복구]`;
-
-        if (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) {
-          sharedNoticeMemo = recordText + '\n' + sharedNoticeMemo.trim();
-        } else {
-          sharedNoticeMemo = recordText;
-        }
+        sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (recordText + '\n' + sharedNoticeMemo.trim()) : recordText;
 
         renderTrains25Grid();
-        renderStaffAndStations(); // ★ 네임택 복원 추가!
+        renderStaffAndStations();
         renderStatistics();
         renderNoticeMemoList();
         syncTrainsToCloud();
@@ -2213,91 +1447,52 @@
         showToast(`${train.name} 불량이 해제되어 정상 복구되었습니다.`);
         return;
       }
-
       openTrainIssueModal(trainId);
     }
 
-    /* 네임택 빌더 */
     function buildNametagElement(staff) {
       const el = document.createElement('div');
       el.id = staff.id;
       el.draggable = true;
-
       const isOnTrain = staff.location.startsWith('train-');
       const isSelected = selectedStaffIds.has(staff.id);
 
       if (isOnTrain) {
         el.className = `nametag w-full rounded py-1 px-0.5 border text-center flex items-center justify-center shadow-2xs ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
-        el.innerHTML = `
-          <span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>
-        `;
+        el.innerHTML = `<span class="font-black text-[13px] leading-none text-slate-900 tracking-tight">${staff.name}</span>`;
       } else {
         el.className = `nametag w-[130px] h-[50px] rounded-md px-1 py-0.5 border-2 flex flex-col justify-center items-center text-center relative shadow-xs shrink-0 ${getColorTheme(staff.color)} ${isSelected ? 'multi-selected' : ''}`;
-        
-        // ★ icon 검사 보강
-        const isNewbie = (staff.icon === 'smile' || staff.icon === true);
-        const smile = isNewbie 
-          ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` 
-          : '';
-
-        // ★ isSupport 검사 보강
-        const isSupportStaff = (staff.isSupport === true || staff.isSupport === 'true');
-        const supportBadge = isSupportStaff 
-          ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` 
-          : '';
-        
+        const smile = (staff.icon === 'smile' || staff.icon === true) ? `<span class="absolute top-0.5 right-1 text-sm select-none z-20 leading-none drop-shadow-xs pointer-events-none" title="신입 사원">😊</span>` : '';
+        const supportBadge = (staff.isSupport === true || staff.isSupport === 'true') ? `<span class="absolute top-0.5 left-1 text-[9px] bg-rose-600 text-white font-black px-1 rounded-xs select-none pointer-events-none z-20">지원</span>` : '';
         el.innerHTML = `
           ${supportBadge}
           ${smile}
-          <div class="staff-name-text font-black text-[18px] leading-tight tracking-tight text-slate-900 w-full text-center">
-            ${staff.name}
-          </div>
-          <div class="staff-phone-text text-[13px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">
-            ${staff.phone}
-          </div>
+          <div class="staff-name-text font-black text-[18px] leading-tight tracking-tight text-slate-900 w-full text-center">${staff.name}</div>
+          <div class="staff-phone-text text-[13px] font-mono font-black tracking-tight text-slate-800 leading-none mt-0.5 w-full text-center">${staff.phone}</div>
         `;
       }
 
-    el.oncontextmenu = (e) => {
-        e.preventDefault();
-        openStaffActionMenu(staff);
-      };
+      el.oncontextmenu = (e) => { e.preventDefault(); openStaffActionMenu(staff); };
 
-      // ★ 롱프레스 제스처 (모바일에서 0.5초 길게 누르면 우클릭 메뉴 열기)
       let isLongTouch = false;
-      el.addEventListener('touchstart', (e) => {
+      el.addEventListener('touchstart', () => {
         isLongTouch = false;
         longPressTimer = setTimeout(() => {
           isLongTouch = true;
           openStaffActionMenu(staff);
         }, 500);
       }, { passive: true });
+      el.addEventListener('touchend', () => { if (longPressTimer) clearTimeout(longPressTimer); });
+      el.addEventListener('touchmove', () => { if (longPressTimer) clearTimeout(longPressTimer); });
 
-      el.addEventListener('touchend', () => {
-        if (longPressTimer) clearTimeout(longPressTimer);
-      });
-
-      el.addEventListener('touchmove', () => {
-        if (longPressTimer) clearTimeout(longPressTimer);
-      });
-
-      // ★ 모바일 터치 및 PC 클릭 통합 선택 처리
-      // ★ 모바일 터치 및 PC 클릭 통합 선택 처리
       el.onclick = (e) => {
         e.stopPropagation();
         if (isLongTouch) return;
-
-        // PC에서 Ctrl 또는 Cmd 키를 누른 채 클릭한 경우 -> 다중 선택 누적/해제
         if (e.ctrlKey || e.metaKey) {
-          if (selectedStaffIds.has(staff.id)) {
-            selectedStaffIds.delete(staff.id);
-          } else {
-            selectedStaffIds.add(staff.id);
-          }
+          if (selectedStaffIds.has(staff.id)) selectedStaffIds.delete(staff.id);
+          else selectedStaffIds.add(staff.id);
         } else {
-          // 그냥 클릭했을 때 (단일 선택 토글, 모바일 탭)
           const wasSelected = selectedStaffIds.has(staff.id);
-          // 모바일 환경이 아니면 기존 선택을 풀고 현재 카드만 단독 선택
           const isTouchOrMobile = ('ontouchstart' in window) || (window.innerWidth < 1200);
           if (!isTouchOrMobile) {
             selectedStaffIds.clear();
@@ -2307,18 +1502,16 @@
             else selectedStaffIds.add(staff.id);
           }
         }
-
         renderStaffAndStations();
         updateMobileActionBar();
       };
 
       return el;
     }
-    // ★ [추가] 선택된 인원 일괄 다중 삭제 처리 함수
+
     function deleteSelectedStaffsBatch() {
       const count = selectedStaffIds.size;
       if (count === 0) return;
-
       if (!confirm(`선택한 ${count}명의 근무자를 삭제하시겠습니까?`)) return;
 
       const currentStaffList = teamsData[currentTeamKey].staff || [];
@@ -2336,39 +1529,25 @@
       showToast(`${count}명의 근무자가 일괄 삭제되었습니다.`);
     }
 
-    // ★ [수정] 우클릭 메뉴 (다중 선택 상태 감지 및 일괄 삭제 연동)
     function openStaffActionMenu(staff) {
-      // 우클릭한 카드가 이미 다중 선택 목록에 있다면 다중 상태 유지, 아니라면 해당 카드만 단독 선택
       if (!selectedStaffIds.has(staff.id)) {
         selectedStaffIds.clear();
         selectedStaffIds.add(staff.id);
         renderStaffAndStations();
       }
-
       const count = selectedStaffIds.size;
-      const titleText = count > 1 
-        ? `선택한 ${count}명 일괄 관리` 
-        : `'${staff.name}' 근무자 관리 ${staff.isSupport ? '(지원자)' : ''}`;
+      const titleText = count > 1 ? `선택한 ${count}명 일괄 관리` : `'${staff.name}' 근무자 관리 ${staff.isSupport ? '(지원자)' : ''}`;
 
       const modal = document.createElement('div');
       modal.className = 'fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4';
       modal.innerHTML = `
         <div class="bg-white border border-slate-300 rounded-xl p-4 max-w-xs w-full text-center space-y-3 shadow-xl">
-          <div class="font-black text-slate-900 text-sm border-b border-slate-100 pb-2">
-            ${titleText}
-          </div>
+          <div class="font-black text-slate-900 text-sm border-b border-slate-100 pb-2">${titleText}</div>
           <p class="text-xs text-slate-600">원하시는 작업을 선택해 주세요.</p>
           <div class="grid ${count > 1 ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 pt-1">
-            <button id="act-copy" class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1" title="클립보드에 복사">
-              <i class="fa-solid fa-copy"></i> 복사${count > 1 ? `(${count})` : ''}
-            </button>
-            ${count === 1 ? `
-            <button id="act-edit" class="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
-              <i class="fa-solid fa-pen"></i> 수정
-            </button>` : ''}
-            <button id="act-delete" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1">
-              <i class="fa-solid fa-trash"></i> 삭제${count > 1 ? `(${count})` : ''}
-            </button>
+            <button id="act-copy" class="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1"><i class="fa-solid fa-copy"></i> 복사${count > 1 ? `(${count})` : ''}</button>
+            ${count === 1 ? `<button id="act-edit" class="px-2 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1"><i class="fa-solid fa-pen"></i> 수정</button>` : ''}
+            <button id="act-delete" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded flex items-center justify-center gap-1"><i class="fa-solid fa-trash"></i> 삭제${count > 1 ? `(${count})` : ''}</button>
           </div>
           <button id="act-cancel" class="w-full py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded mt-1">닫기</button>
         </div>
@@ -2376,31 +1555,11 @@
       document.body.appendChild(modal);
 
       modal.querySelector('#act-cancel').onclick = () => modal.remove();
-      modal.querySelector('#act-copy').onclick = () => {
-        copySelectedStaffsToClipboard();
-        modal.remove();
-      };
+      modal.querySelector('#act-copy').onclick = () => { copySelectedStaffsToClipboard(); modal.remove(); };
       if (count === 1) {
-        modal.querySelector('#act-edit').onclick = () => {
-          modal.remove();
-          openEditModal(staff);
-        };
+        modal.querySelector('#act-edit').onclick = () => { modal.remove(); openEditModal(staff); };
       }
-      modal.querySelector('#act-delete').onclick = () => {
-        modal.remove();
-        deleteSelectedStaffsBatch(); // 👈 여기서 일괄 다중 삭제 호출
-      };
-    }
-
-    function deleteStaffDirect(staff) {
-      if (staff.location.startsWith('train-')) {
-        handleRideLogging(staff.name, staff.location, null);
-      }
-      teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
-      selectedStaffIds.delete(staff.id);
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${staff.name} 근무자가 삭제되었습니다.`);
+      modal.querySelector('#act-delete').onclick = () => { modal.remove(); deleteSelectedStaffsBatch(); };
     }
 
     function copySelectedStaffsToClipboard() {
@@ -2409,34 +1568,24 @@
       staffClipboardArray = currentStaffList
         .filter(s => selectedStaffIds.has(s.id))
         .map(s => JSON.parse(JSON.stringify(s)));
-
       showToast(`${staffClipboardArray.length}명 복사 완료! (다른 팀 탭에서 Ctrl+V로 붙여넣기 가능)`);
     }
 
     function pasteStaffsFromClipboard() {
       if (!staffClipboardArray || staffClipboardArray.length === 0) {
-        showToast('클립보드에 복사된 근무자가 없습니다. 먼저 선택 후 Ctrl+C를 누르세요.');
+        showToast('클립보드에 복사된 근무자가 없습니다.');
         return;
       }
-
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       let pastedCount = 0;
-
       staffClipboardArray.forEach((sourceStaff, index) => {
         const newStaff = JSON.parse(JSON.stringify(sourceStaff));
-
         newStaff.id = 'st-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 100000);
         newStaff.location = '미배치';
-        newStaff.isSupport = true; // 무조건 지원자 부여
-        
-        if (sourceStaff.icon === 'smile') {
-          newStaff.icon = 'smile';
-        }
-
+        newStaff.isSupport = true;
         currentStaffList.push(newStaff);
         pastedCount++;
       });
-
       teamsData[currentTeamKey].staff = currentStaffList;
       render();
       syncCurrentTeamStaffToCloud();
@@ -2445,61 +1594,29 @@
 
     window.addEventListener('keydown', (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (selectedStaffIds.size > 0) {
-          e.preventDefault();
-          copySelectedStaffsToClipboard();
-        }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedStaffIds.size > 0) {
+        e.preventDefault(); copySelectedStaffsToClipboard();
       }
-
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (staffClipboardArray.length > 0) {
-          e.preventDefault();
-          pasteStaffsFromClipboard();
-        }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && staffClipboardArray.length > 0) {
+        e.preventDefault(); pasteStaffsFromClipboard();
       }
-
-      // ★ [여기에 추가] Delete 및 Backspace 다중 삭제 단축키
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedStaffIds.size > 0) {
-          e.preventDefault();
-          deleteSelectedStaffsBatch();
-        }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedStaffIds.size > 0) {
+        e.preventDefault(); deleteSelectedStaffsBatch();
       }
-
       if (e.key === 'Escape') {
-        selectedStaffIds.clear();
-        renderStaffAndStations();
+        selectedStaffIds.clear(); renderStaffAndStations();
       }
     });
 
     document.addEventListener('click', (e) => {
-      // Ctrl 또는 Cmd 키를 누르고 있는 도중에는 선택 해제 방지
       if (e.ctrlKey || e.metaKey) return;
-
-      // 팝업 모달이나 툴바를 누를 때도 선택 해제 방지
       if (e.target.closest('#mobile-action-bar') || e.target.closest('.fixed.inset-0')) return;
-
-      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn')) {
-        if (selectedStaffIds.size > 0) {
-          selectedStaffIds.clear();
-          renderStaffAndStations();
-          updateMobileActionBar();
-        }
+      if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn') && selectedStaffIds.size > 0) {
+        selectedStaffIds.clear();
+        renderStaffAndStations();
+        updateMobileActionBar();
       }
     });
-
-    function deleteStaffDirect(staff) {
-      if (staff.location.startsWith('train-')) {
-        handleRideLogging(staff.name, staff.location, null);
-      }
-      teamsData[currentTeamKey].staff = teamsData[currentTeamKey].staff.filter(s => s.id !== staff.id);
-      selectedStaffIds.delete(staff.id);
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${staff.name} 근무자가 삭제되었습니다.`);
-    }
 
     let editingStaffId = null;
 
@@ -2508,12 +1625,10 @@
       document.getElementById('edit-name').value = staff.name || '';
       document.getElementById('edit-phone').value = staff.phone || '';
       document.getElementById('edit-is-newbie').checked = (staff.icon === 'smile');
-
       const radio = document.querySelector(`input[name="edit-color-choice"][value="${staff.color || 'team1'}"]`);
       if (radio) radio.checked = true;
 
       populateEditLocationOptions(staff.location);
-
       document.getElementById('edit-modal').classList.remove('hidden');
       document.getElementById('edit-modal').classList.add('flex');
     }
@@ -2527,8 +1642,7 @@
     function populateEditLocationOptions(currentLoc) {
       const sel = document.getElementById('edit-location');
       if (!sel) return;
-      let opts = `<optgroup label="기본 대기"><option value="미배치">미배치 (대기함)</option></optgroup>`;
-      opts += `<optgroup label="역사">`;
+      let opts = `<optgroup label="기본 대기"><option value="미배치">미배치 (대기함)</option></optgroup><optgroup label="역사">`;
       document.querySelectorAll('.station-card').forEach(c => {
         const id = c.getAttribute('data-zone-id');
         if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황') {
@@ -2546,7 +1660,6 @@
 
     function confirmEditStaff() {
       if (!editingStaffId) return;
-
       const currentTeam = teamsData[currentTeamKey];
       const staff = currentTeam.staff.find(s => s.id === editingStaffId);
       if (!staff) return;
@@ -2557,23 +1670,15 @@
       const newColor = document.querySelector('input[name="edit-color-choice"]:checked').value;
       const isNewbie = document.getElementById('edit-is-newbie').checked;
 
-      if (!newName) {
-        alert('성명을 입력해 주세요.');
-        return;
-      }
+      if (!newName) { alert('성명을 입력해 주세요.'); return; }
 
-      const prevLoc = staff.location;
-      if (prevLoc !== newLocation) {
-        handleRideLogging(newName, prevLoc, newLocation);
-      }
+      if (staff.location !== newLocation) handleRideLogging(newName, staff.location, newLocation);
 
       staff.name = newName;
       staff.phone = newPhone;
       staff.location = newLocation;
       staff.color = newColor;
       staff.icon = isNewbie ? 'smile' : null;
-      staff.isSupport = staff.isSupport === true; // ★ 기존 지원자 여부 안전하게 유지
-      
 
       render();
       syncCurrentTeamStaffToCloud();
@@ -2581,7 +1686,6 @@
       closeEditModal();
     }
 
-    /* 2. 전체 역사 및 열차 드롭존 네임택 배치 */
     function renderStaffAndStations() {
       document.querySelectorAll('.station-dropzone').forEach(dz => dz.innerHTML = '');
 
@@ -2600,25 +1704,11 @@
         const overlay = card.querySelector('.station-status-overlay');
         if (overlay) {
           if (isAway && isIssue) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-black/50 border border-white/50 truncate max-w-full">
-                <span class="text-slate-100 font-black">외부</span>
-                <span class="text-white/40 font-light">|</span>
-                <span class="text-yellow-300 font-black truncate">⚠️${detailText}</span>
-              </span>
-            `;
+            overlay.innerHTML = `<span class="flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-black/50 border border-white/50 truncate max-w-full"><span class="text-slate-100 font-black">외부</span><span class="text-white/40 font-light">|</span><span class="text-yellow-300 font-black truncate">⚠️${detailText}</span></span>`;
           } else if (isAway) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black">
-                <i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부
-              </span>
-            `;
+            overlay.innerHTML = `<span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black"><i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부</span>`;
           } else if (isIssue) {
-            overlay.innerHTML = `
-              <span class="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black truncate max-w-full">
-                <i class="fa-solid fa-triangle-exclamation text-xs"></i> <span class="truncate">${detailText}</span>
-              </span>
-            `;
+            overlay.innerHTML = `<span class="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black truncate max-w-full"><i class="fa-solid fa-triangle-exclamation text-xs"></i> <span class="truncate">${detailText}</span></span>`;
           } else {
             overlay.innerHTML = '';
           }
@@ -2626,51 +1716,37 @@
       });
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
-
       currentStaff.forEach(staff => {
         const targetDropzone = document.querySelector(`[data-zone-id="${staff.location}"] .station-dropzone`);
         if (targetDropzone) {
-          // ★ 카드 내부의 .select-none(스마일/뱃지)을 지우지 않고, 빈자리 안내 태그만 안전하게 제거
           const placeholder = targetDropzone.querySelector(':scope > .select-none, :scope > .text-slate-300, :scope > span:not(.nametag span)');
           if (placeholder) placeholder.remove();
-
-          const tag = buildNametagElement(staff);
-          targetDropzone.appendChild(tag);
+          targetDropzone.appendChild(buildNametagElement(staff));
         }
       });
 
       document.querySelectorAll('.station-card').forEach(card => {
         const zoneId = card.getAttribute('data-zone-id');
         if (!zoneId) return;
-
         const dropzone = card.querySelector('.station-dropzone');
         if (!dropzone) return;
 
         const staffList = currentStaff.filter(s => s.location === zoneId);
-
         if (zoneId.startsWith('train-')) {
-          if (staffList.length === 0) {
-            dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
-          }
+          if (staffList.length === 0) dropzone.innerHTML = `<span class="text-[9px] text-slate-300 font-bold select-none">-</span>`;
           return;
         }
 
-        // ★ 미배치함은 좌우 2열 전용이므로 count 정렬 클래스를 적용하지 않고 제외!
         if (zoneId === '미배치' || zoneId === '휴무자' || zoneId === '본사') {
           dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
           return;
         }
 
         dropzone.classList.remove('count-1', 'count-2', 'count-3', 'count-many');
-        if (staffList.length === 1) {
-          dropzone.classList.add('count-1');
-        } else if (staffList.length === 2) {
-          dropzone.classList.add('count-2');
-        } else if (staffList.length === 3) {
-          dropzone.classList.add('count-3');
-        } else if (staffList.length > 3) {
-          dropzone.classList.add('count-many');
-        }
+        if (staffList.length === 1) dropzone.classList.add('count-1');
+        else if (staffList.length === 2) dropzone.classList.add('count-2');
+        else if (staffList.length === 3) dropzone.classList.add('count-3');
+        else if (staffList.length > 3) dropzone.classList.add('count-many');
 
         if (staffList.length === 0 && zoneId !== '휴무자' && zoneId !== '본사' && zoneId !== '미배치' && zoneId !== '승무현황') {
           dropzone.innerHTML = `<div class="m-auto text-sm font-black text-slate-300 tracking-widest select-none">무 인</div>`;
@@ -2681,97 +1757,61 @@
       attachStationStaticEvents();
     }
 
-    // ★ 여기에 아래 함수를 그대로 붙여넣어 주시면 됩니다!
-    // 모든 역사 장애/외부 오버레이의 깜빡임 타이밍을 '가장 최근 변경 시점' 기준으로 일제히 동기화
     function resyncStationOverlayAnimations() {
       const overlays = document.querySelectorAll('.station-status-overlay');
-      overlays.forEach(el => {
-        el.style.animation = 'none'; // 애니메이션 즉시 정지
-      });
-
-      // 브라우저 강제 렌더링 갱신 (리플로우)
+      overlays.forEach(el => { el.style.animation = 'none'; });
       void document.body.offsetHeight;
-
-      overlays.forEach(el => {
-        el.style.animation = ''; // CSS에 지정된 애니메이션 속성으로 0초부터 일제히 재시작
-      });
+      overlays.forEach(el => { el.style.animation = ''; });
     }
 
     let draggedId = null;
 
     function attachNametagEvents() {
-      const nametags = document.querySelectorAll('.nametag');
-
-      nametags.forEach(tag => {
+      document.querySelectorAll('.nametag').forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
           draggedId = tag.id;
           tag.classList.add('dragging');
           e.dataTransfer.setData('text/plain', tag.id);
         });
-
         tag.addEventListener('dragend', () => {
           tag.classList.remove('dragging');
           document.querySelectorAll('.station-dropzone').forEach(dz => dz.classList.remove('drag-hover'));
           document.querySelectorAll('.nametag').forEach(nt => nt.classList.remove('drag-insert-before', 'drag-insert-after'));
         });
-
         tag.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+          e.preventDefault(); e.stopPropagation();
           if (!draggedId || draggedId === tag.id) return;
-
           const rect = tag.getBoundingClientRect();
-          const midY = rect.top + rect.height / 2;
-          if (e.clientY < midY) {
-            tag.classList.add('drag-insert-before');
-            tag.classList.remove('drag-insert-after');
+          if (e.clientY < rect.top + rect.height / 2) {
+            tag.classList.add('drag-insert-before'); tag.classList.remove('drag-insert-after');
           } else {
-            tag.classList.add('drag-insert-after');
-            tag.classList.remove('drag-insert-before');
+            tag.classList.add('drag-insert-after'); tag.classList.remove('drag-insert-before');
           }
         });
-
-        tag.addEventListener('dragleave', () => {
-          tag.classList.remove('drag-insert-before', 'drag-insert-after');
-        });
-
+        tag.addEventListener('dragleave', () => tag.classList.remove('drag-insert-before', 'drag-insert-after'));
         tag.addEventListener('drop', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+          e.preventDefault(); e.stopPropagation();
           tag.classList.remove('drag-insert-before', 'drag-insert-after');
-
           if (!draggedId || draggedId === tag.id) return;
-
           const targetCard = tag.closest('.station-card');
           if (!targetCard) return;
-
           const targetZone = targetCard.getAttribute('data-zone-id');
           const rect = tag.getBoundingClientRect();
-          const isBefore = (e.clientY < rect.top + rect.height / 2);
-
-          reorderStaff(draggedId, tag.id, targetZone, isBefore);
+          reorderStaff(draggedId, tag.id, targetZone, (e.clientY < rect.top + rect.height / 2));
           draggedId = null;
         });
       });
     }
 
     function attachTrainDropEvents() {
-      const trainDropzones = document.querySelectorAll('#trains-grid .station-dropzone');
-      trainDropzones.forEach(dz => {
-        dz.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dz.classList.add('drag-hover');
-        });
-        dz.addEventListener('dragleave', () => {
-          dz.classList.remove('drag-hover');
-        });
+      document.querySelectorAll('#trains-grid .station-dropzone').forEach(dz => {
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-hover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag-hover'));
         dz.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dz.classList.remove('drag-hover');
+          e.preventDefault(); dz.classList.remove('drag-hover');
           const card = dz.closest('.station-card');
           if (card && draggedId) {
-            const newZone = card.getAttribute('data-zone-id');
-            moveStaffToEnd(draggedId, newZone);
+            moveStaffToEnd(draggedId, card.getAttribute('data-zone-id'));
             draggedId = null;
           }
         });
@@ -2783,23 +1823,15 @@
       if (isStationEventsAttached) return;
       isStationEventsAttached = true;
 
-      const dropzones = document.querySelectorAll('main .station-dropzone');
-      const stationHeaders = document.querySelectorAll('.station-header');
-
-      stationHeaders.forEach(header => {
+      document.querySelectorAll('.station-header').forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
           const card = header.closest('.station-card');
-          if (!card) return;
-          const zoneId = card.getAttribute('data-zone-id');
-          if (zoneId) {
-            onStationHeaderClicked(zoneId);
-          }
+          if (card && card.getAttribute('data-zone-id')) onStationHeaderClicked(card.getAttribute('data-zone-id'));
         };
       });
 
-      dropzones.forEach(dz => {
-        // ★ [모바일 터치 이동 핵심] 선택된 인원이 있을 때 해당 역사 칸을 터치하면 즉시 이동
+      document.querySelectorAll('main .station-dropzone').forEach(dz => {
         dz.onclick = (e) => {
           if (selectedStaffIds.size > 0 && !e.target.closest('.nametag')) {
             e.stopPropagation();
@@ -2810,41 +1842,28 @@
 
             const currentStaffList = teamsData[currentTeamKey].staff || [];
             let movedCount = 0;
-
             selectedStaffIds.forEach(staffId => {
               const staff = currentStaffList.find(s => s.id === staffId);
               if (staff && staff.location !== targetZone) {
-                const prevLoc = staff.location;
-                handleRideLogging(staff.name, prevLoc, targetZone);
+                handleRideLogging(staff.name, staff.location, targetZone);
                 staff.location = targetZone;
                 movedCount++;
               }
             });
-
             if (movedCount > 0) {
-              clearSelection();
-              render();
-              syncCurrentTeamStaffToCloud();
+              clearSelection(); render(); syncCurrentTeamStaffToCloud();
               showToast(`${movedCount}명이 [${targetZone}]으로 이동되었습니다.`);
             }
           }
         };
 
-        // (기존 PC 마우스 드래그 앤 드롭 이벤트는 그대로 유지)
-        dz.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dz.classList.add('drag-hover');
-        });
-        dz.addEventListener('dragleave', () => {
-          dz.classList.remove('drag-hover');
-        });
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-hover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag-hover'));
         dz.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dz.classList.remove('drag-hover');
+          e.preventDefault(); dz.classList.remove('drag-hover');
           const card = dz.closest('.station-card');
           if (card && draggedId) {
-            const newZone = card.getAttribute('data-zone-id');
-            moveStaffToEnd(draggedId, newZone);
+            moveStaffToEnd(draggedId, card.getAttribute('data-zone-id'));
             draggedId = null;
           }
         });
@@ -2855,20 +1874,12 @@
       const staffList = teamsData[currentTeamKey].staff;
       const targetIndex = staffList.findIndex(s => s.id === staffId);
       if (targetIndex === -1) return;
-
       const staff = staffList[targetIndex];
-      const prevLocation = staff.location;
-
-      if (prevLocation !== newLocation) {
-        handleRideLogging(staff.name, prevLocation, newLocation);
-      }
-
+      if (staff.location !== newLocation) handleRideLogging(staff.name, staff.location, newLocation);
       const [sItem] = staffList.splice(targetIndex, 1);
       sItem.location = newLocation;
       staffList.push(sItem);
-
-      render();
-      syncCurrentTeamStaffToCloud();
+      render(); syncCurrentTeamStaffToCloud();
       showToast(`${staff.name} 근무자가 배치되었습니다.`);
     }
 
@@ -2876,27 +1887,14 @@
       const staffList = teamsData[currentTeamKey].staff;
       const srcIdx = staffList.findIndex(s => s.id === sourceId);
       if (srcIdx === -1) return;
-
       const sourceStaff = staffList[srcIdx];
-      const prevLocation = sourceStaff.location;
-
-      if (prevLocation !== targetZone) {
-        handleRideLogging(sourceStaff.name, prevLocation, targetZone);
-      }
-
+      if (sourceStaff.location !== targetZone) handleRideLogging(sourceStaff.name, sourceStaff.location, targetZone);
       const [sItem] = staffList.splice(srcIdx, 1);
       sItem.location = targetZone;
-
       let tgtIdx = staffList.findIndex(s => s.id === targetId);
-      if (tgtIdx === -1) {
-        staffList.push(sItem);
-      } else {
-        const insertIdx = isBefore ? tgtIdx : tgtIdx + 1;
-        staffList.splice(insertIdx, 0, sItem);
-      }
-
-      render();
-      syncCurrentTeamStaffToCloud();
+      if (tgtIdx === -1) staffList.push(sItem);
+      else staffList.splice(isBefore ? tgtIdx : tgtIdx + 1, 0, sItem);
+      render(); syncCurrentTeamStaffToCloud();
       showToast(`${sourceStaff.name} 근무자 순서가 변경되었습니다.`);
     }
 
@@ -2908,38 +1906,16 @@
       if (prevLoc && prevLoc.startsWith('train-')) {
         const trainNum = prevLoc.replace('train-', '');
         const activeLog = currentRideLogs.find(l => l.staffName === staffName && l.trainNum === trainNum && !l.endTime);
-        if (activeLog) {
-          activeLog.endTime = timeStr;
-        } else {
-          currentRideLogs.unshift({
-            id: 'log-' + Date.now(),
-            staffName,
-            trainNum,
-            startTime: '-',
-            endTime: timeStr,
-            startTimestamp: null
-          });
-        }
+        if (activeLog) activeLog.endTime = timeStr;
+        else currentRideLogs.unshift({ id: 'log-' + Date.now(), staffName, trainNum, startTime: '-', endTime: timeStr, startTimestamp: null });
       }
 
       if (newLoc && newLoc.startsWith('train-')) {
         const trainNum = newLoc.replace('train-', '');
-        currentRideLogs.unshift({
-          id: 'log-' + Date.now(),
-          staffName,
-          trainNum,
-          startTime: timeStr,
-          endTime: null,
-          startTimestamp: now.getTime()
-        });
+        currentRideLogs.unshift({ id: 'log-' + Date.now(), staffName, trainNum, startTime: timeStr, endTime: null, startTimestamp: now.getTime() });
       }
 
-      if (currentRideLogs.length > 30) {
-        teamsData[currentTeamKey].rideLogs = currentRideLogs.slice(0, 30);
-      } else {
-        teamsData[currentTeamKey].rideLogs = currentRideLogs;
-      }
-
+      teamsData[currentTeamKey].rideLogs = currentRideLogs.slice(0, 30);
       syncCurrentTeamRideLogsToCloud();
       renderRideLogs();
     }
@@ -2948,25 +1924,19 @@
       let startMs = startTimestamp;
       if (!startMs && startTimeStr && startTimeStr.includes(':')) {
         const [h, m] = startTimeStr.split(':').map(v => parseInt(v, 10));
-        const d = new Date();
-        d.setHours(h, m, 0, 0);
+        const d = new Date(); d.setHours(h, m, 0, 0);
         startMs = d.getTime();
       }
       if (!startMs) return '';
-
       const diffMinutes = Math.max(0, Math.floor((Date.now() - startMs) / 60000));
-      if (diffMinutes < 1) return '방금';
-      return `${diffMinutes}분`;
+      return diffMinutes < 1 ? '방금' : `${diffMinutes}분`;
     }
 
     let lastRideLogsSignature = '';
-
     function renderRideLogs() {
       const container = document.getElementById('train-ride-logs');
       if (!container) return;
-
       const rawRideLogs = teamsData[currentTeamKey].rideLogs || [];
-
       if (rawRideLogs.length === 0) {
         container.innerHTML = `<span class="text-[10.5px] text-slate-400 italic p-1 text-center">기록 없음</span>`;
         lastRideLogsSignature = '';
@@ -2974,15 +1944,9 @@
       }
 
       const sortedRideLogs = [...rawRideLogs].sort((a, b) => {
-        const aActive = !a.endTime;
-        const bActive = !b.endTime;
-
-        if (aActive && !bActive) return -1;
-        if (!aActive && bActive) return 1;
-
-        const aTime = a.startTimestamp || 0;
-        const bTime = b.startTimestamp || 0;
-        return bTime - aTime;
+        if (!a.endTime && b.endTime) return -1;
+        if (a.endTime && !b.endTime) return 1;
+        return (b.startTimestamp || 0) - (a.startTimestamp || 0);
       });
 
       const currentSignature = sortedRideLogs.map(l => `${l.id}_${l.endTime || 'riding'}`).join('|');
@@ -2992,106 +1956,57 @@
       container.innerHTML = sortedRideLogs.map(l => {
         const isRiding = !l.endTime;
         const durationText = isRiding ? getElapsedDurationText(l.startTimestamp, l.startTime) : '';
-
         return `
-          <div class="grid grid-cols-[44px_48px_auto_1fr_16px] items-center gap-1.5 px-1.5 py-1 rounded text-[11px] font-bold leading-normal border ${
-            isRiding 
-              ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' 
-              : 'bg-slate-50 border-slate-200 text-slate-700'
-          }">
+          <div class="grid grid-cols-[44px_48px_auto_1fr_16px] items-center gap-1.5 px-1.5 py-1 rounded text-[11px] font-bold leading-normal border ${isRiding ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-2xs' : 'bg-slate-50 border-slate-200 text-slate-700'}">
             <span class="bg-indigo-600 text-white font-black text-[9.5px] text-center py-0.5 rounded leading-tight shrink-0">${l.trainNum}편성</span>
             <span class="truncate font-black text-slate-900 leading-normal shrink-0">${l.staffName}</span>
-            <div class="flex items-center justify-start shrink-0">
-              ${isRiding && durationText ? `
-                <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full leading-tight animate-pulse">
-                  ${durationText}
-                </span>
-              ` : ''}
-            </div>
-
+            <div class="flex items-center justify-start shrink-0">${isRiding && durationText ? `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full leading-tight animate-pulse">${durationText}</span>` : ''}</div>
             <div class="text-[11px] text-right truncate leading-normal flex items-center justify-end gap-1">
               <span class="font-mono text-indigo-700 font-semibold">${l.startTime}</span>
               <span class="text-slate-400 font-mono">~</span>
-              ${isRiding 
-                ? `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded text-[10px] font-black tracking-tight">탑승중</span>`
-                : `<span class="font-mono text-slate-600 font-semibold">${l.endTime}</span>`
-              }
+              ${isRiding ? `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded text-[10px] font-black tracking-tight">탑승중</span>` : `<span class="font-mono text-slate-600 font-semibold">${l.endTime}</span>`}
             </div>
-
-            <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition flex items-center justify-center" title="이 기록 삭제">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button onclick="deleteRideLogItem('${l.id}')" class="text-slate-400 hover:text-rose-600 text-[11px] font-black text-center transition flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
           </div>
         `;
       }).join('');
 
-      if (isStatusChanged || prevScrollTop <= 10) {
-        container.scrollTop = 0;
-      } else {
-        container.scrollTop = prevScrollTop;
-      }
-
+      container.scrollTop = (isStatusChanged || prevScrollTop <= 10) ? 0 : prevScrollTop;
       lastRideLogsSignature = currentSignature;
     }
 
     function renderStatistics() {
-      const activeTrains = sharedTrains.filter(t => t.status === 'active').length;
-      const depotTrains = sharedTrains.filter(t => t.status === 'depot').length;
-      const issueTrains = sharedTrains.filter(t => t.status === 'issue').length;
-
-      document.getElementById('stat-active').textContent = activeTrains;
-      document.getElementById('stat-depot').textContent = depotTrains;
-      document.getElementById('stat-issue').textContent = issueTrains;
-
+      document.getElementById('stat-active').textContent = sharedTrains.filter(t => t.status === 'active').length;
+      document.getElementById('stat-depot').textContent = sharedTrains.filter(t => t.status === 'depot').length;
+      document.getElementById('stat-issue').textContent = sharedTrains.filter(t => t.status === 'issue').length;
       document.getElementById('stat-station-issue').textContent = `${sharedStationIssues.length}개역`;
 
       const currentStaff = teamsData[currentTeamKey].staff || [];
-
-      const offStaff = currentStaff.filter(s => s.location === '휴무자');
       const badgeOff = document.getElementById('badge-off-count');
-      if (badgeOff) {
-        badgeOff.textContent = `${offStaff.length}명`;
-      }
-
-      const hqStaff = currentStaff.filter(s => s.location === '본사');
+      if (badgeOff) badgeOff.textContent = `${currentStaff.filter(s => s.location === '휴무자').length}명`;
       const badgeHq = document.getElementById('badge-hq-count');
-      if (badgeHq) {
-        badgeHq.textContent = `${hqStaff.length}명`;
-      }
-
-      const unassignedStaff = currentStaff.filter(s => s.location === '미배치');
+      if (badgeHq) badgeHq.textContent = `${currentStaff.filter(s => s.location === '본사').length}명`;
       const badgeUnassigned = document.getElementById('badge-unassigned-count');
-      if (badgeUnassigned) {
-        badgeUnassigned.textContent = `${unassignedStaff.length}명`;
-      }
+      if (badgeUnassigned) badgeUnassigned.textContent = `${currentStaff.filter(s => s.location === '미배치').length}명`;
 
-      const activeDutyCount = currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length;
-      document.getElementById('stat-total').textContent = `${activeDutyCount}명`;
+      document.getElementById('stat-total').textContent = `${currentStaff.filter(s => s.location !== '휴무자' && s.location !== '미배치').length}명`;
 
       const trainStaff = currentStaff.filter(s => s.location.startsWith('train-'));
       const trainBadge = document.getElementById('badge-train-count');
-      if (trainBadge) {
-        trainBadge.textContent = `${trainStaff.length}명`;
-      }
+      if (trainBadge) trainBadge.textContent = `${trainStaff.length}명`;
 
       const riderList = document.getElementById('train-riders-list');
       if (riderList) {
         if (trainStaff.length === 0) {
           riderList.innerHTML = `<span class="text-[11px] text-slate-400 italic p-1 text-center">탑승 배정 없음</span>`;
         } else {
-          riderList.innerHTML = trainStaff.map(s => {
-            const tNum = s.location.replace('train-', '');
-            const smileBadge = (s.icon === 'smile') ? '😊' : '';
-            return `
-              <div class="grid grid-cols-[48px_60px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-0.5 rounded shadow-2xs">
-                <span class="bg-sky-600 text-white font-black text-[9.5px] text-center py-0.5 rounded">${tNum}편성</span>
-                <span class="font-black text-xs text-slate-900 truncate">
-                  ${s.name} ${smileBadge}
-                </span>
-                <span class="font-mono font-bold text-[11px] text-sky-800 tracking-tighter text-right">${s.phone}</span>
-              </div>
-            `;
-          }).join('');
+          riderList.innerHTML = trainStaff.map(s => `
+            <div class="grid grid-cols-[48px_60px_1fr] items-center gap-1.5 bg-sky-100/90 border border-sky-300 text-sky-950 px-2 py-0.5 rounded shadow-2xs">
+              <span class="bg-sky-600 text-white font-black text-[9.5px] text-center py-0.5 rounded">${s.location.replace('train-', '')}편성</span>
+              <span class="font-black text-xs text-slate-900 truncate">${s.name} ${s.icon === 'smile' ? '😊' : ''}</span>
+              <span class="font-mono font-bold text-[11px] text-sky-800 tracking-tighter text-right">${s.phone}</span>
+            </div>
+          `).join('');
         }
       }
     }
@@ -3099,8 +2014,7 @@
     function populateLocationOptions() {
       const sel = document.getElementById('input-location');
       if (!sel) return;
-      let opts = `<optgroup label="기본 대기"><option value="미배치" selected>미배치 (대기함)</option></optgroup>`;
-      opts += `<optgroup label="역사">`;
+      let opts = `<optgroup label="기본 대기"><option value="미배치" selected>미배치 (대기함)</option></optgroup><optgroup label="역사">`;
       document.querySelectorAll('.station-card').forEach(c => {
         const id = c.getAttribute('data-zone-id');
         if (id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황') {
@@ -3133,98 +2047,42 @@
       const location = document.getElementById('input-location').value;
       const color = document.querySelector('input[name="color-choice"]:checked').value;
       const isNewbie = document.getElementById('input-is-newbie').checked;
-
       if (!name) return;
 
-      const currentTeam = teamsData[currentTeamKey];
-      currentTeam.staff.push({
-        id: 'st-' + Date.now(),
-        name,
-        phone,
-        location,
-        color,
-        icon: isNewbie ? 'smile' : null
-      });
-
-      if (location.startsWith('train-')) {
-        handleRideLogging(name, null, location);
-      }
-
-      render();
-      syncCurrentTeamStaffToCloud();
-      showToast(`${name} 근무자${isNewbie ? '(신입😊)' : ''}가 등록되었습니다.`);
+      teamsData[currentTeamKey].staff.push({ id: 'st-' + Date.now(), name, phone, location, color, icon: isNewbie ? 'smile' : null });
+      if (location.startsWith('train-')) handleRideLogging(name, null, location);
+      render(); syncCurrentTeamStaffToCloud();
+      showToast(`${name} 근무자가 등록되었습니다.`);
       closeAddModal();
     }
 
-    // =========================================================================
-    // 캘린더 엔진
-    // =========================================================================
     const SHIFT_PATTERN = ['주', '야', '비', '휴'];
     const BASE_DATE = new Date(2026, 7, 1, 12, 0, 0);
     const TEAM_BASE_OFFSET = { "1": 1, "2": 2, "3": 3, "4": 0 };
-    
-    let calCurrentYear = 2026;
-    let calCurrentMonth = 9;
-    let calSelectedDateStr = "2026-10-26";
-
-    let SHEET_WEB_APP_URL = localStorage.getItem('bgl_sheet_web_app_url') || "";
+    let calCurrentYear = 2026, calCurrentMonth = 9, calSelectedDateStr = "2026-10-26";
 
     function getShiftType(year, month, day, teamNumStr) {
       const targetDate = new Date(year, month, day, 12, 0, 0);
       const diffDays = Math.round((targetDate - BASE_DATE) / 86400000);
-      let patternIndex = (TEAM_BASE_OFFSET[teamNumStr] + diffDays) % 4;
-      if (patternIndex < 0) patternIndex += 4;
-      return SHIFT_PATTERN[patternIndex];
+      let pIdx = (TEAM_BASE_OFFSET[teamNumStr] + diffDays) % 4;
+      if (pIdx < 0) pIdx += 4;
+      return SHIFT_PATTERN[pIdx];
     }
 
     function getDutyBadgeHtml(shift) {
-      if (shift === '주') return '<span class="badge-common badge-ju">주</span>';
-      if (shift === '야') return '<span class="badge-common badge-ya">야</span>';
-      if (shift === '비') return '<span class="badge-common badge-bi">비</span>';
-      if (shift === '휴') return '<span class="badge-common badge-hyu">휴</span>';
-      return `<span class="badge-common badge-ju">${shift}</span>`;
+      return `<span class="badge-common badge-${shift === '주' ? 'ju' : (shift === '야' ? 'ya' : (shift === '비' ? 'bi' : 'hyu'))}">${shift}</span>`;
     }
 
-    // 실시간 교대 기준에 맞춘 현재 근무팀 독립 뱃지 업데이트 (옵션 A)
     function updateCurrentWorkingTeamBadge() {
       const now = new Date();
-      const hour = now.getHours();
-      const y = now.getFullYear();
-      const m = now.getMonth();
-      const d = now.getDate();
-
-      // 시간대별 근무 형태 및 라벨 설정
-      let activeShiftType = '';
-      let shiftLabel = '';
-
-      if (hour >= 9 && hour < 18) {
-        // 09:00 ~ 18:00 : 주간
-        activeShiftType = '주';
-        shiftLabel = '주간';
-      } else if (hour >= 18) {
-        // 18:00 ~ 24:00 : 오늘 저녁 출근한 야간
-        activeShiftType = '야';
-        shiftLabel = '야간';
-      } else {
-        // 00:00 ~ 09:00 : 어제 야간 출근하여 근무 중인 조 (비번일) -> 일관되게 '야간'으로 표기
-        activeShiftType = '비';
-        shiftLabel = '야간';
-      }
-
-      // 현재 현장에서 일하고 있는 팀 탐색
-      let onDutyTeam = '';
-      for (const num of ['1', '2', '3', '4']) {
-        if (getShiftType(y, m, d, num) === activeShiftType) {
-          onDutyTeam = num;
-          break;
-        }
-      }
+      const hour = now.getHours(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+      let activeShiftType = (hour >= 9 && hour < 18) ? '주' : ((hour >= 18) ? '야' : '비');
+      let onDutyTeam = ['1', '2', '3', '4'].find(num => getShiftType(y, m, d, num) === activeShiftType);
 
       const badgeBtn = document.getElementById('current-duty-badge');
       const badgeText = document.getElementById('current-duty-badge-text');
-
       if (badgeBtn && badgeText && onDutyTeam) {
-        badgeText.textContent = `${onDutyTeam}팀 ${shiftLabel}근무`;
+        badgeText.textContent = `${onDutyTeam}팀 ${activeShiftType === '주' ? '주간' : '야간'}근무`;
         badgeBtn.onclick = () => switchTeam(`team${onDutyTeam}`);
         badgeBtn.classList.remove('hidden');
         badgeBtn.classList.add('flex');
@@ -3233,15 +2091,9 @@
 
     function openCalendarDialog() {
       const now = new Date();
-      calCurrentYear = now.getFullYear();
-      calCurrentMonth = now.getMonth();
-      const mStr = String(now.getMonth() + 1).padStart(2, '0');
-      const dStr = String(now.getDate()).padStart(2, '0');
-      calSelectedDateStr = `${calCurrentYear}-${mStr}-${dStr}`;
-
-      const teamNum = currentTeamKey.replace('team', '');
-      document.getElementById('cal-team-label').textContent = `${teamNum}팀`;
-
+      calCurrentYear = now.getFullYear(); calCurrentMonth = now.getMonth();
+      calSelectedDateStr = `${calCurrentYear}-${String(calCurrentMonth + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      document.getElementById('cal-team-label').textContent = `${currentTeamKey.replace('team', '')}팀`;
       renderCalendarGrid();
       document.getElementById('calendar-modal').classList.remove('hidden');
       document.getElementById('calendar-modal').classList.add('flex');
@@ -3254,13 +2106,8 @@
 
     function changeCalMonth(delta) {
       calCurrentMonth += delta;
-      if (calCurrentMonth < 0) {
-        calCurrentMonth = 11;
-        calCurrentYear--;
-      } else if (calCurrentMonth > 11) {
-        calCurrentMonth = 0;
-        calCurrentYear++;
-      }
+      if (calCurrentMonth < 0) { calCurrentMonth = 11; calCurrentYear--; }
+      else if (calCurrentMonth > 11) { calCurrentMonth = 0; calCurrentYear++; }
       renderCalendarGrid();
     }
 
@@ -3268,50 +2115,29 @@
       document.getElementById('calMonthTitle').innerText = `${calCurrentYear}년 ${calCurrentMonth + 1}월`;
       const container = document.getElementById('calendarDays');
       container.innerHTML = '';
-
       const firstDay = new Date(calCurrentYear, calCurrentMonth, 1, 12, 0, 0).getDay();
       const lastDate = new Date(calCurrentYear, calCurrentMonth + 1, 0, 12, 0, 0).getDate();
       const teamNum = currentTeamKey.replace('team', '');
 
       for (let i = 0; i < firstDay; i++) {
-        const empty = document.createElement('div');
-        empty.className = 'min-h-[40px]';
-        container.appendChild(empty);
+        container.appendChild(document.createElement('div')).className = 'min-h-[40px]';
       }
 
       for (let day = 1; day <= lastDate; day++) {
-        const mStr = String(calCurrentMonth + 1).padStart(2, '0');
-        const dStr = String(day).padStart(2, '0');
-        const dateStr = `${calCurrentYear}-${mStr}-${dStr}`;
+        const dateStr = `${calCurrentYear}-${String(calCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const shift = getShiftType(calCurrentYear, calCurrentMonth, day, teamNum);
-
         const isSelected = (dateStr === calSelectedDateStr);
         const dow = new Date(calCurrentYear, calCurrentMonth, day, 12, 0, 0).getDay();
 
         const dayCell = document.createElement('div');
-        dayCell.className = `min-h-[40px] py-1 border rounded-lg flex flex-col items-center justify-center gap-0.5 cursor-pointer transition ${
-          isSelected ? 'border-2 border-blue-600 bg-blue-50/70 font-black' : 'border-transparent hover:bg-slate-100'
-        }`;
-
-        let numColor = 'text-slate-800';
-        if (dow === 0) numColor = 'text-rose-500 font-bold';
-        if (dow === 6) numColor = 'text-blue-500 font-bold';
-
-        dayCell.innerHTML = `
-          <span class="text-xs leading-none ${numColor}">${day}</span>
-          ${getDutyBadgeHtml(shift)}
-        `;
-
+        dayCell.className = `min-h-[40px] py-1 border rounded-lg flex flex-col items-center justify-center gap-0.5 cursor-pointer transition ${isSelected ? 'border-2 border-blue-600 bg-blue-50/70 font-black' : 'border-transparent hover:bg-slate-100'}`;
+        dayCell.innerHTML = `<span class="text-xs leading-none ${dow === 0 ? 'text-rose-500 font-bold' : (dow === 6 ? 'text-blue-500 font-bold' : 'text-slate-800')}">${day}</span>${getDutyBadgeHtml(shift)}`;
         dayCell.onclick = () => {
           calSelectedDateStr = dateStr;
           updateCalSelectedInfo(dateStr, shift);
           renderCalendarGrid();
         };
-
-        if (isSelected) {
-          updateCalSelectedInfo(dateStr, shift);
-        }
-
+        if (isSelected) updateCalSelectedInfo(dateStr, shift);
         container.appendChild(dayCell);
       }
     }
@@ -3319,42 +2145,29 @@
     function updateCalSelectedInfo(dateStr, shift) {
       document.getElementById('displaySelectedDate').innerText = dateStr;
       const dutyArea = document.getElementById('displaySelectedDuty');
-      if (dutyArea) {
-        dutyArea.innerHTML = getDutyBadgeHtml(shift);
-      }
+      if (dutyArea) dutyArea.innerHTML = getDutyBadgeHtml(shift);
     }
 
     async function executeAutoArrangeFromCalendar() {
       const teamNum = currentTeamKey.replace('team', '');
       const parts = calSelectedDateStr.split('-').map(v => parseInt(v, 10));
       const shift = getShiftType(parts[0], parts[1] - 1, parts[2], teamNum);
-
       if (shift === '비' || shift === '휴') {
-        alert(`[${calSelectedDateStr}] ${teamNum}팀은 '${shift === '비' ? '비번' : '휴무'}'일입니다.\n배치를 중단합니다.`);
+        alert(`[${calSelectedDateStr}] ${teamNum}팀은 '${shift === '비' ? '비번' : '휴무'}'일입니다.`);
         return;
       }
-
-      // [수정됨] prompt 팝업 제거 -> 상수로 박아둔 GAS_DUTY_URL 직접 사용
-      const targetUrl = GAS_DUTY_URL;
 
       const btn = document.getElementById('btnSubmitAutoArrange');
       btn.disabled = true;
       btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 배치중...`;
-
       try {
-        const fetchUrl = `${targetUrl}?team=${teamNum}&date=${calSelectedDateStr}`;
-        const res = await fetch(fetchUrl);
+        const res = await fetch(`${GAS_DUTY_URL}?team=${teamNum}&date=${calSelectedDateStr}`);
         const data = await res.json();
-
-        if (!data.success) {
-          throw new Error(data.message || "시트 데이터 읽기 실패");
-        }
-
+        if (!data.success) throw new Error(data.message || "시트 데이터 읽기 실패");
         applyAutoArrangementWithSupportLogic(data);
         closeCalendarDialog();
-
       } catch (err) {
-        alert("자동배치 오류: " + err.message + "\n\n(Apps Script 웹앱 URL이 올바른지 확인해 주세요)");
+        alert("자동배치 오류: " + err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-bolt"></i> 자동배치 실행`;
@@ -3362,30 +2175,22 @@
     }
 
     function findStaffFromOtherTeams(targetName) {
-      const allTeamKeys = ['team1', 'team2', 'team3', 'team4'];
-      for (const tKey of allTeamKeys) {
+      for (const tKey of ['team1', 'team2', 'team3', 'team4']) {
         if (tKey === currentTeamKey) continue;
         const candidate = (teamsData[tKey].staff || []).find(s => s.name === targetName);
         if (candidate) {
           return {
             id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-            name: candidate.name,
-            phone: candidate.phone,
-            color: candidate.color || 'team1',
-            icon: (candidate.icon === 'smile' || candidate.icon === true) ? 'smile' : null, // ★ 신입 스마일 확실히 계승
-            location: '미배치',
-            isSupport: true // ★ 지원자 뱃지 명시
+            name: candidate.name, phone: candidate.phone, color: candidate.color || 'team1',
+            icon: (candidate.icon === 'smile' || candidate.icon === true) ? 'smile' : null,
+            location: '미배치', isSupport: true
           };
         }
       }
       return {
         id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-        name: targetName,
-        phone: '010-0000-0000',
-        color: 'purple',
-        icon: null,
-        location: '미배치',
-        isSupport: true // ★ 지원자 뱃지 명시
+        name: targetName, phone: '010-0000-0000', color: 'purple', icon: null,
+        location: '미배치', isSupport: true
       };
     }
 
@@ -3393,120 +2198,72 @@
       const stationMap = data.stationMap || {};
       const leaveList = data.leaveList || [];
       let currentStaffList = teamsData[currentTeamKey].staff || [];
-
-      // 시트 휴무란에 적히는 비인명 텍스트 필터 목록
       const IGNORE_LEAVE_KEYWORDS = ['연차자제', '연차제한', '휴가자제', '휴가제한', '자제', '제한', '-', '공란', '없음'];
 
       const allDutyNamesInSheet = new Set();
       Object.values(stationMap).forEach(list => {
-        if (Array.isArray(list)) {
-          list.forEach(name => {
-            const cleanName = (name || '').trim();
-            if (cleanName && !IGNORE_LEAVE_KEYWORDS.includes(cleanName)) {
-              allDutyNamesInSheet.add(cleanName);
-            }
-          });
-        }
+        if (Array.isArray(list)) list.forEach(name => {
+          const cleanName = (name || '').trim();
+          if (cleanName && !IGNORE_LEAVE_KEYWORDS.includes(cleanName)) allDutyNamesInSheet.add(cleanName);
+        });
       });
 
-      // 휴무 명단에서도 '연차자제' 등의 문구는 근무자 목록에서 제외
-      const validLeaveList = (leaveList || [])
-        .map(n => (n || '').trim())
-        .filter(n => n && !IGNORE_LEAVE_KEYWORDS.includes(n));
+      const validLeaveList = (leaveList || []).map(n => (n || '').trim()).filter(n => n && !IGNORE_LEAVE_KEYWORDS.includes(n));
       validLeaveList.forEach(name => allDutyNamesInSheet.add(name));
 
-      currentStaffList = currentStaffList.filter(s => {
-        if (s.isSupport && !allDutyNamesInSheet.has(s.name)) {
-          return false;
-        }
-        return true;
-      });
-
+      currentStaffList = currentStaffList.filter(s => !s.isSupport || allDutyNamesInSheet.has(s.name));
       currentStaffList.forEach(s => s.location = '미배치');
 
       const newlyAddedSupports = [];
       allDutyNamesInSheet.forEach(name => {
-        let exists = currentStaffList.find(s => s.name === name);
-        if (!exists) {
-          const copiedStaff = findStaffFromOtherTeams(name);
-          currentStaffList.push(copiedStaff);
+        if (!currentStaffList.some(s => s.name === name)) {
+          currentStaffList.push(findStaffFromOtherTeams(name));
           newlyAddedSupports.push(name);
         }
       });
 
-      const stationCards = document.querySelectorAll('.station-card');
-      const validZoneIds = Array.from(stationCards)
+      const validZoneIds = Array.from(document.querySelectorAll('.station-card'))
         .map(c => c.getAttribute('data-zone-id'))
         .filter(id => id && !id.startsWith('train-') && id !== '휴무자' && id !== '미배치' && id !== '승무현황');
 
       let placedDutyCount = 0;
       for (const [stName, names] of Object.entries(stationMap)) {
-        let matchedZone = null;
-
-        if (stName === '차량기지' || stName === '기지' || stName === '기지입환') {
-          matchedZone = '기지입환';
-        } else {
-          matchedZone = validZoneIds.find(z => !z.includes('사전점검') && z.startsWith(stName));
-          if (!matchedZone) {
-            matchedZone = validZoneIds.find(z => !z.includes('사전점검') && (z.includes(stName) || stName.includes(z.split(' ')[0])));
-          }
-        }
-
+        let matchedZone = (stName === '차량기지' || stName === '기지' || stName === '기지입환') ? '기지입환' : validZoneIds.find(z => !z.includes('사전점검') && (z.startsWith(stName) || z.includes(stName) || stName.includes(z.split(' ')[0])));
         if (matchedZone && Array.isArray(names)) {
           names.forEach(name => {
             const staff = currentStaffList.find(s => s.name === name && s.location === '미배치');
-            if (staff) {
-              staff.location = matchedZone;
-              placedDutyCount++;
-            }
+            if (staff) { staff.location = matchedZone; placedDutyCount++; }
           });
         }
       }
 
-     let placedLeaveCount = 0;
+      let placedLeaveCount = 0;
       validLeaveList.forEach(name => {
         const staff = currentStaffList.find(s => s.name === name && s.location === '미배치');
-        if (staff) {
-          staff.location = '휴무자';
-          placedLeaveCount++;
-        }
+        if (staff) { staff.location = '휴무자'; placedLeaveCount++; }
       });
 
       teamsData[currentTeamKey].staff = currentStaffList;
       selectedStaffIds.clear();
       render();
       syncCurrentTeamStaffToCloud();
-
-      let supportMsg = newlyAddedSupports.length > 0 ? `\n(타 팀 지원자 복사: ${newlyAddedSupports.join(', ')})` : '';
-      showToast(`자동배치 완료! (근무 ${placedDutyCount}명, 휴무 ${placedLeaveCount}명)${supportMsg}`);
+      showToast(`자동배치 완료! (근무 ${placedDutyCount}명, 휴무 ${placedLeaveCount}명)`);
     }
 
     function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     let toastTimeout = null;
     function showToast(msg) {
       const toast = document.getElementById('toast');
-      const msgSpan = document.getElementById('toast-message');
-      msgSpan.textContent = msg;
-
+      document.getElementById('toast-message').textContent = msg;
       if (toastTimeout) clearTimeout(toastTimeout);
       toast.classList.add('show');
-
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2500);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
-    // 모바일 툴바 제어 및 롱프레스 관련 함수
     let longPressTimer = null;
-
     function updateMobileActionBar() {
       const bar = document.getElementById('mobile-action-bar');
       const infoText = document.getElementById('mobile-selected-info');
@@ -3520,19 +2277,16 @@
       const count = selectedStaffIds.size;
       const hasClipboard = (staffClipboardArray && staffClipboardArray.length > 0);
 
-      // 선택된 인원도 없고, 클립보드도 없으면 완전히 숨김
       if (count === 0 && !hasClipboard) {
         bar.classList.add('opacity-0', 'pointer-events-none', 'translate-y-6');
         bar.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
         return;
       }
 
-      // 툴바 표시
       bar.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-6');
       bar.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
 
       if (count > 0) {
-        // [선택 인원이 있을 때]: 인원수, 구분선, 복사, 삭제 버튼 표시
         infoText.textContent = `${count}명 선택`;
         infoText.classList.remove('hidden');
         if (divider) divider.classList.remove('hidden');
@@ -3540,7 +2294,6 @@
         if (deleteBtn) deleteBtn.classList.remove('hidden');
         if (editBtn) editBtn.style.display = (count === 1) ? 'flex' : 'none';
       } else {
-        // [선택 인원 없이 붙여넣기만 대기 중일 때]: 불필요한 요소 숨김
         infoText.classList.add('hidden');
         if (divider) divider.classList.add('hidden');
         if (copyBtn) copyBtn.classList.add('hidden');
@@ -3548,7 +2301,6 @@
         if (editBtn) editBtn.style.display = 'none';
       }
 
-      // 붙여넣기 버튼 제어
       if (hasClipboard) {
         pasteBtn.classList.remove('hidden');
         pasteBtn.classList.add('flex');
@@ -3567,57 +2319,38 @@
 
     function handleMobileEdit() {
       if (selectedStaffIds.size !== 1) return;
-      const staffId = Array.from(selectedStaffIds)[0];
-      const staff = (teamsData[currentTeamKey].staff || []).find(s => s.id === staffId);
+      const staff = (teamsData[currentTeamKey].staff || []).find(s => s.id === Array.from(selectedStaffIds)[0]);
       if (staff) openEditModal(staff);
     }
 
     function handleMobileDelete() {
       if (selectedStaffIds.size === 0) return;
       if (!confirm(`선택한 ${selectedStaffIds.size}명의 근무자를 삭제하시겠습니까?`)) return;
-
       const currentStaffList = teamsData[currentTeamKey].staff || [];
       selectedStaffIds.forEach(id => {
         const staff = currentStaffList.find(s => s.id === id);
-        if (staff && staff.location.startsWith('train-')) {
-          handleRideLogging(staff.name, staff.location, null);
-        }
+        if (staff && staff.location.startsWith('train-')) handleRideLogging(staff.name, staff.location, null);
       });
-
       teamsData[currentTeamKey].staff = currentStaffList.filter(s => !selectedStaffIds.has(s.id));
-      clearSelection();
-      render();
-      syncCurrentTeamStaffToCloud();
+      clearSelection(); render(); syncCurrentTeamStaffToCloud();
       showToast('선택한 근무자가 삭제되었습니다.');
     }
 
     setInterval(() => {
       const now = new Date();
       const clock = document.getElementById('live-clock');
-      if (clock) {
-        clock.textContent = now.toTimeString().split(' ')[0];
-      }
+      if (clock) clock.textContent = now.toTimeString().split(' ')[0];
       renderRideLogs();
-      // [추가] 매 분 0초가 될 때마다 교대 여부 갱신 (또는 시간 변화 감지)
-      if (now.getSeconds() === 0) {
-        updateCurrentWorkingTeamBadge();
-      }
+      if (now.getSeconds() === 0) updateCurrentWorkingTeamBadge();
     }, 1000);
 
-    let currentZoom = 1.0;
-    let initialPinchDistance = null;
-    let startZoom = 1.0;
-
+    let currentZoom = 1.0, initialPinchDistance = null, startZoom = 1.0;
     function applyZoom(scale) {
       currentZoom = Math.min(Math.max(scale, 0.4), 2.5);
       const container = document.getElementById('zoom-container');
-      if (container) {
-        container.style.transform = `scale(${currentZoom})`;
-      }
+      if (container) container.style.transform = `scale(${currentZoom})`;
       const label = document.getElementById('zoom-percent-text');
-      if (label) {
-        label.textContent = `${Math.round(currentZoom * 100)}%`;
-      }
+      if (label) label.textContent = `${Math.round(currentZoom * 100)}%`;
     }
 
     function resetZoomScale() {
@@ -3625,10 +2358,8 @@
       showToast('배율이 100%로 재설정되었습니다.');
     }
 
-    function getTouchDistance(touch1, touch2) {
-      const dx = touch1.clientX - touch2.clientX;
-      const dy = touch1.clientY - touch2.clientY;
-      return Math.sqrt(dx * dx + dy * dy);
+    function getTouchDistance(t1, t2) {
+      return Math.sqrt(Math.pow(t1.clientX - t2.clientX, 2) + Math.pow(t1.clientY - t2.clientY, 2));
     }
 
     window.addEventListener('touchstart', (e) => {
@@ -3641,25 +2372,17 @@
     window.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2 && initialPinchDistance) {
         e.preventDefault();
-        const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
-        const factor = currentDistance / initialPinchDistance;
-        applyZoom(startZoom * factor);
+        applyZoom(startZoom * (getTouchDistance(e.touches[0], e.touches[1]) / initialPinchDistance));
       }
     }, { passive: false });
 
     window.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) {
-        initialPinchDistance = null;
-      }
+      if (e.touches.length < 2) initialPinchDistance = null;
     });
 
     window.onload = function() {
       checkAuthOnLoad();
-      render();
-      initRealtimeSync();
-      updateCurrentWorkingTeamBadge(); // ★ 이 한 줄 추가!
     };
   </script>
-   
 </body>
 </html>
