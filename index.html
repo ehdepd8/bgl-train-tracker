@@ -1021,9 +1021,17 @@
         return;
       }
       container.innerHTML = lines.map((line, idx) => `
-        <div class="flex items-center justify-between gap-1.5 px-2 py-1 bg-amber-50/70 border border-amber-200 rounded text-[11px] font-semibold text-slate-800 leading-tight">
+        <div ondblclick="editNoticeMemoLine(${idx})" title="더블클릭 또는 연필 아이콘으로 수정"
+             class="flex items-center justify-between gap-1 px-2 py-1 bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200 rounded text-[11px] font-semibold text-slate-800 leading-tight cursor-pointer transition">
           <span class="break-all flex-1">${escapeHtml(line)}</span>
-          <button onclick="deleteNoticeMemoLine(${idx})" class="text-slate-400 hover:text-rose-600 font-bold px-1 transition shrink-0" title="이 항목 삭제"><i class="fa-solid fa-xmark"></i></button>
+          <div class="flex items-center gap-0.5 shrink-0">
+            <button onclick="event.stopPropagation(); editNoticeMemoLine(${idx})" class="text-slate-400 hover:text-amber-700 font-bold px-1 transition" title="이 항목 수정">
+              <i class="fa-solid fa-pen text-[10px]"></i>
+            </button>
+            <button onclick="event.stopPropagation(); deleteNoticeMemoLine(${idx})" class="text-slate-400 hover:text-rose-600 font-bold px-1 transition" title="이 항목 삭제">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </div>
       `).join('');
       container.scrollTop = 0;
@@ -1041,6 +1049,60 @@
       syncFacilityStatusToCloud();
       renderNoticeMemoList();
       showToast('특이사항 항목이 추가되었습니다.');
+    }
+
+    function editNoticeMemoLine(idx) {
+      const lines = (sharedNoticeMemo || '').split('\n').filter(l => l.trim().length > 0);
+      if (idx < 0 || idx >= lines.length) return;
+
+      const currentText = lines[idx];
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4';
+      modal.innerHTML = `
+        <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-pen-to-square text-amber-600"></i> 특이사항 내용 수정
+            </h3>
+            <button id="memo-edit-close" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <div>
+            <input type="text" id="memo-edit-input" class="w-full border-2 border-amber-400 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-600">
+          </div>
+          <div class="flex justify-end gap-1.5 pt-1">
+            <button id="memo-edit-cancel" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">취소</button>
+            <button id="memo-edit-save" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-black rounded-lg">수정 완료</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      const editInput = modal.querySelector('#memo-edit-input');
+      editInput.value = currentText;
+      setTimeout(() => { editInput.focus(); editInput.select(); }, 50);
+
+      const saveEdit = () => {
+        const updatedText = editInput.value.trim();
+        if (!updatedText) {
+          alert('내용을 입력해 주세요. 삭제하려면 X 버튼을 누르세요.');
+          editInput.focus();
+          return;
+        }
+        lines[idx] = updatedText;
+        sharedNoticeMemo = lines.join('\n');
+        syncFacilityStatusToCloud();
+        renderNoticeMemoList();
+        showToast('특이사항 내용이 수정되었습니다.');
+        modal.remove();
+      };
+
+      modal.querySelector('#memo-edit-save').onclick = saveEdit;
+      modal.querySelector('#memo-edit-cancel').onclick = () => modal.remove();
+      modal.querySelector('#memo-edit-close').onclick = () => modal.remove();
+      editInput.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+        if (e.key === 'Escape') { e.preventDefault(); modal.remove(); }
+      };
     }
 
     function deleteNoticeMemoLine(idx) {
