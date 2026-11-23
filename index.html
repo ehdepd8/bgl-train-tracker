@@ -42,7 +42,7 @@
     .station-header { position: relative; display: flex; align-items: center; justify-content: center; padding: 4px 6px; user-select: none; overflow: hidden; cursor: pointer; }
     .station-status-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; z-index: 10; pointer-events: none; font-weight: 900; letter-spacing: 0.3px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); animation: blink-overlay 2.4s infinite ease-in-out; }
     @keyframes blink-overlay { 0%, 55% { opacity: 0; } 70%, 90% { opacity: 0.95; } 100% { opacity: 0; } }
-    .station-card.is-away:not(.is-issue) .station-status-overlay { display: flex; background-color: #1e293b; color: #f8fafc; font-size: 13px; }
+    .station-card.is-away:not(.is-issue):not(.is-circular) .station-status-overlay { display: flex; background-color: #1e293b; color: #f8fafc; font-size: 13px; }
     .station-card.is-issue:not(.is-away) .station-status-overlay { display: flex; background-color: #dc2626; color: #fef08a; font-size: 11px; padding: 0 4px; }
     .station-card.is-away.is-issue .station-status-overlay { display: flex; background: linear-gradient(90deg, #1e293b 45%, #dc2626 55%); color: #ffffff; font-size: 10.5px; padding: 0 2px; }
     .station-card.is-away .station-dropzone { filter: grayscale(85%) contrast(80%) opacity(0.45); background: repeating-linear-gradient(-45deg, rgba(203, 213, 225, 0.35), rgba(203, 213, 225, 0.35) 6px, transparent 6px, transparent 12px) !important; }
@@ -61,7 +61,15 @@
     #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px); background-color: #0f172a; color: #ffffff; padding: 6px 16px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; border: 1px solid #334155; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .sidebar-fixed-card { height: 210px !important; max-height: 210px !important; min-height: 210px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
-    .station-card.range-anchor-selected { outline: 3px solid #f59e0b !important; outline-offset: 1px; box-shadow: 0 0 12px rgba(245, 158, 11, 0.7) !important; z-index: 25; }
+
+    /* 역사 다중 선택 테두리 */
+    .station-card.station-multi-selected { outline: 3px solid #0284c7 !important; outline-offset: 1px; box-shadow: 0 0 12px rgba(2, 132, 199, 0.75) !important; z-index: 25; }
+
+    /* 순환승차 전용 주황색 스타일 */
+    .station-card.is-circular { border: 2.5px solid #f97316 !important; box-shadow: 0 0 10px rgba(249, 115, 22, 0.45) !important; animation: pulse-circular 1.4s infinite ease-in-out; }
+    @keyframes pulse-circular { 0%, 100% { border-color: #f97316; } 50% { border-color: #c2410c; } }
+    .station-card.is-circular:not(.is-away) .station-status-overlay { display: flex; background-color: #ea580c; color: #ffffff; font-size: 11.5px; padding: 0 4px; }
+    .station-card.is-away.is-circular .station-status-overlay { display: flex; background: linear-gradient(90deg, #1e293b 45%, #ea580c 55%); color: #ffffff; font-size: 10.5px; padding: 0 2px; }
   </style>
 </head>
 <body>
@@ -188,13 +196,13 @@
         <div id="trains-grid" class="grid-cols-25 w-full"></div>
       </section>
 
-      <!-- 2. 중앙 메인: 동적으로 서버에서 생성되는 텅 빈 박스 (역사 코드 완전 삭제) -->
+      <!-- 2. 중앙 메인: 동적으로 서버에서 생성되는 텅 빈 박스 -->
       <main id="main-grid" class="flex-1 matrix-layout-grid min-h-0 w-full"></main>
 
     </div>
   </div>
 
-  <!-- 모달들 (역사 정보 없는 순수 입력 UI) -->
+  <!-- 모달들 -->
   <div id="calendar-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-2xl max-w-sm w-full p-4 space-y-3 shadow-2xl">
       <div class="flex justify-between items-center bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
@@ -223,16 +231,17 @@
   <div id="issue-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
     <div class="bg-white border border-slate-300 rounded-xl max-w-sm w-full p-4 space-y-3.5 shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-200 pb-2">
-        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i><span id="issue-modal-station-name" class="text-rose-700">역명</span> 불량 유형 선택</h3>
+        <h3 class="font-black text-slate-900 text-sm flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i><span id="issue-modal-station-name" class="text-rose-700">역명</span> 상태/불량 선택</h3>
         <button onclick="closeIssueModal(true)" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1.5">불량 유형 선택</label>
-          <div class="grid grid-cols-3 gap-1.5" id="issue-type-buttons">
-            <button type="button" onclick="selectIssueType('PSD')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">PSD 장애</button>
-            <button type="button" onclick="selectIssueType('통신불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">통신 불량</button>
-            <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center">기타</button>
+          <label class="block font-bold text-slate-700 mb-1.5">유형 선택</label>
+          <div class="grid grid-cols-4 gap-1.5" id="issue-type-buttons">
+            <button type="button" onclick="selectIssueType('PSD')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center text-[11px]">PSD 장애</button>
+            <button type="button" onclick="selectIssueType('통신불량')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center text-[11px]">통신 불량</button>
+            <button type="button" onclick="selectIssueType('순환승차')" class="p-2 border rounded font-black text-orange-700 bg-orange-50/60 hover:bg-orange-100 hover:border-orange-400 transition text-center text-[11px]">순환승차</button>
+            <button type="button" onclick="selectIssueType('기타')" class="p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center text-[11px]">기타</button>
           </div>
         </div>
         <div id="psd-sub-options" class="hidden p-2.5 bg-rose-50/80 rounded-lg border border-rose-200 space-y-2.5">
@@ -384,15 +393,14 @@
   </div>
 
   <script>
-    // ★ 1단계에서 복사하신 Apps Script 웹앱 URL을 입력하세요!
     const GAS_AUTH_URL = "https://script.google.com/macros/s/AKfycbxc49MbcjtuiID2yqM0cIny4IYw-27zLxRQNvS0zFumLQYJqOSY3vGlo30KK2dL0u6J/exec";
     const GAS_DUTY_URL = "https://script.google.com/macros/s/AKfycbz9DsugBS_GpCJ7gVQU4pLwweK-scbvl9gaLZ871PBuifKpMmuJ6pu8fHr6oFVsZKH2BQ/exec";
 
     // -------------------------------------------------------------
     // [보안 잠금 설정] 5회 실패 시 5분간 입력 잠금
     // -------------------------------------------------------------
-    const MAX_FAIL_COUNT = 5;       // 최대 허용 실패 횟수
-    const LOCK_MINUTES = 5;         // 잠금 시간 (5분)
+    const MAX_FAIL_COUNT = 5;
+    const LOCK_MINUTES = 5;
 
     function checkLockStatus() {
       const lockUntil = localStorage.getItem('bgl_pin_lock_until');
@@ -432,53 +440,51 @@
     // -------------------------------------------------------------
 
     function callGasJsonp(params) {
-  return new Promise((resolve, reject) => {
-    // 구글 스크립트 특수문자 충돌 방지를 위해 알파벳+숫자만 사용
-    const callbackName = 'gasCB_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    let timer = null;
+      return new Promise((resolve, reject) => {
+        const callbackName = 'gasCB_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        let timer = null;
 
-    window[callbackName] = function(data) {
-      if (timer) clearTimeout(timer);
-      cleanup();
-      resolve(data);
-    };
+        window[callbackName] = function(data) {
+          if (timer) clearTimeout(timer);
+          cleanup();
+          resolve(data);
+        };
 
-    function cleanup() {
-      try {
-        delete window[callbackName];
-        const el = document.getElementById(callbackName);
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-      } catch (e) {}
+        function cleanup() {
+          try {
+            delete window[callbackName];
+            const el = document.getElementById(callbackName);
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+          } catch (e) {}
+        }
+
+        const queryArr = [];
+        for (const key in params) {
+          queryArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
+        }
+        queryArr.push('callback=' + callbackName);
+
+        const script = document.createElement('script');
+        script.id = callbackName;
+        const separator = GAS_AUTH_URL.indexOf('?') >= 0 ? '&' : '?';
+        script.src = GAS_AUTH_URL + separator + queryArr.join('&');
+
+        script.onerror = function(err) {
+          if (timer) clearTimeout(timer);
+          cleanup();
+          console.error("JSONP Script Load Error:", err);
+          reject(new Error("통신 오류 (Script 태그 로드 실패)"));
+        };
+
+        timer = setTimeout(() => {
+          cleanup();
+          console.error("JSONP Timeout: 서버 응답 없음");
+          reject(new Error("서버 응답 시간 초과"));
+        }, 10000);
+
+        document.head.appendChild(script);
+      });
     }
-
-    const queryArr = [];
-    for (const key in params) {
-      queryArr.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
-    }
-    queryArr.push('callback=' + callbackName);
-
-    const script = document.createElement('script');
-    script.id = callbackName;
-    const separator = GAS_AUTH_URL.indexOf('?') >= 0 ? '&' : '?';
-    script.src = GAS_AUTH_URL + separator + queryArr.join('&');
-
-    script.onerror = function(err) {
-      if (timer) clearTimeout(timer);
-      cleanup();
-      console.error("JSONP Script Load Error:", err);
-      reject(new Error("통신 오류 (Script 태그 로드 실패)"));
-    };
-
-    // 응답 대기시간 10초 설정
-    timer = setTimeout(() => {
-      cleanup();
-      console.error("JSONP Timeout: 서버 응답 없음");
-      reject(new Error("서버 응답 시간 초과"));
-    }, 10000);
-
-    document.head.appendChild(script);
-  });
-}
 
     const firebaseConfig = {
       apiKey: "AIzaSyAAwqYosNUTymda3UCrEwDMJFxKK-m9Wew",
@@ -518,10 +524,10 @@
     let staffClipboardArray = [];
     let isCheckingAuth = false;
 
-    // ★ [핵심] 서버에서 받은 역사 목록으로 텅 빈 DOM에 카드를 조립하는 동적 렌더링 함수
+    // 동적 그리드 조립
     function buildDynamicGrid(layout) {
       const main = document.getElementById('main-grid');
-      if (!main || main.children.length > 0) return; // 이미 조립되어 있으면 중복 방지
+      if (!main || main.children.length > 0) return;
 
       function getHeaderClass(theme) {
         if (theme === 'slate') return 'bg-slate-200 hover:bg-slate-300 text-slate-900 border-b border-rose-200';
@@ -691,13 +697,12 @@
       document.getElementById('zoom-container').classList.remove('hidden');
     }
 
-    // 화면 첫 로딩 검증 (깜빡임 완전 방지)
+    // 화면 첫 로딩 검증
     async function checkAuthOnLoad() {
       const modal = document.getElementById('pin-auth-modal');
       const localVersion = localStorage.getItem('bgl_auth_version');
       const savedPin = localStorage.getItem('bgl_cached_pin');
 
-      // 저장된 로그인 정보가 없는 경우 -> 모달 표시
       if (!localVersion || !savedPin) {
         if (modal) modal.style.display = 'flex';
         setTimeout(() => {
@@ -707,23 +712,20 @@
         return;
       }
 
-      // 저장된 정보가 있는 경우 -> 모달은 숨겨둔 상태로 백그라운드 로드
       try {
         await firebase.auth().signInAnonymously();
 
-        // 캐시된 PIN으로 서버에서 역사 구조 다운로드
         const bundle = await callGasJsonp({ action: 'getAppBundle', pin: savedPin });
         if (bundle && bundle.success && bundle.layoutConfig) {
           buildDynamicGrid(bundle.layoutConfig);
           initRealtimeSync();
           render();
           updateCurrentWorkingTeamBadge();
-          if (modal) modal.style.display = 'none'; // 안전하게 숨김 유지
+          if (modal) modal.style.display = 'none';
         } else {
           throw new Error("번들 획득 실패");
         }
 
-        // 백그라운드에서 보안 버전 체크
         const data = await callGasJsonp({ action: 'auth', check_version: 'true' });
         if (data && data.serverVersion && String(data.serverVersion) !== String(localVersion)) {
           lockScreenManual();
@@ -735,103 +737,98 @@
       }
     }
 
-    // 2. 키패드 확인 버튼 / Enter 입력 시 (연속 실패 방어 적용)
-async function checkPinAuth() {
-  if (isCheckingAuth) return;
-  if (checkLockStatus()) return; // 잠김 상태면 즉시 중단
+    // 키패드 확인 버튼 / Enter 입력 시
+    async function checkPinAuth() {
+      if (isCheckingAuth) return;
+      if (checkLockStatus()) return;
 
-  const input = document.getElementById('pin-input');
-  const errorMsg = document.getElementById('pin-error-msg');
-  const modal = document.getElementById('pin-auth-modal');
-  const btn = modal ? modal.querySelector('button') : null;
-  const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
+      const input = document.getElementById('pin-input');
+      const errorMsg = document.getElementById('pin-error-msg');
+      const modal = document.getElementById('pin-auth-modal');
+      const btn = modal ? modal.querySelector('button') : null;
+      const val = (input ? input.value : '').toString().replace(/\s+/g, '').trim();
 
-  if (val.length !== 4) {
-    if (errorMsg) {
-      errorMsg.innerText = "비밀번호 4자리를 모두 입력해 주세요.";
-      errorMsg.className = "text-xs font-bold text-rose-600 block";
-    }
-    if (input) input.focus();
-    return;
-  }
-
-  isCheckingAuth = true;
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 인증 중...`;
-  }
-  if (errorMsg) {
-    errorMsg.innerText = "서버 인증 확인 중...";
-    errorMsg.className = "text-xs font-bold text-amber-600 block";
-  }
-
-  try {
-    // 1) 구글 시트 PIN 검증
-    const authData = await callGasJsonp({ action: 'auth', pin: val });
-
-    // 비밀번호가 틀린 경우 처리
-    if (!authData || !authData.success) {
-      let currentFail = parseInt(localStorage.getItem('bgl_pin_fail_count') || '0', 10) + 1;
-      localStorage.setItem('bgl_pin_fail_count', currentFail.toString());
-
-      if (currentFail >= MAX_FAIL_COUNT) {
-        // 5회 채움 -> 5분 잠금 발동
-        const lockTime = Date.now() + (LOCK_MINUTES * 60 * 1000);
-        localStorage.setItem('bgl_pin_lock_until', lockTime.toString());
-        checkLockStatus();
-      } else {
-        const remainChance = MAX_FAIL_COUNT - currentFail;
+      if (val.length !== 4) {
         if (errorMsg) {
-          errorMsg.innerText = `비밀번호가 올바르지 않습니다. (${remainChance}회 남음)`;
+          errorMsg.innerText = "비밀번호 4자리를 모두 입력해 주세요.";
           errorMsg.className = "text-xs font-bold text-rose-600 block";
         }
+        if (input) input.focus();
+        return;
       }
 
-      if (input) { input.value = ''; input.focus(); }
-      isCheckingAuth = false;
-      if (btn) { btn.disabled = false; btn.innerHTML = "확인 및 접속"; }
-      return;
+      isCheckingAuth = true;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 인증 중...`;
+      }
+      if (errorMsg) {
+        errorMsg.innerText = "서버 인증 확인 중...";
+        errorMsg.className = "text-xs font-bold text-amber-600 block";
+      }
+
+      try {
+        const authData = await callGasJsonp({ action: 'auth', pin: val });
+
+        if (!authData || !authData.success) {
+          let currentFail = parseInt(localStorage.getItem('bgl_pin_fail_count') || '0', 10) + 1;
+          localStorage.setItem('bgl_pin_fail_count', currentFail.toString());
+
+          if (currentFail >= MAX_FAIL_COUNT) {
+            const lockTime = Date.now() + (LOCK_MINUTES * 60 * 1000);
+            localStorage.setItem('bgl_pin_lock_until', lockTime.toString());
+            checkLockStatus();
+          } else {
+            const remainChance = MAX_FAIL_COUNT - currentFail;
+            if (errorMsg) {
+              errorMsg.innerText = `비밀번호가 올바르지 않습니다. (${remainChance}회 남음)`;
+              errorMsg.className = "text-xs font-bold text-rose-600 block";
+            }
+          }
+
+          if (input) { input.value = ''; input.focus(); }
+          isCheckingAuth = false;
+          if (btn) { btn.disabled = false; btn.innerHTML = "확인 및 접속"; }
+          return;
+        }
+
+        localStorage.removeItem('bgl_pin_fail_count');
+        localStorage.removeItem('bgl_pin_lock_until');
+
+        localStorage.setItem('bgl_auth_version', authData.authVersion);
+        localStorage.setItem('bgl_cached_pin', val);
+
+        const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
+        if (!bundle || !bundle.success) throw new Error("화면 레이아웃 수신 실패");
+
+        buildDynamicGrid(bundle.layoutConfig);
+        await firebase.auth().signInAnonymously();
+        initRealtimeSync();
+
+        if (modal) modal.style.display = 'none';
+        if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
+
+        setTimeout(() => {
+          render();
+          updateCurrentWorkingTeamBadge();
+        }, 200);
+
+        showToast('접속되었습니다.');
+
+      } catch (err) {
+        console.error("접속 오류:", err);
+        if (errorMsg) {
+          errorMsg.innerText = "오류 발생: " + err.message;
+          errorMsg.className = "text-xs font-bold text-rose-600 block";
+        }
+      } finally {
+        isCheckingAuth = false;
+        if (btn && !checkLockStatus()) {
+          btn.disabled = false;
+          btn.innerHTML = "확인 및 접속";
+        }
+      }
     }
-
-    // 2) 성공 시 실패 횟수 및 잠금 즉시 초기화
-    localStorage.removeItem('bgl_pin_fail_count');
-    localStorage.removeItem('bgl_pin_lock_until');
-
-    // 세션 저장 및 화면 구성
-    localStorage.setItem('bgl_auth_version', authData.authVersion);
-    localStorage.setItem('bgl_cached_pin', val);
-
-    const bundle = await callGasJsonp({ action: 'getAppBundle', pin: val });
-    if (!bundle || !bundle.success) throw new Error("화면 레이아웃 수신 실패");
-
-    buildDynamicGrid(bundle.layoutConfig);
-    await firebase.auth().signInAnonymously();
-    initRealtimeSync();
-
-    if (modal) modal.style.display = 'none';
-    if (errorMsg) errorMsg.className = "text-xs font-bold text-rose-600 hidden";
-
-    setTimeout(() => {
-      render();
-      updateCurrentWorkingTeamBadge();
-    }, 200);
-
-    showToast('접속되었습니다.');
-
-  } catch (err) {
-    console.error("접속 오류:", err);
-    if (errorMsg) {
-      errorMsg.innerText = "오류 발생: " + err.message;
-      errorMsg.className = "text-xs font-bold text-rose-600 block";
-    }
-  } finally {
-    isCheckingAuth = false;
-    if (btn && !checkLockStatus()) {
-      btn.disabled = false;
-      btn.innerHTML = "확인 및 접속";
-    }
-  }
-}
 
     // 로그아웃
     function lockScreenManual() {
@@ -843,7 +840,7 @@ async function checkPinAuth() {
       if (input) input.value = '';
       
       const main = document.getElementById('main-grid');
-      if (main) main.innerHTML = ''; // 화면 알맹이 즉시 파괴
+      if (main) main.innerHTML = '';
       
       const zoom = document.getElementById('zoom-container');
       if (zoom) zoom.classList.add('hidden');
@@ -1097,10 +1094,70 @@ async function checkPinAuth() {
       }
     }
 
+    // =============================================================
+    // ★ 역사 다중 선택(Shift/Ctrl) 및 일괄 불량/순환승차 등록·해제 로직
+    // =============================================================
     let stationClickTimerMap = {};
     let lastStationClickTimes = {};
+    let selectedStationIds = new Set();
+    let lastStationAnchorId = null;
 
-    function onStationHeaderClicked(zoneId) {
+    function getAllValidStationCards() {
+      return Array.from(document.querySelectorAll('#main-grid .station-card[data-zone-id]'))
+        .filter(c => {
+          const z = c.getAttribute('data-zone-id');
+          return z && !['승무현황', '미배치', '휴무자', '본사'].includes(z);
+        });
+    }
+
+    function updateStationSelectionUI() {
+      document.querySelectorAll('#main-grid .station-card').forEach(c => {
+        const z = c.getAttribute('data-zone-id');
+        if (z && selectedStationIds.has(z)) c.classList.add('station-multi-selected');
+        else c.classList.remove('station-multi-selected');
+      });
+    }
+
+    function onStationHeaderClicked(zoneId, e) {
+      // 1) Shift + 클릭: 시작역 ~ 끝역 구간 다중 선택
+      if (e && e.shiftKey) {
+        const cards = getAllValidStationCards();
+        const endIdx = cards.findIndex(c => c.getAttribute('data-zone-id') === zoneId);
+        if (endIdx === -1) return;
+
+        if (!lastStationAnchorId) {
+          if (!e.ctrlKey && !e.metaKey) selectedStationIds.clear();
+          selectedStationIds.add(zoneId);
+          lastStationAnchorId = zoneId;
+        } else {
+          const startIdx = cards.findIndex(c => c.getAttribute('data-zone-id') === lastStationAnchorId);
+          if (startIdx !== -1) {
+            if (!e.ctrlKey && !e.metaKey) selectedStationIds.clear();
+            const minIdx = Math.min(startIdx, endIdx);
+            const maxIdx = Math.max(startIdx, endIdx);
+            for (let i = minIdx; i <= maxIdx; i++) {
+              selectedStationIds.add(cards[i].getAttribute('data-zone-id'));
+            }
+          }
+        }
+        updateStationSelectionUI();
+        showToast(`${selectedStationIds.size}개 역사 선택됨 (선택된 역 상단 더블클릭으로 설정)`);
+        return;
+      }
+
+      // 2) Ctrl + 클릭: 개별 역사 추가/해제
+      if (e && (e.ctrlKey || e.metaKey)) {
+        if (selectedStationIds.has(zoneId)) {
+          selectedStationIds.delete(zoneId);
+        } else {
+          selectedStationIds.add(zoneId);
+          lastStationAnchorId = zoneId;
+        }
+        updateStationSelectionUI();
+        return;
+      }
+
+      // 3) 일반 클릭 / 더블클릭 판별
       const now = Date.now();
       const lastTime = lastStationClickTimes[zoneId] || 0;
       const timeDiff = now - lastTime;
@@ -1111,7 +1168,11 @@ async function checkPinAuth() {
           clearTimeout(stationClickTimerMap[zoneId]);
           delete stationClickTimerMap[zoneId];
         }
-        toggleStationIssueOnly(zoneId);
+        // 다중 선택된 역 중 하나를 더블클릭하면 일괄 처리, 아니면 해당 1개 역만 처리
+        const targetZones = (selectedStationIds.size > 1 && selectedStationIds.has(zoneId))
+          ? Array.from(selectedStationIds)
+          : [zoneId];
+        toggleStationsIssueBatch(targetZones);
         return;
       }
 
@@ -1119,6 +1180,12 @@ async function checkPinAuth() {
 
       stationClickTimerMap[zoneId] = setTimeout(() => {
         delete stationClickTimerMap[zoneId];
+        // 단일 클릭 시 범위 선택 해제 후 해당 역사 1개만 '외부' 토글
+        if (selectedStationIds.size > 0) {
+          selectedStationIds.clear();
+          lastStationAnchorId = null;
+          updateStationSelectionUI();
+        }
         toggleStationAwayOnly(zoneId);
       }, 280);
     }
@@ -1139,48 +1206,70 @@ async function checkPinAuth() {
       showToast(`${zoneId} ${isAwayNow ? '외부 설정' : '외부 취소 (정상복귀)'}`);
     }
 
-    function toggleStationIssueOnly(zoneId) {
-      const existingIdx = sharedStationIssues.findIndex(item => item.station === zoneId);
-      if (existingIdx > -1) {
-        sharedStationIssues.splice(existingIdx, 1);
+    function toggleStationsIssueBatch(zoneIds) {
+      const hasAnyIssue = zoneIds.some(z => sharedStationIssues.some(item => item.station === z));
+      if (hasAnyIssue) {
+        const clearedNames = [];
+        zoneIds.forEach(z => {
+          const idx = sharedStationIssues.findIndex(item => item.station === z);
+          if (idx > -1) {
+            sharedStationIssues.splice(idx, 1);
+            clearedNames.push(z.split(' ')[0] || z);
+          }
+        });
+
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        const cleanStationName = zoneId.split(' ')[0] || zoneId;
-        const autoMemoText = `[${timeStr} ${cleanStationName}역 불량 조치완료/복구]`;
+        const label = clearedNames.length > 1
+          ? `${clearedNames[0]}~${clearedNames[clearedNames.length - 1]} (${clearedNames.length}개역)`
+          : `${clearedNames[0]}역`;
+        const autoMemoText = `[${timeStr} ${label} 조치완료/복구]`;
 
-        sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (autoMemoText + '\n' + sharedNoticeMemo.trim()) : autoMemoText;
+        sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0)
+          ? (autoMemoText + '\n' + sharedNoticeMemo.trim())
+          : autoMemoText;
 
+        selectedStationIds.clear();
+        lastStationAnchorId = null;
         renderStaffAndStations();
         renderStatistics();
         renderNoticeMemoList();
         syncFacilityStatusToCloud();
         resyncStationOverlayAnimations();
-        showToast(`${cleanStationName}역 불량 해제 (특이사항 자동기록)`);
+        showToast(`${label} 해제 완료 (특이사항 자동기록)`);
       } else {
-        openIssueModal(zoneId);
+        openIssueModal(zoneIds);
       }
     }
 
-    let currentModalZoneId = null;
+    let currentModalZoneIds = [];
     let selectedIssueType = null;
     let selectedPsdLine = '상선';
     let selectedPsdDoors = [];
     let isPsdAll = false;
 
-    function openIssueModal(zoneId) {
-      currentModalZoneId = zoneId;
+    function openIssueModal(zoneIds) {
+      currentModalZoneIds = Array.isArray(zoneIds) ? zoneIds : [zoneIds];
       selectedIssueType = null;
       selectedPsdLine = '상선';
       selectedPsdDoors = [];
       isPsdAll = false;
 
-      const cleanStationName = zoneId.split(' ')[0] || zoneId;
-      document.getElementById('issue-modal-station-name').textContent = cleanStationName;
+      const names = currentModalZoneIds.map(z => z.split(' ')[0] || z);
+      const modalTitle = names.length > 1
+        ? `${names[0]}~${names[names.length - 1]} (${names.length}개역)`
+        : names[0];
+
+      document.getElementById('issue-modal-station-name').textContent = modalTitle;
       document.getElementById('psd-sub-options').classList.add('hidden');
       document.getElementById('btn-confirm-issue-detail').classList.add('hidden');
 
       document.querySelectorAll('#issue-type-buttons button').forEach(b => {
-        b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center";
+        if (b.textContent.includes('순환승차')) {
+          b.className = "p-2 border rounded font-black text-orange-700 bg-orange-50/60 hover:bg-orange-100 hover:border-orange-400 transition text-center text-[11px]";
+        } else {
+          b.className = "p-2 border rounded font-black text-slate-800 hover:bg-rose-50 hover:border-rose-300 transition text-center text-[11px]";
+        }
       });
 
       refreshPsdSubUI();
@@ -1191,16 +1280,18 @@ async function checkPinAuth() {
     function closeIssueModal(isCancel = false) {
       document.getElementById('issue-modal').classList.add('hidden');
       document.getElementById('issue-modal').classList.remove('flex');
-      currentModalZoneId = null;
+      currentModalZoneIds = [];
     }
 
     function selectIssueType(type) {
       selectedIssueType = type;
       document.querySelectorAll('#issue-type-buttons button').forEach(b => {
         if (b.textContent.includes(type)) {
-          b.className = "p-2 border-2 border-rose-600 bg-rose-100 font-black text-rose-950 rounded text-center";
+          b.className = (type === '순환승차')
+            ? "p-2 border-2 border-orange-600 bg-orange-100 font-black text-orange-950 rounded text-center text-[11px]"
+            : "p-2 border-2 border-rose-600 bg-rose-100 font-black text-rose-950 rounded text-center text-[11px]";
         } else {
-          b.className = "p-2 border rounded font-semibold text-slate-500 bg-slate-50 text-center";
+          b.className = "p-2 border rounded font-semibold text-slate-500 bg-slate-50 text-center text-[11px]";
         }
       });
 
@@ -1210,7 +1301,7 @@ async function checkPinAuth() {
         refreshPsdSubUI();
       } else {
         document.getElementById('psd-sub-options').classList.add('hidden');
-        applyIssueFinal(currentModalZoneId, type);
+        applyIssueFinal(currentModalZoneIds, type);
         closeIssueModal(false);
       }
     }
@@ -1264,32 +1355,44 @@ async function checkPinAuth() {
         let doorsText = (isPsdAll || selectedPsdDoors.length === 4) ? '전체' : (selectedPsdDoors.length > 0 ? selectedPsdDoors.join(', ') : '전체');
         detailDesc = `PSD ${line} ${doorsText}`;
       }
-      applyIssueFinal(currentModalZoneId, detailDesc);
+      applyIssueFinal(currentModalZoneIds, detailDesc);
       closeIssueModal(false);
     }
 
-    function applyIssueFinal(zoneId, detailText) {
-      const existingIdx = sharedStationIssues.findIndex(item => item.station === zoneId);
-      if (existingIdx > -1) {
-        sharedStationIssues[existingIdx].detail = detailText || '불량';
-      } else {
-        sharedStationIssues.push({ station: zoneId, detail: detailText || '불량' });
-      }
+    function applyIssueFinal(zoneIds, detailText) {
+      const targetList = Array.isArray(zoneIds) ? zoneIds : [zoneIds];
+      const appliedNames = [];
+
+      targetList.forEach(zId => {
+        const existingIdx = sharedStationIssues.findIndex(item => item.station === zId);
+        if (existingIdx > -1) {
+          sharedStationIssues[existingIdx].detail = detailText || '불량';
+        } else {
+          sharedStationIssues.push({ station: zId, detail: detailText || '불량' });
+        }
+        appliedNames.push(zId.split(' ')[0] || zId);
+      });
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const cleanStationName = zoneId.split(' ')[0] || zoneId;
-      const recordText = `[${timeStr} ${cleanStationName}역 불량: ${detailText || '점검중'}]`;
+      const rangeLabel = appliedNames.length > 1
+        ? `${appliedNames[0]}~${appliedNames[appliedNames.length - 1]} (${appliedNames.length}개역)`
+        : `${appliedNames[0]}역`;
+      const prefix = (detailText === '순환승차') ? '순환승차' : `불량: ${detailText || '점검중'}`;
+      const recordText = `[${timeStr} ${rangeLabel} ${prefix}]`;
 
       sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0) ? (recordText + '\n' + sharedNoticeMemo.trim()) : recordText;
 
+      selectedStationIds.clear();
+      lastStationAnchorId = null;
       renderStaffAndStations();
       renderStatistics();
       renderNoticeMemoList();
       syncFacilityStatusToCloud();
       resyncStationOverlayAnimations();
-      showToast(`⚠️ ${cleanStationName}역 불량 등록 완료 (${detailText})`);
+      showToast(`${rangeLabel} [${detailText}] 등록 완료`);
     }
+    // =============================================================
 
     let currentModalTrainId = null;
     let selectedTrainIssueType = null;
@@ -1695,17 +1798,26 @@ async function checkPinAuth() {
         e.preventDefault(); deleteSelectedStaffsBatch();
       }
       if (e.key === 'Escape') {
-        selectedStaffIds.clear(); renderStaffAndStations();
+        selectedStaffIds.clear();
+        selectedStationIds.clear();
+        lastStationAnchorId = null;
+        renderStaffAndStations();
+        updateStationSelectionUI();
       }
     });
 
     document.addEventListener('click', (e) => {
-      if (e.ctrlKey || e.metaKey) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
       if (e.target.closest('#mobile-action-bar') || e.target.closest('.fixed.inset-0')) return;
       if (!e.target.closest('.nametag') && !e.target.closest('.team-tab-btn') && selectedStaffIds.size > 0) {
         selectedStaffIds.clear();
         renderStaffAndStations();
         updateMobileActionBar();
+      }
+      if (!e.target.closest('.station-header') && selectedStationIds.size > 0) {
+        selectedStationIds.clear();
+        lastStationAnchorId = null;
+        updateStationSelectionUI();
       }
     });
 
@@ -1788,16 +1900,23 @@ async function checkPinAuth() {
         const issueItem = sharedStationIssues.find(item => item.station === zoneId);
         const isIssue = !!issueItem;
         const detailText = issueItem ? issueItem.detail : '불량';
+        const isCircular = isIssue && detailText === '순환승차';
 
         if (isAway) card.classList.add('is-away'); else card.classList.remove('is-away');
-        if (isIssue) card.classList.add('is-issue'); else card.classList.remove('is-issue');
+        card.classList.remove('is-issue', 'is-circular');
+        if (isCircular) card.classList.add('is-circular');
+        else if (isIssue) card.classList.add('is-issue');
 
         const overlay = card.querySelector('.station-status-overlay');
         if (overlay) {
-          if (isAway && isIssue) {
+          if (isAway && isCircular) {
+            overlay.innerHTML = `<span class="flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-black/50 border border-white/50 truncate max-w-full"><span class="text-slate-100 font-black">외부</span><span class="text-white/40 font-light">|</span><span class="text-orange-200 font-black truncate">🔄순환승차</span></span>`;
+          } else if (isAway && isIssue) {
             overlay.innerHTML = `<span class="flex items-center gap-1 px-1.5 py-0.5 rounded-xs bg-black/50 border border-white/50 truncate max-w-full"><span class="text-slate-100 font-black">외부</span><span class="text-white/40 font-light">|</span><span class="text-yellow-300 font-black truncate">⚠️${detailText}</span></span>`;
           } else if (isAway) {
             overlay.innerHTML = `<span class="flex items-center gap-1 px-3 py-0.5 rounded-xs bg-slate-900/60 border border-slate-300/50 text-slate-100 font-black"><i class="fa-solid fa-person-walking text-xs text-sky-300"></i> 외 부</span>`;
+          } else if (isCircular) {
+            overlay.innerHTML = `<span class="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-orange-950/60 border border-orange-200/60 text-white font-black truncate max-w-full"><i class="fa-solid fa-rotate text-xs"></i> <span class="truncate">순환승차</span></span>`;
           } else if (isIssue) {
             overlay.innerHTML = `<span class="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-red-950/60 border border-yellow-300/50 text-yellow-300 font-black truncate max-w-full"><i class="fa-solid fa-triangle-exclamation text-xs"></i> <span class="truncate">${detailText}</span></span>`;
           } else {
@@ -1844,6 +1963,7 @@ async function checkPinAuth() {
         }
       });
 
+      updateStationSelectionUI();
       attachNametagEvents();
       attachStationStaticEvents();
     }
@@ -1914,84 +2034,11 @@ async function checkPinAuth() {
       if (isStationEventsAttached) return;
       isStationEventsAttached = true;
 
-      let lastIssueRangeStartZone = null;
-
       document.querySelectorAll('.station-header').forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
           const card = header.closest('.station-card');
-          const zoneId = card ? card.getAttribute('data-zone-id') : null;
-          if (!zoneId) return;
-
-          // ★ Shift + 역 상단 클릭: 구간 내 역사 일괄 '통신불량' 등록
-          if (e.shiftKey) {
-            const stationCards = Array.from(document.querySelectorAll('#main-grid .station-card[data-zone-id]'))
-              .filter(c => {
-                const z = c.getAttribute('data-zone-id');
-                return z && !['승무현황', '미배치', '휴무자', '본사'].includes(z);
-              });
-
-            const endIdx = stationCards.findIndex(c => c.getAttribute('data-zone-id') === zoneId);
-            if (endIdx === -1) return;
-
-            // 1) 첫 번째 기준 역 선택
-            if (!lastIssueRangeStartZone || lastIssueRangeStartZone === zoneId) {
-              document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
-              lastIssueRangeStartZone = zoneId;
-              card.classList.add('range-anchor-selected');
-              const cleanName = zoneId.split(' ')[0] || zoneId;
-              showToast(`[${cleanName}] 시작역 선택됨 — Shift를 누른 채 끝 역 상단을 클릭하세요.`);
-              return;
-            }
-
-            // 2) 두 번째 끝 역 선택 -> 구간 내 모든 역에 '통신불량' 일괄 적용
-            const startIdx = stationCards.findIndex(c => c.getAttribute('data-zone-id') === lastIssueRangeStartZone);
-            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
-            lastIssueRangeStartZone = null;
-
-            if (startIdx !== -1) {
-              const minIdx = Math.min(startIdx, endIdx);
-              const maxIdx = Math.max(startIdx, endIdx);
-              const now = new Date();
-              const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-              const appliedNames = [];
-
-              for (let i = minIdx; i <= maxIdx; i++) {
-                const targetZoneId = stationCards[i].getAttribute('data-zone-id');
-                const existingIdx = sharedStationIssues.findIndex(item => item.station === targetZoneId);
-                if (existingIdx > -1) {
-                  sharedStationIssues[existingIdx].detail = '통신불량';
-                } else {
-                  sharedStationIssues.push({ station: targetZoneId, detail: '통신불량' });
-                }
-                appliedNames.push(targetZoneId.split(' ')[0] || targetZoneId);
-              }
-
-              // 특이사항 로그에도 구간 기록 1줄 추가
-              const rangeLabel = appliedNames.length > 1
-                ? `${appliedNames[0]}~${appliedNames[appliedNames.length - 1]} (${appliedNames.length}개역)`
-                : appliedNames[0];
-              const recordText = `[${timeStr} ${rangeLabel} 불량: 통신불량]`;
-              sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0)
-                ? (recordText + '\n' + sharedNoticeMemo.trim())
-                : recordText;
-
-              renderStaffAndStations();
-              renderStatistics();
-              renderNoticeMemoList();
-              syncFacilityStatusToCloud();
-              resyncStationOverlayAnimations();
-              showToast(`⚠️ ${rangeLabel} 통신불량 일괄 등록 완료`);
-            }
-            return;
-          }
-
-          // 일반 클릭 시 기준점 해제 후 기존 동작(외부/더블클릭 불량) 실행
-          if (lastIssueRangeStartZone) {
-            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
-            lastIssueRangeStartZone = null;
-          }
-          onStationHeaderClicked(zoneId);
+          if (card && card.getAttribute('data-zone-id')) onStationHeaderClicked(card.getAttribute('data-zone-id'), e);
         };
       });
 
