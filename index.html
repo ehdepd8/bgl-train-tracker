@@ -866,6 +866,21 @@
       }
     }
 
+    // 현재 시각(08:40 / 17:40 교대 기준) 실제 근무 중인 팀 번호('1'~'4') 반환
+    function getCurrentWorkingTeamNum() {
+      const now = new Date();
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+
+      if (totalMinutes >= 520 && totalMinutes < 1060) {
+        return ['1', '2', '3', '4'].find(num => getShiftType(now.getFullYear(), now.getMonth(), now.getDate(), num) === '주') || '1';
+      } else if (totalMinutes >= 1060) {
+        return ['1', '2', '3', '4'].find(num => getShiftType(now.getFullYear(), now.getMonth(), now.getDate(), num) === '야') || '1';
+      } else {
+        const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 12, 0, 0);
+        return ['1', '2', '3', '4'].find(num => getShiftType(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), num) === '야') || '1';
+      }
+    }
+
     function checkUrlTeamParam() {
       const urlParams = new URLSearchParams(window.location.search);
       const teamParam = urlParams.get('team');
@@ -873,6 +888,8 @@
         currentTeamKey = `team${teamParam}`;
       } else if (teamParam && ['team1', 'team2', 'team3', 'team4'].includes(teamParam)) {
         currentTeamKey = teamParam;
+      } else {
+        currentTeamKey = `team${getCurrentWorkingTeamNum()}`;
       }
     }
 
@@ -2348,14 +2365,14 @@
 
     function updateCurrentWorkingTeamBadge() {
       const now = new Date();
-      const hour = now.getHours(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-      let activeShiftType = (hour >= 9 && hour < 18) ? '주' : ((hour >= 18) ? '야' : '비');
-      let onDutyTeam = ['1', '2', '3', '4'].find(num => getShiftType(y, m, d, num) === activeShiftType);
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      const activeShiftLabel = (totalMinutes >= 520 && totalMinutes < 1060) ? '주간근무' : '야간근무';
+      const onDutyTeam = getCurrentWorkingTeamNum();
 
       const badgeBtn = document.getElementById('current-duty-badge');
       const badgeText = document.getElementById('current-duty-badge-text');
       if (badgeBtn && badgeText && onDutyTeam) {
-        badgeText.textContent = `${onDutyTeam}팀 ${activeShiftType === '주' ? '주간' : '야간'}근무`;
+        badgeText.textContent = `${onDutyTeam}팀 ${activeShiftLabel}`;
         badgeBtn.onclick = () => switchTeam(`team${onDutyTeam}`);
         badgeBtn.classList.remove('hidden');
         badgeBtn.classList.add('flex');
