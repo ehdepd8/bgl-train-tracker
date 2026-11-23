@@ -61,6 +61,7 @@
     #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px); background-color: #0f172a; color: #ffffff; padding: 6px 16px; border-radius: 9999px; font-size: 11.5px; font-weight: 700; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); display: flex; align-items: center; gap: 8px; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; border: 1px solid #334155; }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .sidebar-fixed-card { height: 210px !important; max-height: 210px !important; min-height: 210px !important; display: flex !important; flex-direction: column !important; overflow: hidden !important; }
+    .station-card.range-anchor-selected { outline: 3px solid #f59e0b !important; outline-offset: 1px; box-shadow: 0 0 12px rgba(245, 158, 11, 0.7) !important; z-index: 25; }
   </style>
 </head>
 <body>
@@ -1913,11 +1914,84 @@ async function checkPinAuth() {
       if (isStationEventsAttached) return;
       isStationEventsAttached = true;
 
+      let lastIssueRangeStartZone = null;
+
       document.querySelectorAll('.station-header').forEach(header => {
         header.onclick = (e) => {
           e.stopPropagation();
           const card = header.closest('.station-card');
-          if (card && card.getAttribute('data-zone-id')) onStationHeaderClicked(card.getAttribute('data-zone-id'));
+          const zoneId = card ? card.getAttribute('data-zone-id') : null;
+          if (!zoneId) return;
+
+          // ★ Shift + 역 상단 클릭: 구간 내 역사 일괄 '통신불량' 등록
+          if (e.shiftKey) {
+            const stationCards = Array.from(document.querySelectorAll('#main-grid .station-card[data-zone-id]'))
+              .filter(c => {
+                const z = c.getAttribute('data-zone-id');
+                return z && !['승무현황', '미배치', '휴무자', '본사'].includes(z);
+              });
+
+            const endIdx = stationCards.findIndex(c => c.getAttribute('data-zone-id') === zoneId);
+            if (endIdx === -1) return;
+
+            // 1) 첫 번째 기준 역 선택
+            if (!lastIssueRangeStartZone || lastIssueRangeStartZone === zoneId) {
+              document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
+              lastIssueRangeStartZone = zoneId;
+              card.classList.add('range-anchor-selected');
+              const cleanName = zoneId.split(' ')[0] || zoneId;
+              showToast(`[${cleanName}] 시작역 선택됨 — Shift를 누른 채 끝 역 상단을 클릭하세요.`);
+              return;
+            }
+
+            // 2) 두 번째 끝 역 선택 -> 구간 내 모든 역에 '통신불량' 일괄 적용
+            const startIdx = stationCards.findIndex(c => c.getAttribute('data-zone-id') === lastIssueRangeStartZone);
+            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
+            lastIssueRangeStartZone = null;
+
+            if (startIdx !== -1) {
+              const minIdx = Math.min(startIdx, endIdx);
+              const maxIdx = Math.max(startIdx, endIdx);
+              const now = new Date();
+              const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+              const appliedNames = [];
+
+              for (let i = minIdx; i <= maxIdx; i++) {
+                const targetZoneId = stationCards[i].getAttribute('data-zone-id');
+                const existingIdx = sharedStationIssues.findIndex(item => item.station === targetZoneId);
+                if (existingIdx > -1) {
+                  sharedStationIssues[existingIdx].detail = '통신불량';
+                } else {
+                  sharedStationIssues.push({ station: targetZoneId, detail: '통신불량' });
+                }
+                appliedNames.push(targetZoneId.split(' ')[0] || targetZoneId);
+              }
+
+              // 특이사항 로그에도 구간 기록 1줄 추가
+              const rangeLabel = appliedNames.length > 1
+                ? `${appliedNames[0]}~${appliedNames[appliedNames.length - 1]} (${appliedNames.length}개역)`
+                : appliedNames[0];
+              const recordText = `[${timeStr} ${rangeLabel} 불량: 통신불량]`;
+              sharedNoticeMemo = (sharedNoticeMemo && sharedNoticeMemo.trim().length > 0)
+                ? (recordText + '\n' + sharedNoticeMemo.trim())
+                : recordText;
+
+              renderStaffAndStations();
+              renderStatistics();
+              renderNoticeMemoList();
+              syncFacilityStatusToCloud();
+              resyncStationOverlayAnimations();
+              showToast(`⚠️ ${rangeLabel} 통신불량 일괄 등록 완료`);
+            }
+            return;
+          }
+
+          // 일반 클릭 시 기준점 해제 후 기존 동작(외부/더블클릭 불량) 실행
+          if (lastIssueRangeStartZone) {
+            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('range-anchor-selected'));
+            lastIssueRangeStartZone = null;
+          }
+          onStationHeaderClicked(zoneId);
         };
       });
 
